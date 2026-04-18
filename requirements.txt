@@ -1,0 +1,7 @@
+Flask
+gunicorn
+werkzeug
+reportlab
+python-owasp-zap-v2.4
+flask-login
+flask-mail

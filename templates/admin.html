@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #eef2ff, #f8fafc);
+            margin: 0;
+            padding: 30px 15px;
+            color: #1e293b;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1250px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 35px;
+            border-radius: 18px;
+            box-shadow: 0 10px 28px rgba(0, 0, 0, 0.12);
+            box-sizing: border-box;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+            color: #0f172a;
+        }
+
+        h2 {
+            margin-top: 35px;
+            margin-bottom: 15px;
+            color: #0f172a;
+        }
+
+        .top-links {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .top-links a {
+            margin: 0 10px;
+            text-decoration: none;
+            color: #2563eb;
+            font-weight: bold;
+        }
+
+        .top-links a:hover {
+            text-decoration: underline;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 18px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: #f8fafc;
+            border: 1px solid #dbe4ee;
+            border-radius: 16px;
+            padding: 22px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.04);
+        }
+
+        .stat-title {
+            font-size: 14px;
+            color: #64748b;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 30px;
+            font-weight: bold;
+            color: #0f172a;
+        }
+
+        .card-users .stat-value { color: #2563eb; }
+        .card-scans .stat-value { color: #7c3aed; }
+        .card-high .stat-value { color: #dc2626; }
+        .card-medium .stat-value { color: #f59e0b; }
+        .card-low .stat-value { color: #16a34a; }
+        .card-info .stat-value { color: #0891b2; }
+
+        .chart-box {
+            background: #f8fafc;
+            border: 1px solid #dbe4ee;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        .section-box {
+            background: #f8fafc;
+            border: 1px solid #dbe4ee;
+            border-radius: 14px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            background: white;
+        }
+
+        th, td {
+            border: 1px solid #e2e8f0;
+            padding: 12px;
+            text-align: left;
+            vertical-align: top;
+        }
+
+        th {
+            background: #f1f5f9;
+        }
+
+        .result-link {
+            color: #2563eb;
+            font-weight: bold;
+            text-decoration: none;
+        }
+
+        .result-link:hover {
+            text-decoration: underline;
+        }
+
+        .delete-btn {
+            background: #dc2626;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .delete-btn:hover {
+            background: #b91c1c;
+        }
+
+        .empty {
+            background: #fefce8;
+            border-left: 5px solid #eab308;
+            border-radius: 10px;
+            padding: 14px;
+            line-height: 1.6;
+        }
+
+        .url-cell {
+            max-width: 280px;
+            overflow-wrap: break-word;
+            word-break: break-word;
+        }
+
+        .small-note {
+            color: #64748b;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+
+        .action-group {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Admin Dashboard</h1>
+
+        <div class="top-links">
+            <a href="/">Home</a>
+            <a href="/history">History</a>
+            <a href="/logout">Logout</a>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card card-users">
+                <div class="stat-title">Total Users</div>
+                <div class="stat-value">{{ total_users }}</div>
+            </div>
+
+            <div class="stat-card card-scans">
+                <div class="stat-title">Total Scans</div>
+                <div class="stat-value">{{ total_scans }}</div>
+            </div>
+
+            <div class="stat-card card-high">
+                <div class="stat-title">High Findings</div>
+                <div class="stat-value">{{ total_high }}</div>
+            </div>
+
+            <div class="stat-card card-medium">
+                <div class="stat-title">Medium Findings</div>
+                <div class="stat-value">{{ total_medium }}</div>
+            </div>
+
+            <div class="stat-card card-low">
+                <div class="stat-title">Low Findings</div>
+                <div class="stat-value">{{ total_low }}</div>
+            </div>
+
+            <div class="stat-card card-info">
+                <div class="stat-title">Informational Findings</div>
+                <div class="stat-value">{{ total_info }}</div>
+            </div>
+        </div>
+
+        <div class="chart-box">
+            <h2 style="margin-top:0;">Risk Distribution</h2>
+            <canvas id="adminChart"></canvas>
+        </div>
+
+        <div class="section-box">
+            <h2>Registered Users</h2>
+            <p class="small-note">This section displays all users registered in the system.</p>
+
+            {% if users %}
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Username</th>
+                            <th>Email</th>
+                            <th>Role</th>
+                            <th>Verified</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for u in users %}
+                            <tr>
+                                <td>{{ u["id"] }}</td>
+                                <td>{{ u["username"] }}</td>
+                                <td>{{ u["email"] }}</td>
+                                <td>{{ u["role"] }}</td>
+                                <td>{{ "Yes" if u["is_verified"] == 1 else "No" }}</td>
+                                <td>
+                                    {% if u["email"] != "deeneshdeenesh66@gmail.com" %}
+                                        <form method="post" action="/admin/delete_user/{{ u['id'] }}">
+                                            <button type="submit" class="delete-btn">Delete</button>
+                                        </form>
+                                    {% else %}
+                                        Protected
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <div class="empty">No users found.</div>
+            {% endif %}
+        </div>
+
+        <div class="section-box">
+            <h2>All Scan History</h2>
+            <p class="small-note">This section shows scan activities from all users.</p>
+
+            {% if history %}
+                <table>
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Email</th>
+                            <th>Target URL</th>
+                            <th>Scan Mode</th>
+                            <th>Status</th>
+                            <th>Total Findings</th>
+                            <th>Date & Time</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in history %}
+                            <tr>
+                                <td>{{ item["username"] }}</td>
+                                <td>{{ item["email"] }}</td>
+                                <td class="url-cell">{{ item["target"] }}</td>
+                                <td>{{ item["scan_mode"] }}</td>
+                                <td>{{ item["status"] }}</td>
+                                <td>{{ item["total_findings"] }}</td>
+                                <td>{{ item["created_at"] }}</td>
+                                <td>
+                                    <div class="action-group">
+                                        <a href="/result/{{ item['scan_id'] }}" class="result-link">Open</a>
+                                        <form method="post" action="/admin/delete_scan/{{ item['scan_id'] }}">
+                                            <button type="submit" class="delete-btn">Delete</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <div class="empty">No scan history available.</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+        const adminData = JSON.parse('{{ [total_high, total_medium, total_low, total_info] | tojson | safe }}');
+
+        new Chart(document.getElementById('adminChart'), {
+            type: 'pie',
+            data: {
+                labels: ['High', 'Medium', 'Low', 'Info'],
+                datasets: [{
+                    data: adminData
+                }]
+            },
+            options: {
+                responsive: true
+            }
+        });
+    </script>
+</body>
+</html>

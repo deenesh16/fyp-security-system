@@ -1,0 +1,4 @@
+scan_history.db
+__pycache__/
+.env
+*.pyc

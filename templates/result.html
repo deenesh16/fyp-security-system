@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Scan Results</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #eef2ff, #f8fafc);
+            margin: 0;
+            padding: 30px 15px;
+            color: #1e293b;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1050px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 35px;
+            border-radius: 18px;
+            box-shadow: 0 10px 28px rgba(0, 0, 0, 0.12);
+            box-sizing: border-box;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #0f172a;
+        }
+
+        h2 {
+            margin-top: 30px;
+            margin-bottom: 16px;
+            color: #0f172a;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+
+        .summary-card {
+            background: #f8fafc;
+            border: 1px solid #dbe4ee;
+            border-radius: 14px;
+            padding: 18px;
+        }
+
+        .summary-label {
+            font-size: 13px;
+            color: #64748b;
+            margin-bottom: 6px;
+        }
+
+        .summary-value {
+            font-size: 17px;
+            font-weight: bold;
+            color: #0f172a;
+            overflow-wrap: break-word;
+            word-break: break-word;
+        }
+
+        .full-width {
+            grid-column: 1 / -1;
+        }
+
+        .url-box {
+            background: #eef2f7;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            padding: 10px 12px;
+            line-height: 1.5;
+            overflow-wrap: break-word;
+            word-break: break-word;
+        }
+
+        .short-url {
+            color: #0f172a;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .short-url:hover {
+            text-decoration: underline;
+        }
+
+        .vuln-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-left: 8px solid #94a3b8;
+            border-radius: 16px;
+            padding: 22px;
+            margin-bottom: 18px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+        }
+
+        .vuln-card.high-border {
+            border-left-color: #dc2626;
+        }
+
+        .vuln-card.medium-border {
+            border-left-color: #f59e0b;
+        }
+
+        .vuln-card.low-border {
+            border-left-color: #16a34a;
+        }
+
+        .vuln-card.info-border {
+            border-left-color: #2563eb;
+        }
+
+        .vuln-title-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+
+        .vuln-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #0f172a;
+        }
+
+        .field {
+            margin-bottom: 14px;
+        }
+
+        .field-label {
+            font-weight: bold;
+            display: block;
+            margin-bottom: 6px;
+            color: #334155;
+        }
+
+        .text-box {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 12px;
+            line-height: 1.6;
+            overflow-wrap: break-word;
+            word-break: break-word;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 7px 14px;
+            border-radius: 999px;
+            font-size: 13px;
+            font-weight: bold;
+            color: white;
+        }
+
+        .badge-high {
+            background: #dc2626;
+        }
+
+        .badge-medium {
+            background: #f59e0b;
+        }
+
+        .badge-low {
+            background: #16a34a;
+        }
+
+        .badge-info {
+            background: #2563eb;
+        }
+
+        .sort-note {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            color: #1d4ed8;
+            border-radius: 10px;
+            padding: 12px 14px;
+            margin-bottom: 18px;
+            font-size: 14px;
+        }
+
+        .empty {
+            background: #fefce8;
+            border-left: 5px solid #eab308;
+            border-radius: 10px;
+            padding: 14px;
+            line-height: 1.6;
+        }
+
+        .btn-group {
+            margin-top: 25px;
+        }
+
+        .btn {
+            display: inline-block;
+            margin-right: 10px;
+            margin-bottom: 10px;
+            background: #2563eb;
+            color: white;
+            padding: 11px 16px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .btn:hover {
+            background: #1d4ed8;
+        }
+
+        .btn-pdf {
+            background: #dc2626;
+        }
+
+        .btn-pdf:hover {
+            background: #b91c1c;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Scan Results</h1>
+
+        <div class="summary-grid">
+            <div class="summary-card">
+                <div class="summary-label">Status</div>
+                <div class="summary-value">{{ result.status }}</div>
+            </div>
+
+            <div class="summary-card">
+                <div class="summary-label">User</div>
+                <div class="summary-value">{{ result.username }}</div>
+            </div>
+
+            <div class="summary-card">
+                <div class="summary-label">Scan Date & Time</div>
+                <div class="summary-value">{{ result.created_at }}</div>
+            </div>
+
+            <div class="summary-card">
+                <div class="summary-label">Scan Mode</div>
+                <div class="summary-value">{{ result.scan_mode }}</div>
+            </div>
+
+            <div class="summary-card">
+                <div class="summary-label">Total Findings</div>
+                <div class="summary-value">{{ result.vulnerabilities|length }}</div>
+            </div>
+
+            <div class="summary-card full-width">
+                <div class="summary-label">Target URL</div>
+                <div class="url-box">
+                    <a href="{{ result.url }}" target="_blank" class="short-url" title="{{ result.url }}">
+                        {{ result.url }}
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="sort-note">
+            Vulnerabilities are sorted automatically by severity: High → Medium → Low → Informational.
+        </div>
+
+        <h2>Detected Vulnerabilities</h2>
+
+        {% if result.vulnerabilities %}
+            {% for v in result.vulnerabilities %}
+                <div class="vuln-card
+                    {% if v.risk == 'High' %}high-border{% elif v.risk == 'Medium' %}medium-border{% elif v.risk == 'Low' %}low-border{% else %}info-border{% endif %}">
+                    
+                    <div class="vuln-title-row">
+                        <div class="vuln-title">{{ v.type }}</div>
+
+                        {% if v.risk == 'High' %}
+                            <span class="badge badge-high">{{ v.risk }}</span>
+                        {% elif v.risk == 'Medium' %}
+                            <span class="badge badge-medium">{{ v.risk }}</span>
+                        {% elif v.risk == 'Low' %}
+                            <span class="badge badge-low">{{ v.risk }}</span>
+                        {% else %}
+                            <span class="badge badge-info">{{ v.risk }}</span>
+                        {% endif %}
+                    </div>
+
+                    <div class="field">
+                        <span class="field-label">Affected URL</span>
+                        <div class="url-box">
+                            <a href="{{ v.url }}" target="_blank" class="short-url" title="{{ v.url }}">
+                                {{ v.url }}
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <span class="field-label">Description</span>
+                        <div class="text-box">{{ v.description | safe }}</div>
+                    </div>
+
+                    <div class="field">
+                        <span class="field-label">Recommended Mitigation</span>
+                        <div class="text-box">{{ v.solution | safe }}</div>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty">
+                No vulnerabilities detected or scan time was insufficient.
+            </div>
+        {% endif %}
+
+        <div class="btn-group">
+            <a href="/" class="btn">Back</a>
+            <a href="/export_report_pdf/{{ result.scan_id }}" class="btn btn-pdf">Export PDF</a>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Scan History</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #eef2ff, #f8fafc);
+            margin: 0;
+            padding: 30px 15px;
+            color: #1e293b;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: auto;
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+            box-sizing: border-box;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .top-bar {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .top-bar a {
+            margin: 0 8px;
+            text-decoration: none;
+            color: #2563eb;
+            font-weight: bold;
+        }
+
+        .top-bar a:hover {
+            text-decoration: underline;
+        }
+
+        .filter-box {
+            background: #f8fafc;
+            border: 1px solid #dbe4ee;
+            border-radius: 14px;
+            padding: 18px;
+            margin-bottom: 25px;
+        }
+
+        .filter-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr auto;
+            gap: 12px;
+            align-items: end;
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 6px;
+        }
+
+        input[type="text"], select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            box-sizing: border-box;
+        }
+
+        .filter-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-filter, .btn-reset {
+            padding: 10px 14px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .btn-filter {
+            background: #2563eb;
+            color: white;
+        }
+
+        .btn-filter:hover {
+            background: #1d4ed8;
+        }
+
+        .btn-reset {
+            background: #e2e8f0;
+            color: #0f172a;
+        }
+
+        .btn-reset:hover {
+            background: #cbd5e1;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            border: 1px solid #e2e8f0;
+            padding: 12px;
+            text-align: left;
+            vertical-align: top;
+        }
+
+        th {
+            background: #f1f5f9;
+        }
+
+        .btn {
+            color: #2563eb;
+            font-weight: bold;
+            text-decoration: none;
+        }
+
+        .btn:hover {
+            text-decoration: underline;
+        }
+
+        .empty {
+            background: #fefce8;
+            padding: 15px;
+            border-radius: 10px;
+        }
+
+        .url-cell {
+            max-width: 280px;
+            overflow-wrap: break-word;
+            word-break: break-word;
+        }
+    </style>
+</head>
+
+<body>
+<div class="container">
+
+    <div class="top-bar">
+        <a href="/">Home</a> |
+        {% if user["role"] == "admin" %}
+            <a href="/admin">Admin Panel</a> |
+        {% endif %}
+        <a href="/logout">Logout</a>
+    </div>
+
+    <h1>Scan History</h1>
+
+    <div class="filter-box">
+        <form method="get" action="/history">
+            <div class="filter-grid">
+                <div>
+                    <label for="q">Search</label>
+                    <input type="text" id="q" name="q" value="{{ search_query }}" placeholder="Search target, user, email, status, mode">
+                </div>
+
+                <div>
+                    <label for="mode">Scan Mode</label>
+                    <select id="mode" name="mode">
+                        <option value="">All Modes</option>
+                        <option value="quick" {% if mode_filter == 'quick' %}selected{% endif %}>Quick Scan</option>
+                        <option value="full" {% if mode_filter == 'full' %}selected{% endif %}>Full Scan</option>
+                    </select>
+                </div>
+
+                <div class="filter-actions">
+                    <button type="submit" class="btn-filter">Filter</button>
+                    <a href="/history" class="btn-reset">Reset</a>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    {% if history %}
+    <table>
+        <tr>
+            <th>No</th>
+            {% if user["role"] == "admin" %}
+                <th>User</th>
+                <th>Email</th>
+            {% endif %}
+            <th>Target</th>
+            <th>Mode</th>
+            <th>Status</th>
+            <th>Findings</th>
+            <th>Date & Time</th>
+            <th>Action</th>
+        </tr>
+
+        {% for item in history %}
+        <tr>
+            <td>{{ loop.index }}</td>
+
+            {% if user["role"] == "admin" %}
+                <td>{{ item["username"] }}</td>
+                <td>{{ item["email"] }}</td>
+            {% endif %}
+
+            <td class="url-cell">{{ item["target"] }}</td>
+            <td>{{ item["scan_mode"] }}</td>
+            <td>{{ item["status"] }}</td>
+            <td>{{ item["total_findings"] }}</td>
+            <td>{{ item["created_at"] }}</td>
+            <td>
+                <a href="/result/{{ item['scan_id'] }}" class="btn">View</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% else %}
+        <div class="empty">No scan history available.</div>
+    {% endif %}
+
+</div>
+</body>
+</html>

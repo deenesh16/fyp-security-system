@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Scan Progress</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #eef2ff, #f8fafc);
+            margin: 0;
+            min-height: 100vh;
+            color: #1e293b;
+        }
+
+        .wrapper {
+            max-width: 760px;
+            margin: 70px auto;
+            padding: 0 15px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 18px;
+            box-shadow: 0 10px 28px rgba(0, 0, 0, 0.12);
+            padding: 34px;
+        }
+
+        h1 {
+            text-align: center;
+            margin: 0 0 10px;
+            color: #0f172a;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #64748b;
+            margin-bottom: 28px;
+            line-height: 1.6;
+        }
+
+        .status-box {
+            background: #f8fafc;
+            border: 1px solid #dbe4ee;
+            border-radius: 14px;
+            padding: 18px;
+            margin-bottom: 24px;
+        }
+
+        .status-row {
+            margin-bottom: 12px;
+        }
+
+        .status-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .status-label {
+            font-size: 13px;
+            color: #64748b;
+            margin-bottom: 6px;
+        }
+
+        .status-value {
+            font-size: 16px;
+            font-weight: bold;
+            color: #0f172a;
+            overflow-wrap: break-word;
+            word-break: break-word;
+        }
+
+        .progress-track {
+            width: 100%;
+            height: 24px;
+            background: #e2e8f0;
+            border-radius: 999px;
+            overflow: hidden;
+            margin-top: 18px;
+        }
+
+        .progress-bar {
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(90deg, #2563eb, #3b82f6);
+            border-radius: 999px;
+            transition: width 0.6s ease;
+        }
+
+        .percent-text {
+            text-align: center;
+            font-size: 28px;
+            font-weight: bold;
+            color: #1d4ed8;
+            margin-top: 18px;
+        }
+
+        .live-status {
+            text-align: center;
+            font-size: 16px;
+            color: #334155;
+            margin-top: 10px;
+            line-height: 1.6;
+        }
+
+        .spinner-wrap {
+            display: flex;
+            justify-content: center;
+            margin: 24px 0 8px;
+        }
+
+        .spinner {
+            width: 54px;
+            height: 54px;
+            border: 6px solid #dbeafe;
+            border-top: 6px solid #2563eb;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        .note {
+            margin-top: 18px;
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            color: #1d4ed8;
+            border-radius: 10px;
+            padding: 12px 14px;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .footer-link {
+            text-align: center;
+            margin-top: 24px;
+        }
+
+        .footer-link a {
+            color: #2563eb;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .footer-link a:hover {
+            text-decoration: underline;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="wrapper">
+        <div class="card">
+            <h1>Scan in Progress</h1>
+            <div class="subtitle">
+                The system is currently scanning the target website. Please wait while the process completes.
+            </div>
+
+            <div class="status-box">
+                <div class="status-row">
+                    <div class="status-label">Scan Mode</div>
+                    <div id="modeText" class="status-value">Loading...</div>
+                </div>
+
+                <div class="status-row">
+                    <div class="status-label">Current Status</div>
+                    <div id="statusText" class="status-value">Starting scan...</div>
+                </div>
+            </div>
+
+            <div class="progress-track">
+                <div id="progressBar" class="progress-bar"></div>
+            </div>
+
+            <div id="percentText" class="percent-text">0%</div>
+            <div class="live-status">Live scan progress is being updated automatically.</div>
+
+            <div class="spinner-wrap">
+                <div class="spinner"></div>
+            </div>
+
+            <div class="note">
+                Depending on the selected scan mode and the target website, the scan may take a little time to complete.
+                You will be redirected automatically to the result page once the scan is finished.
+            </div>
+
+            <div class="footer-link">
+                <a href="/">Back to Home</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const scanId = "{{ scan_id }}";
+
+        function updateProgress() {
+            fetch(`/scan_status/${scanId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        document.getElementById("statusText").innerText = data.error;
+                        return;
+                    }
+
+                    document.getElementById("progressBar").style.width = data.progress + "%";
+                    document.getElementById("percentText").innerText = data.progress + "%";
+                    document.getElementById("statusText").innerText = data.status;
+                    document.getElementById("modeText").innerText = data.scan_mode;
+
+                    if (data.completed) {
+                        window.location.href = `/result/${scanId}`;
+                    }
+                })
+                .catch(() => {
+                    document.getElementById("statusText").innerText = "Unable to retrieve scan progress.";
+                });
+        }
+
+        setInterval(updateProgress, 2000);
+        updateProgress();
+    </script>
+</body>
+</html>

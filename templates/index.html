@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Web Security Scanner</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #eef2ff, #f8fafc);
+            margin: 0;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 50px auto;
+            background: white;
+            padding: 35px;
+            border-radius: 16px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+            box-sizing: border-box;
+        }
+
+        h1 {
+            text-align: center;
+            color: #0f172a;
+        }
+
+        p {
+            color: #475569;
+            text-align: center;
+        }
+
+        .top-bar {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .top-bar a {
+            margin: 0 8px;
+            text-decoration: none;
+            color: #2563eb;
+            font-weight: bold;
+        }
+
+        .top-bar a:hover {
+            text-decoration: underline;
+        }
+
+        .warning {
+            background-color: #fff7ed;
+            border-left: 5px solid #f97316;
+            padding: 14px;
+            border-radius: 8px;
+            margin: 20px 0;
+            color: #9a3412;
+            font-size: 14px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 18px;
+            margin: 30px 0;
+        }
+
+        .stat-card {
+            background: #f8fafc;
+            border: 1px solid #dbe4ee;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.04);
+            text-align: center;
+        }
+
+        .stat-title {
+            font-size: 14px;
+            color: #64748b;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: bold;
+            color: #0f172a;
+        }
+
+        .card-scans .stat-value { color: #2563eb; }
+        .card-findings .stat-value { color: #7c3aed; }
+        .card-high .stat-value { color: #dc2626; }
+        .card-medium .stat-value { color: #f59e0b; }
+        .card-low .stat-value { color: #16a34a; }
+        .card-info .stat-value { color: #0891b2; }
+
+        .chart-box {
+            background: #f8fafc;
+            border: 1px solid #dbe4ee;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        label {
+            display: block;
+            margin-top: 20px;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #334155;
+        }
+
+        input[type="text"], select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 15px;
+            box-sizing: border-box;
+        }
+
+        button {
+            margin-top: 20px;
+            width: 100%;
+            padding: 12px;
+            background-color: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #1d4ed8;
+        }
+
+        .footer {
+            margin-top: 20px;
+            font-size: 13px;
+            text-align: center;
+            color: #64748b;
+        }
+    </style>
+</head>
+
+<body>
+<div class="container">
+
+    <div class="top-bar">
+        <p>Welcome, <strong>{{ user["username"] }}</strong> ({{ user["role"] }})</p>
+        <a href="/history">My History</a>
+        {% if user["role"] == "admin" %}
+            | <a href="/admin">Admin Dashboard</a>
+        {% endif %}
+        | <a href="/logout">Logout</a>
+    </div>
+
+    <h1>User Dashboard</h1>
+    <p>Scan web applications and detect vulnerabilities.</p>
+
+    <div class="warning">
+        <strong>Warning:</strong> Only scan authorized or test websites.
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card card-scans">
+            <div class="stat-title">Total Scans</div>
+            <div class="stat-value">{{ total_scans }}</div>
+        </div>
+        <div class="stat-card card-findings">
+            <div class="stat-title">Total Findings</div>
+            <div class="stat-value">{{ total_findings }}</div>
+        </div>
+        <div class="stat-card card-high">
+            <div class="stat-title">High</div>
+            <div class="stat-value">{{ total_high }}</div>
+        </div>
+        <div class="stat-card card-medium">
+            <div class="stat-title">Medium</div>
+            <div class="stat-value">{{ total_medium }}</div>
+        </div>
+        <div class="stat-card card-low">
+            <div class="stat-title">Low</div>
+            <div class="stat-value">{{ total_low }}</div>
+        </div>
+        <div class="stat-card card-info">
+            <div class="stat-title">Info</div>
+            <div class="stat-value">{{ total_info }}</div>
+        </div>
+    </div>
+
+    <div class="chart-box">
+        <h3 style="text-align:center;">My Risk Distribution</h3>
+        <canvas id="chart"></canvas>
+    </div>
+
+    <form action="/start_scan" method="post">
+        <label for="url">Enter Website URL</label>
+        <input id="url" type="text" name="url" placeholder="http://testphp.vulnweb.com" required>
+
+        <label for="scan_mode">Scan Mode</label>
+        <select id="scan_mode" name="scan_mode">
+            <option value="quick">Quick Scan</option>
+            <option value="full">Full Scan</option>
+        </select>
+
+        <button type="submit">Start Scan</button>
+    </form>
+
+    <div class="footer">
+        Recommended: DVWA | testphp.vulnweb.com
+    </div>
+
+</div>
+
+<script>
+    const chartData = JSON.parse('{{ [total_high, total_medium, total_low, total_info] | tojson | safe }}');
+
+    new Chart(document.getElementById('chart'), {
+        type: 'bar',
+        data: {
+            labels: ['High', 'Medium', 'Low', 'Info'],
+            datasets: [{
+                label: 'Findings',
+                data: chartData
+            }]
+        },
+        options: {
+            responsive: true
+        }
+    });
+</script>
+
+</body>
+</html>
