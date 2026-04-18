@@ -18,27 +18,35 @@ import sqlite3
 import json
 import secrets
 import io
+import os
 
 app = Flask(__name__)
-app.secret_key = "change_this_to_a_random_secret_key"
+
+# ---------------- APP / ENV CONFIG ----------------
+app.secret_key = os.environ.get("SECRET_KEY", "change_this_to_a_random_secret_key")
+
+DB_PATH = os.environ.get("DB_PATH", "scan_history.db")
 
 # ====== ADMIN ACCOUNT ======
-ADMIN_EMAIL = "deeneshdeenesh66@gmail.com"
-ADMIN_USERNAME = "DeeneshAdmin"
-ADMIN_PASSWORD = "Admin@@123!"
+ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "deeneshdeenesh66@gmail.com")
+ADMIN_USERNAME = os.environ.get("ADMIN_USERNAME", "DeeneshAdmin")
+ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "Admin@@123!")
 # ===========================
 
 # ====== EMAIL CONFIGURATION ======
-MAIL_SENDER = "deeneshdeenesh66@gmail.com"
-MAIL_APP_PASSWORD = "jjavgfgyzqhpthkp"
-MAIL_SERVER = "smtp.gmail.com"
-MAIL_PORT = 465
+MAIL_SENDER = os.environ.get("MAIL_USERNAME")
+MAIL_APP_PASSWORD = os.environ.get("MAIL_PASSWORD")
+MAIL_SERVER = os.environ.get("MAIL_SERVER", "smtp.gmail.com")
+MAIL_PORT = int(os.environ.get("MAIL_PORT", "587"))
+MAIL_USE_TLS = os.environ.get("MAIL_USE_TLS", "True").lower() == "true"
 # ================================
 
-ZAP_API_KEY = '12345'
-ZAP_HOST = '127.0.0.1'
-ZAP_PORT = '8080'
-ZAP_PROXY = f'http://{ZAP_HOST}:{ZAP_PORT}'
+# ====== ZAP CONFIGURATION ======
+ZAP_API_KEY = os.environ.get("ZAP_API_KEY", "12345")
+ZAP_HOST = os.environ.get("ZAP_HOST", "127.0.0.1")
+ZAP_PORT = os.environ.get("ZAP_PORT", "8080")
+ZAP_PROXY = f"http://{ZAP_HOST}:{ZAP_PORT}"
+# ================================
 
 scan_tasks = {}
 
@@ -58,7 +66,7 @@ SCAN_MODES = {
 
 # ---------------- DATABASE ----------------
 def get_db_connection():
-    conn = sqlite3.connect("scan_history.db")
+    conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -357,8 +365,8 @@ def sort_vulnerabilities(vulnerabilities):
 
 # ---------------- EMAIL ----------------
 def send_email_message(to_email, subject, body):
-    if MAIL_APP_PASSWORD == "PUT_YOUR_NEW_GOOGLE_APP_PASSWORD_HERE":
-        raise ValueError("Please set your Google App Password in MAIL_APP_PASSWORD.")
+    if not MAIL_SENDER or not MAIL_APP_PASSWORD:
+        raise ValueError("MAIL_USERNAME or MAIL_PASSWORD is not set in environment variables.")
 
     msg = EmailMessage()
     msg["Subject"] = subject
@@ -366,10 +374,17 @@ def send_email_message(to_email, subject, body):
     msg["To"] = to_email
     msg.set_content(body)
 
-    context = ssl.create_default_context()
-    with smtplib.SMTP_SSL(MAIL_SERVER, MAIL_PORT, context=context) as server:
-        server.login(MAIL_SENDER, MAIL_APP_PASSWORD)
-        server.send_message(msg)
+    if MAIL_USE_TLS and MAIL_PORT == 587:
+        context = ssl.create_default_context()
+        with smtplib.SMTP(MAIL_SERVER, MAIL_PORT) as server:
+            server.starttls(context=context)
+            server.login(MAIL_SENDER, MAIL_APP_PASSWORD)
+            server.send_message(msg)
+    else:
+        context = ssl.create_default_context()
+        with smtplib.SMTP_SSL(MAIL_SERVER, MAIL_PORT, context=context) as server:
+            server.login(MAIL_SENDER, MAIL_APP_PASSWORD)
+            server.send_message(msg)
 
 
 # ---------------- AUTH HELPERS ----------------
@@ -581,14 +596,6 @@ def reset_password(token):
 
 # ---------------- SCAN LOGIC ----------------
 def run_scan(scan_id, target, scan_mode, user_id):
-    zap = ZAPv2(
-        apikey=ZAP_API_KEY,
-        proxies={
-            'http': ZAP_PROXY,
-            'https': ZAP_PROXY
-        }
-    )
-
     mode_config = SCAN_MODES.get(scan_mode, SCAN_MODES["quick"])
     spider_timeout = mode_config["spider_timeout"]
     ascan_timeout = mode_config["ascan_timeout"]
@@ -612,6 +619,14 @@ def run_scan(scan_id, target, scan_mode, user_id):
     }
 
     try:
+        zap = ZAPv2(
+            apikey=ZAP_API_KEY,
+            proxies={
+                'http': ZAP_PROXY,
+                'https': ZAP_PROXY
+            }
+        )
+
         zap.urlopen(target)
         time.sleep(2)
 
@@ -971,7 +986,9 @@ def export_report_pdf(scan_id):
     )
 
 
+# ---------------- STARTUP ----------------
+init_db()
+seed_admin()
+
 if __name__ == '__main__':
-    init_db()
-    seed_admin()
     app.run(debug=True)
