@@ -25,7 +25,8 @@ app = Flask(__name__)
 # ---------------- APP / ENV CONFIG ----------------
 app.secret_key = os.environ.get("SECRET_KEY", "change_this_to_a_random_secret_key")
 
-DB_PATH = os.environ.get("DB_PATH", "scan_history.db")
+# Render-safe writable path
+DB_PATH = os.environ.get("DB_PATH", "/tmp/scan_history.db")
 
 # ====== ADMIN ACCOUNT ======
 ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "deeneshdeenesh66@gmail.com")
