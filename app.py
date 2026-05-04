@@ -19,13 +19,13 @@ import json
 import secrets
 import io
 import os
+import logging
 
 app = Flask(__name__)
+logging.basicConfig(level=logging.INFO)
 
 # ---------------- APP / ENV CONFIG ----------------
 app.secret_key = os.environ.get("SECRET_KEY", "change_this_to_a_random_secret_key")
-
-# Render-safe writable path
 DB_PATH = os.environ.get("DB_PATH", "/tmp/scan_history.db")
 
 # ====== ADMIN ACCOUNT ======
@@ -43,9 +43,11 @@ MAIL_USE_TLS = os.environ.get("MAIL_USE_TLS", "True").lower() == "true"
 # ================================
 
 # ====== ZAP CONFIGURATION ======
-# For Render private ZAP service
+# Put this in Render Environment for Flask app:
+# ZAP_PROXY=http://zap-service-q0cp:8080
+# ZAP_API_KEY=   leave empty because ZAP API key is disabled
 ZAP_API_KEY = os.environ.get("ZAP_API_KEY", "")
-ZAP_PROXY = os.environ.get("ZAP_PROXY", "http://zap-service:8080")
+ZAP_PROXY = os.environ.get("ZAP_PROXY", "http://zap-service-q0cp:8080")
 # ================================
 
 scan_tasks = {}
@@ -629,6 +631,8 @@ def run_scan(scan_id, target, scan_mode, user_id):
     }
 
     try:
+        app.logger.info(f"Connecting to ZAP using proxy: {ZAP_PROXY}")
+
         zap = ZAPv2(
             apikey=ZAP_API_KEY,
             proxies={
@@ -637,8 +641,8 @@ def run_scan(scan_id, target, scan_mode, user_id):
             }
         )
 
-        # Test ZAP connection first
-        _ = zap.core.version
+        zap_version = zap.core.version
+        app.logger.info(f"Connected to ZAP version: {zap_version}")
 
         zap.urlopen(target)
         time.sleep(2)
@@ -716,6 +720,7 @@ def run_scan(scan_id, target, scan_mode, user_id):
         scan_tasks[scan_id]["completed"] = True
 
     except Exception as e:
+        app.logger.exception("ZAP scan failed")
         scan_tasks[scan_id]["status"] = f"{mode_label}: Scan Failed"
         scan_tasks[scan_id]["error"] = str(e)
         scan_tasks[scan_id]["completed"] = True
@@ -770,7 +775,20 @@ def start_scan():
         target = "http://" + target
 
     scan_id = str(uuid.uuid4())
-    thread = threading.Thread(target=run_scan, args=(scan_id, target, scan_mode, user["id"]))
+    scan_tasks[scan_id] = {
+        "user_id": user["id"],
+        "target": target,
+        "scan_mode": SCAN_MODES.get(scan_mode, SCAN_MODES["quick"])["label"],
+        "status": "Queued scan...",
+        "progress": 0,
+        "completed": False,
+        "vulnerabilities": [],
+        "error": None,
+        "username": user["username"],
+        "created_at": time.strftime("%Y-%m-%d %H:%M:%S")
+    }
+
+    thread = threading.Thread(target=run_scan, args=(scan_id, target, scan_mode, user["id"]), daemon=True)
     thread.start()
 
     return redirect(url_for('progress_page', scan_id=scan_id))
@@ -787,6 +805,16 @@ def progress_page(scan_id):
 def scan_status(scan_id):
     task = scan_tasks.get(scan_id)
     if not task:
+        row = get_history_by_scan_id(scan_id)
+        if row:
+            return jsonify({
+                "target": row["target"],
+                "scan_mode": row["scan_mode"],
+                "status": row["status"],
+                "progress": 100,
+                "completed": True,
+                "error": None if not str(row["status"]).startswith("Error:") else row["status"]
+            })
         return jsonify({"error": "Invalid scan ID"}), 404
 
     user = current_user()
