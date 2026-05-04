@@ -607,6 +607,35 @@ def reset_password(token):
 
 
 # ---------------- SCAN LOGIC ----------------
+def get_zap_client(max_retries=10, delay_seconds=5):
+    proxies = {
+        "http": ZAP_PROXY,
+        "https": ZAP_PROXY
+    }
+
+    last_error = None
+
+    for attempt in range(1, max_retries + 1):
+        try:
+            app.logger.info(f"Checking ZAP connection attempt {attempt}/{max_retries} using proxy: {ZAP_PROXY}")
+
+            zap = ZAPv2(
+                apikey=ZAP_API_KEY,
+                proxies=proxies
+            )
+
+            zap_version = zap.core.version
+            app.logger.info(f"Connected to ZAP version: {zap_version}")
+            return zap
+
+        except Exception as e:
+            last_error = e
+            app.logger.warning(f"ZAP not ready yet. Retry {attempt}/{max_retries}. Error: {e}")
+            time.sleep(delay_seconds)
+
+    raise Exception(f"ZAP is not reachable after {max_retries} attempts. Last error: {last_error}")
+
+
 def run_scan(scan_id, target, scan_mode, user_id):
     mode_config = SCAN_MODES.get(scan_mode, SCAN_MODES["quick"])
     spider_timeout = mode_config["spider_timeout"]
@@ -631,19 +660,10 @@ def run_scan(scan_id, target, scan_mode, user_id):
     }
 
     try:
-        app.logger.info(f"Connecting to ZAP using proxy: {ZAP_PROXY}")
+        scan_tasks[scan_id]["status"] = "Connecting to OWASP ZAP..."
+        zap = get_zap_client()
 
-        zap = ZAPv2(
-            apikey=ZAP_API_KEY,
-            proxies={
-                "http": ZAP_PROXY,
-                "https": ZAP_PROXY
-            }
-        )
-
-        zap_version = zap.core.version
-        app.logger.info(f"Connected to ZAP version: {zap_version}")
-
+        scan_tasks[scan_id]["status"] = f"{mode_label}: Opening target..."
         zap.urlopen(target)
         time.sleep(2)
 
