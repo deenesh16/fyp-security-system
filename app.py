@@ -43,10 +43,9 @@ MAIL_USE_TLS = os.environ.get("MAIL_USE_TLS", "True").lower() == "true"
 # ================================
 
 # ====== ZAP CONFIGURATION ======
-ZAP_API_KEY = os.environ.get("ZAP_API_KEY", "12345")
-ZAP_HOST = os.environ.get("ZAP_HOST", "127.0.0.1")
-ZAP_PORT = os.environ.get("ZAP_PORT", "8080")
-ZAP_PROXY = f"http://{ZAP_HOST}:{ZAP_PORT}"
+# For Render private ZAP service
+ZAP_API_KEY = os.environ.get("ZAP_API_KEY", "")
+ZAP_PROXY = os.environ.get("ZAP_PROXY", "http://zap-service:8080")
 # ================================
 
 scan_tasks = {}
@@ -467,7 +466,12 @@ If you did not create this account, please ignore this email.
             send_email_message(email, subject, body)
             return render_template("verify_notice.html", title="Verification Email Sent", link=None)
         except Exception as e:
-            return render_template("verify_notice.html", title="Email Send Failed - Use This Link", link=verify_link, error=str(e))
+            return render_template(
+                "verify_notice.html",
+                title="Email Send Failed - Use This Link",
+                link=verify_link,
+                error=str(e)
+            )
 
     return render_template("register.html")
 
@@ -559,7 +563,12 @@ If you did not request this, please ignore this email.
             send_email_message(email, subject, body)
             return render_template("verify_notice.html", title="Password Reset Email Sent", link=None)
         except Exception as e:
-            return render_template("verify_notice.html", title="Email Send Failed - Use This Link", link=reset_link, error=str(e))
+            return render_template(
+                "verify_notice.html",
+                title="Email Send Failed - Use This Link",
+                link=reset_link,
+                error=str(e)
+            )
 
     return render_template("forgot_password.html")
 
@@ -623,10 +632,13 @@ def run_scan(scan_id, target, scan_mode, user_id):
         zap = ZAPv2(
             apikey=ZAP_API_KEY,
             proxies={
-                'http': ZAP_PROXY,
-                'https': ZAP_PROXY
+                "http": ZAP_PROXY,
+                "https": ZAP_PROXY
             }
         )
+
+        # Test ZAP connection first
+        _ = zap.core.version
 
         zap.urlopen(target)
         time.sleep(2)
@@ -682,11 +694,11 @@ def run_scan(scan_id, target, scan_mode, user_id):
         seen = set()
 
         for alert in alerts:
-            vuln_type = alert.get('alert', 'Unknown')
-            risk = alert.get('risk', 'Unknown')
-            url = alert.get('url', 'N/A')
-            description = alert.get('description', 'No description available.')
-            solution = alert.get('solution', 'No mitigation recommendation available.')
+            vuln_type = alert.get("alert", "Unknown")
+            risk = alert.get("risk", "Unknown")
+            url = alert.get("url", "N/A")
+            description = alert.get("description", "No description available.")
+            solution = alert.get("solution", "No mitigation recommendation available.")
 
             unique_key = (vuln_type, risk, url)
             if unique_key not in seen:
