@@ -381,18 +381,24 @@ def send_email_message(to_email, subject, body):
     msg["To"] = to_email
     msg.set_content(body)
 
-    if MAIL_USE_TLS and MAIL_PORT == 587:
-        context = ssl.create_default_context()
-        with smtplib.SMTP(MAIL_SERVER, MAIL_PORT) as server:
-            server.starttls(context=context)
-            server.login(MAIL_SENDER, MAIL_APP_PASSWORD)
-            server.send_message(msg)
-    else:
-        context = ssl.create_default_context()
-        with smtplib.SMTP_SSL(MAIL_SERVER, MAIL_PORT, context=context) as server:
-            server.login(MAIL_SENDER, MAIL_APP_PASSWORD)
-            server.send_message(msg)
+    timeout_seconds = 10
 
+    try:
+        if MAIL_USE_TLS and MAIL_PORT == 587:
+            context = ssl.create_default_context()
+            with smtplib.SMTP(MAIL_SERVER, MAIL_PORT, timeout=timeout_seconds) as server:
+                server.starttls(context=context)
+                server.login(MAIL_SENDER, MAIL_APP_PASSWORD.replace(" ", ""))
+                server.send_message(msg)
+        else:
+            context = ssl.create_default_context()
+            with smtplib.SMTP_SSL(MAIL_SERVER, MAIL_PORT, context=context, timeout=timeout_seconds) as server:
+                server.login(MAIL_SENDER, MAIL_APP_PASSWORD.replace(" ", ""))
+                server.send_message(msg)
+
+    except Exception as e:
+        print("EMAIL ERROR:", e)   # 👈 important for logs
+        raise e   # let register() handle fallback
 
 # ---------------- AUTH HELPERS ----------------
 def current_user():
