@@ -36,10 +36,11 @@ ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "Admin@@123!")
 
 # ====== EMAIL CONFIGURATION ======
 MAIL_SENDER = os.environ.get("MAIL_USERNAME")
-MAIL_APP_PASSWORD = os.environ.get("MAIL_PASSWORD")
+MAIL_APP_PASSWORD = os.environ.get("MAIL_PASSWORD") or os.environ.get("MAIL_APP_PASSWORD")
 MAIL_SERVER = os.environ.get("MAIL_SERVER", "smtp.gmail.com")
 MAIL_PORT = int(os.environ.get("MAIL_PORT", "587"))
 MAIL_USE_TLS = os.environ.get("MAIL_USE_TLS", "True").lower() == "true"
+BASE_URL = os.environ.get("BASE_URL", "http://127.0.0.1:5000").rstrip("/")
 # ================================
 
 # ====== ZAP CONFIGURATION ======
@@ -366,6 +367,10 @@ def sort_vulnerabilities(vulnerabilities):
 
 
 # ---------------- EMAIL ----------------
+def make_public_url(path):
+    return f"{BASE_URL}{path}"
+
+
 def send_email_message(to_email, subject, body):
     if not MAIL_SENDER or not MAIL_APP_PASSWORD:
         raise ValueError("MAIL_USERNAME or MAIL_PASSWORD is not set in environment variables.")
@@ -450,7 +455,7 @@ def register():
             return render_template("register.html", error="Username or email already exists.")
         conn.close()
 
-        verify_link = url_for("verify_email", token=verify_token, _external=True)
+        verify_link = make_public_url(url_for("verify_email", token=verify_token))
 
         subject = "Verify Your Web Security Scanner Account"
         body = f"""
@@ -468,6 +473,7 @@ If you did not create this account, please ignore this email.
             send_email_message(email, subject, body)
             return render_template("verify_notice.html", title="Verification Email Sent", link=None)
         except Exception as e:
+            app.logger.exception("Verification email failed")
             return render_template(
                 "verify_notice.html",
                 title="Email Send Failed - Use This Link",
@@ -547,7 +553,7 @@ def forgot_password():
         conn.commit()
         conn.close()
 
-        reset_link = url_for("reset_password", token=reset_token, _external=True)
+        reset_link = make_public_url(url_for("reset_password", token=reset_token))
 
         subject = "Reset Your Web Security Scanner Password"
         body = f"""
@@ -565,6 +571,7 @@ If you did not request this, please ignore this email.
             send_email_message(email, subject, body)
             return render_template("verify_notice.html", title="Password Reset Email Sent", link=None)
         except Exception as e:
+            app.logger.exception("Password reset email failed")
             return render_template(
                 "verify_notice.html",
                 title="Email Send Failed - Use This Link",
