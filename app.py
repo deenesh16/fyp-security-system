@@ -18,6 +18,7 @@ import secrets
 import io
 import os
 import logging
+import re
 
 app = Flask(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -392,6 +393,16 @@ def register():
         if not username or not email or not password:
             return render_template("register.html", error="All fields are required.")
 
+        # Strong password policy
+        # Minimum 8 characters, at least 1 uppercase, 1 lowercase, 1 number, and 1 symbol
+        password_pattern = r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>_\-+=/\\[\];\'`~]).{8,}$'
+
+        if not re.match(password_pattern, password):
+            return render_template(
+                "register.html",
+                error="Password must be at least 8 characters and include uppercase letter, lowercase letter, number, and symbol."
+            )
+
         if get_user_by_email(email):
             return render_template("register.html", error="Email already registered.")
 
@@ -399,21 +410,31 @@ def register():
 
         conn = get_db_connection()
         cursor = get_cursor(conn)
+
         try:
             cursor.execute("""
                 INSERT INTO users (username, email, password_hash, role, is_verified, verify_token)
                 VALUES (%s, %s, %s, 'user', 0, %s)
-            """, (username, email, generate_password_hash(password), verify_token))
+            """, (
+                username,
+                email,
+                generate_password_hash(password),
+                verify_token
+            ))
+
             conn.commit()
+
         except psycopg2.IntegrityError:
             conn.rollback()
             conn.close()
             return render_template("register.html", error="Username or email already exists.")
+
         conn.close()
 
         verify_link = f"{BASE_URL}/verify/{verify_token}"
 
         subject = "Verify Your Web Security Scanner Account"
+
         body = f"""
 Hello {username},
 
@@ -427,7 +448,12 @@ If you did not create this account, please ignore this email.
 
         try:
             send_email_message(email, subject, body)
-            return render_template("verify_notice.html", title="Verification Email Sent", link=None)
+            return render_template(
+                "verify_notice.html",
+                title="Verification Email Sent",
+                link=None
+            )
+
         except Exception as e:
             return render_template(
                 "verify_notice.html",
