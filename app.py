@@ -393,16 +393,6 @@ def register():
         if not username or not email or not password:
             return render_template("register.html", error="All fields are required.")
 
-        # Strong password policy
-        # Minimum 8 characters, at least 1 uppercase, 1 lowercase, 1 number, and 1 symbol
-        password_pattern = r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>_\-+=/\\[\];\'`~]).{8,}$'
-
-        if not re.match(password_pattern, password):
-            return render_template(
-                "register.html",
-                error="Password must be at least 8 characters and include uppercase letter, lowercase letter, number, and symbol."
-            )
-
         if get_user_by_email(email):
             return render_template("register.html", error="Email already registered.")
 
@@ -410,31 +400,21 @@ def register():
 
         conn = get_db_connection()
         cursor = get_cursor(conn)
-
         try:
             cursor.execute("""
                 INSERT INTO users (username, email, password_hash, role, is_verified, verify_token)
                 VALUES (%s, %s, %s, 'user', 0, %s)
-            """, (
-                username,
-                email,
-                generate_password_hash(password),
-                verify_token
-            ))
-
+            """, (username, email, generate_password_hash(password), verify_token))
             conn.commit()
-
         except psycopg2.IntegrityError:
             conn.rollback()
             conn.close()
             return render_template("register.html", error="Username or email already exists.")
-
         conn.close()
 
         verify_link = f"{BASE_URL}/verify/{verify_token}"
 
         subject = "Verify Your Web Security Scanner Account"
-
         body = f"""
 Hello {username},
 
@@ -448,12 +428,7 @@ If you did not create this account, please ignore this email.
 
         try:
             send_email_message(email, subject, body)
-            return render_template(
-                "verify_notice.html",
-                title="Verification Email Sent",
-                link=None
-            )
-
+            return render_template("verify_notice.html", title="Verification Email Sent", link=None)
         except Exception as e:
             return render_template(
                 "verify_notice.html",
@@ -585,6 +560,38 @@ def reset_password(token):
     return render_template("reset_password.html", token=token)
 
 
+# ---------------- CVE / CVSS HELPERS ----------------
+def get_cvss_score_from_risk(risk):
+    risk = str(risk).strip().lower()
+
+    if risk == "high":
+        return "8.8"
+    elif risk == "medium":
+        return "6.5"
+    elif risk == "low":
+        return "3.1"
+    elif risk in ["informational", "info"]:
+        return "0.0"
+    else:
+        return "N/A"
+
+
+def get_cve_from_alert(alert):
+    possible_text = " ".join([
+        str(alert.get("alert", "")),
+        str(alert.get("description", "")),
+        str(alert.get("reference", "")),
+        str(alert.get("solution", ""))
+    ])
+
+    cve_matches = re.findall(r"CVE-\d{4}-\d{4,7}", possible_text, re.IGNORECASE)
+
+    if cve_matches:
+        return ", ".join(sorted(set(cve_matches)))
+
+    return "N/A"
+
+
 # ---------------- SCAN LOGIC ----------------
 def get_zap_client(max_retries=10, delay_seconds=5):
     proxies = {"http": ZAP_PROXY, "https": ZAP_PROXY}
@@ -688,9 +695,20 @@ def run_scan(scan_id, target, scan_mode, user_id):
             unique_key = (vuln_type, risk, url)
             if unique_key not in seen:
                 seen.add(unique_key)
+                cve_id = get_cve_from_alert(alert)
+                cvss_score = get_cvss_score_from_risk(risk)
+                cwe_id = alert.get("cweid", "N/A")
+                wasc_id = alert.get("wascid", "N/A")
+                plugin_id = alert.get("pluginId", "N/A")
+
                 vulnerabilities.append({
                     "type": vuln_type,
                     "risk": risk,
+                    "cvss_score": cvss_score,
+                    "cve_id": cve_id,
+                    "cwe_id": cwe_id,
+                    "wasc_id": wasc_id,
+                    "plugin_id": plugin_id,
                     "url": url,
                     "description": description,
                     "solution": solution
@@ -981,10 +999,15 @@ def export_report_pdf(scan_id):
             y -= 18
 
             pdf.setFont("Helvetica", 10)
-            y = draw_wrapped_text(pdf, f"Risk: {vuln['risk']}", 60, y, 470)
-            y = draw_wrapped_text(pdf, f"Affected URL: {vuln['url']}", 60, y, 470)
-            y = draw_wrapped_text(pdf, f"Description: {vuln['description']}", 60, y, 470)
-            y = draw_wrapped_text(pdf, f"Recommended Mitigation: {vuln['solution']}", 60, y, 470)
+            y = draw_wrapped_text(pdf, f"Risk: {vuln.get('risk', 'N/A')}", 60, y, 470)
+            y = draw_wrapped_text(pdf, f"CVSS Score: {vuln.get('cvss_score', 'N/A')}", 60, y, 470)
+            y = draw_wrapped_text(pdf, f"CVE ID: {vuln.get('cve_id', 'N/A')}", 60, y, 470)
+            y = draw_wrapped_text(pdf, f"CWE ID: {vuln.get('cwe_id', 'N/A')}", 60, y, 470)
+            y = draw_wrapped_text(pdf, f"WASC ID: {vuln.get('wasc_id', 'N/A')}", 60, y, 470)
+            y = draw_wrapped_text(pdf, f"Plugin ID: {vuln.get('plugin_id', 'N/A')}", 60, y, 470)
+            y = draw_wrapped_text(pdf, f"Affected URL: {vuln.get('url', 'N/A')}", 60, y, 470)
+            y = draw_wrapped_text(pdf, f"Description: {vuln.get('description', 'No description available.')}", 60, y, 470)
+            y = draw_wrapped_text(pdf, f"Recommended Mitigation: {vuln.get('solution', 'No mitigation recommendation available.')}", 60, y, 470)
             y -= 10
     else:
         pdf.setFont("Helvetica", 10)

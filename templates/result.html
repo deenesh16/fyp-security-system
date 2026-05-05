@@ -26,6 +26,7 @@
             text-align: center;
             margin-bottom: 30px;
             color: #0f172a;
+            font-size: 34px;
         }
 
         h2 {
@@ -86,6 +87,16 @@
             text-decoration: underline;
         }
 
+        .sort-note {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            color: #1d4ed8;
+            border-radius: 10px;
+            padding: 12px 14px;
+            margin-bottom: 18px;
+            font-size: 14px;
+        }
+
         .vuln-card {
             background: #ffffff;
             border: 1px solid #e2e8f0;
@@ -101,11 +112,11 @@
         }
 
         .vuln-card.medium-border {
-            border-left-color: #f59e0b;
+            border-left-color: #f97316;
         }
 
         .vuln-card.low-border {
-            border-left-color: #16a34a;
+            border-left-color: #eab308;
         }
 
         .vuln-card.info-border {
@@ -123,6 +134,44 @@
 
         .vuln-title {
             font-size: 20px;
+            font-weight: bold;
+            color: #0f172a;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 7px 14px;
+            border-radius: 999px;
+            font-size: 13px;
+            font-weight: bold;
+            color: white;
+        }
+
+        .badge-high {
+            background: #dc2626;
+        }
+
+        .badge-medium {
+            background: #f97316;
+        }
+
+        .badge-low {
+            background: #eab308;
+            color: #0f172a;
+        }
+
+        .badge-info {
+            background: #2563eb;
+        }
+
+        .meta-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 14px;
+            margin-bottom: 16px;
+        }
+
+        .meta-item .text-box {
             font-weight: bold;
             color: #0f172a;
         }
@@ -146,41 +195,6 @@
             line-height: 1.6;
             overflow-wrap: break-word;
             word-break: break-word;
-        }
-
-        .badge {
-            display: inline-block;
-            padding: 7px 14px;
-            border-radius: 999px;
-            font-size: 13px;
-            font-weight: bold;
-            color: white;
-        }
-
-        .badge-high {
-            background: #dc2626;
-        }
-
-        .badge-medium {
-            background: #f59e0b;
-        }
-
-        .badge-low {
-            background: #16a34a;
-        }
-
-        .badge-info {
-            background: #2563eb;
-        }
-
-        .sort-note {
-            background: #eff6ff;
-            border: 1px solid #bfdbfe;
-            color: #1d4ed8;
-            border-radius: 10px;
-            padding: 12px 14px;
-            margin-bottom: 18px;
-            font-size: 14px;
         }
 
         .empty {
@@ -218,8 +232,27 @@
         .btn-pdf:hover {
             background: #b91c1c;
         }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 22px;
+            }
+
+            h1 {
+                font-size: 28px;
+            }
+
+            .vuln-title {
+                font-size: 18px;
+            }
+
+            .meta-grid {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
+
 <body>
     <div class="container">
         <h1>Scan Results</h1>
@@ -269,8 +302,17 @@
         {% if result.vulnerabilities %}
             {% for v in result.vulnerabilities %}
                 <div class="vuln-card
-                    {% if v.risk == 'High' %}high-border{% elif v.risk == 'Medium' %}medium-border{% elif v.risk == 'Low' %}low-border{% else %}info-border{% endif %}">
-                    
+                    {% if v.risk == 'High' %}
+                        high-border
+                    {% elif v.risk == 'Medium' %}
+                        medium-border
+                    {% elif v.risk == 'Low' %}
+                        low-border
+                    {% else %}
+                        info-border
+                    {% endif %}
+                ">
+
                     <div class="vuln-title-row">
                         <div class="vuln-title">{{ v.type }}</div>
 
@@ -283,6 +325,33 @@
                         {% else %}
                             <span class="badge badge-info">{{ v.risk }}</span>
                         {% endif %}
+                    </div>
+
+                    <div class="meta-grid">
+                        <div class="meta-item">
+                            <span class="field-label">CVE ID</span>
+                            <div class="text-box">{{ v.cve_id if v.cve_id else "N/A" }}</div>
+                        </div>
+
+                        <div class="meta-item">
+                            <span class="field-label">CVSS Score</span>
+                            <div class="text-box">{{ v.cvss_score if v.cvss_score else "N/A" }}</div>
+                        </div>
+
+                        <div class="meta-item">
+                            <span class="field-label">CWE ID</span>
+                            <div class="text-box">{{ v.cwe_id if v.cwe_id else "N/A" }}</div>
+                        </div>
+
+                        <div class="meta-item">
+                            <span class="field-label">WASC ID</span>
+                            <div class="text-box">{{ v.wasc_id if v.wasc_id else "N/A" }}</div>
+                        </div>
+
+                        <div class="meta-item">
+                            <span class="field-label">Plugin ID</span>
+                            <div class="text-box">{{ v.plugin_id if v.plugin_id else "N/A" }}</div>
+                        </div>
                     </div>
 
                     <div class="field">
