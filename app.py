@@ -3,9 +3,16 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 from zapv2 import ZAPv2
 from reportlab.lib.pagesizes import A4
-from reportlab.pdfgen import canvas
-from reportlab.lib.utils import simpleSplit
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak, Image
+from reportlab.lib import colors
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.enums import TA_CENTER
+from reportlab.lib.units import inch
+from reportlab.graphics.shapes import Drawing
+from reportlab.graphics.charts.piecharts import Pie
+from reportlab.graphics.charts.legends import Legend
 from email.message import EmailMessage
+from collections import Counter
 import psycopg2
 import psycopg2.extras
 import smtplib
@@ -19,6 +26,7 @@ import io
 import os
 import logging
 import re
+import html
 
 app = Flask(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -393,6 +401,13 @@ def register():
         if not username or not email or not password:
             return render_template("register.html", error="All fields are required.")
 
+        password_pattern = r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>_\-+=/\\\[\];\'`~]).{8,}$'
+        if not re.match(password_pattern, password):
+            return render_template(
+                "register.html",
+                error="Password must be at least 8 characters and include uppercase letter, lowercase letter, number, and symbol."
+            )
+
         if get_user_by_email(email):
             return render_template("register.html", error="Email already registered.")
 
@@ -545,6 +560,14 @@ def reset_password(token):
         if password != confirm_password:
             return render_template("reset_password.html", token=token, error="Passwords do not match.")
 
+        password_pattern = r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>_\-+=/\\\[\];\'`~]).{8,}$'
+        if not re.match(password_pattern, password):
+            return render_template(
+                "reset_password.html",
+                token=token,
+                error="Password must be at least 8 characters and include uppercase letter, lowercase letter, number, and symbol."
+            )
+
         conn = get_db_connection()
         cursor = get_cursor(conn)
         cursor.execute("""
@@ -695,23 +718,23 @@ def run_scan(scan_id, target, scan_mode, user_id):
             unique_key = (vuln_type, risk, url)
             if unique_key not in seen:
                 seen.add(unique_key)
-                cve_id = get_cve_from_alert(alert)
-                cvss_score = get_cvss_score_from_risk(risk)
-                cwe_id = alert.get("cweid", "N/A")
-                wasc_id = alert.get("wascid", "N/A")
-                plugin_id = alert.get("pluginId", "N/A")
-
                 vulnerabilities.append({
                     "type": vuln_type,
                     "risk": risk,
-                    "cvss_score": cvss_score,
-                    "cve_id": cve_id,
-                    "cwe_id": cwe_id,
-                    "wasc_id": wasc_id,
-                    "plugin_id": plugin_id,
+                    "confidence": alert.get("confidence", "N/A"),
+                    "cvss_score": get_cvss_score_from_risk(risk),
+                    "cve_id": get_cve_from_alert(alert),
+                    "cwe_id": alert.get("cweid", "N/A"),
+                    "wasc_id": alert.get("wascid", "N/A"),
+                    "plugin_id": alert.get("pluginId", "N/A"),
                     "url": url,
                     "description": description,
-                    "solution": solution
+                    "solution": solution,
+                    "reference": alert.get("reference", "N/A"),
+                    "method": alert.get("method", "N/A"),
+                    "param": alert.get("param", "N/A"),
+                    "attack": alert.get("attack", "N/A"),
+                    "evidence": alert.get("evidence", "N/A")
                 })
 
         scan_tasks[scan_id]["vulnerabilities"] = sort_vulnerabilities(vulnerabilities)
@@ -727,18 +750,245 @@ def run_scan(scan_id, target, scan_mode, user_id):
     save_scan_history(scan_id)
 
 
-# ---------------- PDF HELPER ----------------
-def draw_wrapped_text(pdf, text, x, y, max_width, font_name="Helvetica", font_size=10, line_gap=14):
-    lines = simpleSplit(str(text), font_name, font_size, max_width)
-    pdf.setFont(font_name, font_size)
-    for line in lines:
-        if y < 60:
-            pdf.showPage()
-            pdf.setFont(font_name, font_size)
-            y = 800
-        pdf.drawString(x, y, line)
-        y -= line_gap
-    return y
+# ---------------- PDF REPORT HELPERS ----------------
+def clean_pdf_text(value):
+    if value is None:
+        return "N/A"
+    text = str(value)
+    if not text.strip():
+        return "N/A"
+    text = re.sub(r"<[^>]+>", " ", text)
+    text = html.unescape(text)
+    text = re.sub(r"\s+", " ", text).strip()
+    return text if text else "N/A"
+
+
+def pdf_safe(value):
+    return html.escape(clean_pdf_text(value))
+
+
+def normalize_risk(risk):
+    risk = str(risk).strip().lower()
+    if risk == "high":
+        return "High"
+    elif risk == "medium":
+        return "Medium"
+    elif risk == "low":
+        return "Low"
+    elif risk in ["informational", "info"]:
+        return "Informational"
+    return "Informational"
+
+
+def risk_color(risk):
+    risk = normalize_risk(risk)
+    if risk == "High":
+        return colors.HexColor("#dc2626")
+    elif risk == "Medium":
+        return colors.HexColor("#f97316")
+    elif risk == "Low":
+        return colors.HexColor("#eab308")
+    return colors.HexColor("#2563eb")
+
+
+def risk_light_color(risk):
+    risk = normalize_risk(risk)
+    if risk == "High":
+        return colors.HexColor("#fee2e2")
+    elif risk == "Medium":
+        return colors.HexColor("#ffedd5")
+    elif risk == "Low":
+        return colors.HexColor("#fef9c3")
+    return colors.HexColor("#dbeafe")
+
+
+def get_risk_counts(vulnerabilities):
+    counts = {"High": 0, "Medium": 0, "Low": 0, "Informational": 0}
+    for vuln in vulnerabilities:
+        counts[normalize_risk(vuln.get("risk", "Informational"))] += 1
+    return counts
+
+
+def add_page_footer(canvas_obj, doc):
+    canvas_obj.saveState()
+    width, height = A4
+    canvas_obj.setFont("Helvetica", 8)
+    canvas_obj.setFillColor(colors.HexColor("#64748b"))
+    canvas_obj.drawCentredString(width / 2, 25, f"Web Security Scanner Report | Page {doc.page}")
+    canvas_obj.setStrokeColor(colors.HexColor("#cbd5e1"))
+    canvas_obj.line(40, 40, width - 40, 40)
+    canvas_obj.restoreState()
+
+
+def build_risk_pie_chart(vulnerabilities):
+    counts = get_risk_counts(vulnerabilities)
+    labels = ["High", "Medium", "Low", "Informational"]
+    values = [counts["High"], counts["Medium"], counts["Low"], counts["Informational"]]
+
+    drawing = Drawing(420, 220)
+
+    pie = Pie()
+    pie.x = 70
+    pie.y = 25
+    pie.width = 170
+    pie.height = 170
+    pie.data = values if sum(values) > 0 else [1]
+    pie.labels = None
+    pie.slices.strokeWidth = 0.5
+    pie.slices[0].fillColor = colors.HexColor("#dc2626")
+    pie.slices[1].fillColor = colors.HexColor("#f97316")
+    pie.slices[2].fillColor = colors.HexColor("#eab308")
+    pie.slices[3].fillColor = colors.HexColor("#2563eb")
+
+    legend = Legend()
+    legend.x = 270
+    legend.y = 80
+    legend.boxAnchor = "w"
+    legend.fontName = "Helvetica"
+    legend.fontSize = 8
+    legend.dx = 8
+    legend.dy = 8
+    legend.columnMaximum = 4
+    legend.strokeWidth = 0
+    legend.colorNamePairs = [
+        (colors.HexColor("#dc2626"), f"High ({counts['High']})"),
+        (colors.HexColor("#f97316"), f"Medium ({counts['Medium']})"),
+        (colors.HexColor("#eab308"), f"Low ({counts['Low']})"),
+        (colors.HexColor("#2563eb"), f"Informational ({counts['Informational']})"),
+    ]
+
+    drawing.add(pie)
+    drawing.add(legend)
+    return drawing
+
+
+def build_summary_table(vulnerabilities, styles):
+    counts = get_risk_counts(vulnerabilities)
+
+    data = [
+        [Paragraph("<b>Risk Level</b>", styles["TableHeader"]), Paragraph("<b>Total Findings</b>", styles["TableHeader"]), Paragraph("<b>Description</b>", styles["TableHeader"])],
+        [Paragraph("High", styles["NormalText"]), Paragraph(str(counts["High"]), styles["NormalText"]), Paragraph("Critical attention required", styles["NormalText"])],
+        [Paragraph("Medium", styles["NormalText"]), Paragraph(str(counts["Medium"]), styles["NormalText"]), Paragraph("Important remediation needed", styles["NormalText"])],
+        [Paragraph("Low", styles["NormalText"]), Paragraph(str(counts["Low"]), styles["NormalText"]), Paragraph("Lower priority improvement", styles["NormalText"])],
+        [Paragraph("Informational", styles["NormalText"]), Paragraph(str(counts["Informational"]), styles["NormalText"]), Paragraph("Useful security information", styles["NormalText"])],
+    ]
+
+    table = Table(data, colWidths=[1.5 * inch, 1.4 * inch, 3.8 * inch], repeatRows=1)
+    table.setStyle(TableStyle([
+        ("GRID", (0, 0), (-1, -1), 0.6, colors.HexColor("#cbd5e1")),
+        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#0f172a")),
+        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ("LEFTPADDING", (0, 0), (-1, -1), 8),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 8),
+        ("TOPPADDING", (0, 0), (-1, -1), 8),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
+        ("BACKGROUND", (0, 1), (-1, 1), colors.HexColor("#fee2e2")),
+        ("BACKGROUND", (0, 2), (-1, 2), colors.HexColor("#ffedd5")),
+        ("BACKGROUND", (0, 3), (-1, 3), colors.HexColor("#fef9c3")),
+        ("BACKGROUND", (0, 4), (-1, 4), colors.HexColor("#dbeafe")),
+    ]))
+    return table
+
+
+def build_alert_type_table(vulnerabilities, styles):
+    counter = Counter()
+    for vuln in vulnerabilities:
+        alert_type = clean_pdf_text(vuln.get("type", "Unknown"))
+        risk = normalize_risk(vuln.get("risk", "Informational"))
+        counter[(alert_type, risk)] += 1
+
+    data = [[Paragraph("<b>Alert Type</b>", styles["TableHeader"]), Paragraph("<b>Risk</b>", styles["TableHeader"]), Paragraph("<b>Count</b>", styles["TableHeader"])] ]
+
+    sorted_items = sorted(counter.items(), key=lambda item: (risk_order_value(item[0][1]), item[0][0].lower()))
+    for (alert_type, risk), count in sorted_items:
+        data.append([Paragraph(pdf_safe(alert_type), styles["SmallText"]), Paragraph(pdf_safe(risk), styles["SmallText"]), Paragraph(str(count), styles["SmallText"])])
+
+    table = Table(data, colWidths=[4.1 * inch, 1.4 * inch, 1.1 * inch], repeatRows=1)
+    table_style = [
+        ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#cbd5e1")),
+        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#0f172a")),
+        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ("LEFTPADDING", (0, 0), (-1, -1), 7),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 7),
+        ("TOPPADDING", (0, 0), (-1, -1), 6),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+    ]
+
+    for row_index in range(1, len(data)):
+        risk_text = data[row_index][1].getPlainText()
+        table_style.append(("BACKGROUND", (1, row_index), (1, row_index), risk_light_color(risk_text)))
+
+    table.setStyle(TableStyle(table_style))
+    return table
+
+
+def build_vulnerability_details(vuln, index, styles):
+    story_items = []
+    risk = normalize_risk(vuln.get("risk", "Informational"))
+    header_color = risk_color(risk)
+    light_color = risk_light_color(risk)
+    title = clean_pdf_text(vuln.get("type", "Unknown Vulnerability"))
+
+    header_table = Table(
+        [[Paragraph(f"<b>Finding #{index}: {pdf_safe(title)}</b>", styles["WhiteHeader"]), Paragraph(f"<b>{pdf_safe(risk)}</b>", styles["WhiteHeaderRight"])]],
+        colWidths=[5.2 * inch, 1.3 * inch]
+    )
+    header_table.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, -1), header_color),
+        ("TEXTCOLOR", (0, 0), (-1, -1), colors.white),
+        ("BOX", (0, 0), (-1, -1), 0.8, header_color),
+        ("LEFTPADDING", (0, 0), (-1, -1), 9),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 9),
+        ("TOPPADDING", (0, 0), (-1, -1), 9),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 9),
+    ]))
+    story_items.append(header_table)
+    story_items.append(Spacer(1, 8))
+
+    meta_data = [
+        [Paragraph("<b>CVE ID</b>", styles["SmallText"]), Paragraph("<b>CVSS Score</b>", styles["SmallText"]), Paragraph("<b>CWE ID</b>", styles["SmallText"]), Paragraph("<b>WASC ID</b>", styles["SmallText"]), Paragraph("<b>Plugin ID</b>", styles["SmallText"])],
+        [Paragraph(pdf_safe(vuln.get("cve_id", "N/A")), styles["SmallText"]), Paragraph(pdf_safe(vuln.get("cvss_score", "N/A")), styles["SmallText"]), Paragraph(pdf_safe(vuln.get("cwe_id", "N/A")), styles["SmallText"]), Paragraph(pdf_safe(vuln.get("wasc_id", "N/A")), styles["SmallText"]), Paragraph(pdf_safe(vuln.get("plugin_id", "N/A")), styles["SmallText"])],
+        [Paragraph("<b>Confidence</b>", styles["SmallText"]), Paragraph("<b>Method</b>", styles["SmallText"]), Paragraph("<b>Parameter</b>", styles["SmallText"]), Paragraph("<b>Attack</b>", styles["SmallText"]), Paragraph("<b>Evidence</b>", styles["SmallText"])],
+        [Paragraph(pdf_safe(vuln.get("confidence", "N/A")), styles["SmallText"]), Paragraph(pdf_safe(vuln.get("method", "N/A")), styles["SmallText"]), Paragraph(pdf_safe(vuln.get("param", "N/A")), styles["SmallText"]), Paragraph(pdf_safe(vuln.get("attack", "N/A")), styles["SmallText"]), Paragraph(pdf_safe(vuln.get("evidence", "N/A")), styles["SmallText"])],
+    ]
+
+    meta_table = Table(meta_data, colWidths=[1.3 * inch] * 5)
+    meta_table.setStyle(TableStyle([
+        ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#cbd5e1")),
+        ("BACKGROUND", (0, 0), (-1, 0), light_color),
+        ("BACKGROUND", (0, 2), (-1, 2), light_color),
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ("LEFTPADDING", (0, 0), (-1, -1), 6),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 6),
+        ("TOPPADDING", (0, 0), (-1, -1), 6),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+    ]))
+    story_items.append(meta_table)
+    story_items.append(Spacer(1, 8))
+
+    story_items.append(Paragraph("<b>Affected URL</b>", styles["SectionSmall"]))
+    story_items.append(Paragraph(pdf_safe(vuln.get("url", "N/A")), styles["URLText"]))
+    story_items.append(Spacer(1, 8))
+
+    story_items.append(Paragraph("<b>Description</b>", styles["SectionSmall"]))
+    story_items.append(Paragraph(pdf_safe(vuln.get("description", "No description available.")), styles["NormalText"]))
+    story_items.append(Spacer(1, 8))
+
+    story_items.append(Paragraph("<b>Recommended Mitigation</b>", styles["SectionSmall"]))
+    story_items.append(Paragraph(pdf_safe(vuln.get("solution", "No mitigation recommendation available.")), styles["NormalText"]))
+    story_items.append(Spacer(1, 8))
+
+    reference = clean_pdf_text(vuln.get("reference", "N/A"))
+    if reference != "N/A":
+        story_items.append(Paragraph("<b>Reference</b>", styles["SectionSmall"]))
+        story_items.append(Paragraph(pdf_safe(reference), styles["SmallText"]))
+
+    story_items.append(Spacer(1, 16))
+    return story_items
 
 
 # ---------------- MAIN ROUTES ----------------
@@ -946,7 +1196,7 @@ def export_report_pdf(scan_id):
 
         target = task["target"]
         scan_mode = task["scan_mode"]
-        status = task["status"]
+        status = task["status"] if not task["error"] else f"Error: {task['error']}"
         vulnerabilities = sort_vulnerabilities(task["vulnerabilities"])
         username = task["username"]
         created_at = task["created_at"]
@@ -965,61 +1215,94 @@ def export_report_pdf(scan_id):
         created_at = row["created_at"]
 
     buffer = io.BytesIO()
-    pdf = canvas.Canvas(buffer, pagesize=A4)
-    width, height = A4
-    y = height - 50
+    doc = SimpleDocTemplate(
+        buffer,
+        pagesize=A4,
+        rightMargin=40,
+        leftMargin=40,
+        topMargin=50,
+        bottomMargin=55
+    )
 
-    pdf.setTitle("Web Security Assessment Report")
-    pdf.setFont("Helvetica-Bold", 16)
-    pdf.drawString(50, y, "WEB APPLICATION SECURITY ASSESSMENT REPORT")
-    y -= 30
+    base_styles = getSampleStyleSheet()
+    styles = {
+        "Title": ParagraphStyle("Title", parent=base_styles["Title"], fontName="Helvetica-Bold", fontSize=22, leading=28, alignment=TA_CENTER, textColor=colors.HexColor("#0f172a"), spaceAfter=12),
+        "Subtitle": ParagraphStyle("Subtitle", parent=base_styles["Normal"], fontSize=10, leading=14, alignment=TA_CENTER, textColor=colors.HexColor("#475569"), spaceAfter=18),
+        "Heading": ParagraphStyle("Heading", parent=base_styles["Heading2"], fontName="Helvetica-Bold", fontSize=14, leading=18, textColor=colors.HexColor("#0f172a"), spaceBefore=12, spaceAfter=8),
+        "SectionSmall": ParagraphStyle("SectionSmall", parent=base_styles["Normal"], fontName="Helvetica-Bold", fontSize=10, leading=14, textColor=colors.HexColor("#0f172a"), spaceAfter=4),
+        "NormalText": ParagraphStyle("NormalText", parent=base_styles["Normal"], fontSize=9, leading=13, textColor=colors.HexColor("#0f172a")),
+        "SmallText": ParagraphStyle("SmallText", parent=base_styles["Normal"], fontSize=8, leading=11, textColor=colors.HexColor("#0f172a")),
+        "TableHeader": ParagraphStyle("TableHeader", parent=base_styles["Normal"], fontName="Helvetica-Bold", fontSize=9, leading=12, textColor=colors.white),
+        "WhiteHeader": ParagraphStyle("WhiteHeader", parent=base_styles["Normal"], fontName="Helvetica-Bold", fontSize=11, leading=14, textColor=colors.white),
+        "WhiteHeaderRight": ParagraphStyle("WhiteHeaderRight", parent=base_styles["Normal"], fontName="Helvetica-Bold", fontSize=10, leading=14, textColor=colors.white, alignment=TA_CENTER),
+        "URLText": ParagraphStyle("URLText", parent=base_styles["Normal"], fontSize=8, leading=11, textColor=colors.HexColor("#1d4ed8"), backColor=colors.HexColor("#eff6ff"), borderColor=colors.HexColor("#bfdbfe"), borderWidth=0.5, borderPadding=6, spaceAfter=4)
+    }
 
-    pdf.setFont("Helvetica", 11)
-    y = draw_wrapped_text(pdf, f"Scan ID: {scan_id}", 50, y, 500)
-    y = draw_wrapped_text(pdf, f"User: {username}", 50, y, 500)
-    y = draw_wrapped_text(pdf, f"Scan Date/Time: {created_at}", 50, y, 500)
-    y = draw_wrapped_text(pdf, f"Target URL: {target}", 50, y, 500)
-    y = draw_wrapped_text(pdf, f"Scan Mode: {scan_mode}", 50, y, 500)
-    y = draw_wrapped_text(pdf, f"Status: {status}", 50, y, 500)
-    y = draw_wrapped_text(pdf, f"Total Findings: {len(vulnerabilities)}", 50, y, 500)
-    y -= 10
+    story = []
+    story.append(Paragraph("Web Application Security Assessment Report", styles["Title"]))
+    story.append(Paragraph("Generated by Web Security Scanner", styles["Subtitle"]))
 
-    pdf.setFont("Helvetica-Bold", 13)
-    pdf.drawString(50, y, "Detected Vulnerabilities")
-    y -= 20
+    story.append(Paragraph("1. Report Parameters", styles["Heading"]))
+    parameter_data = [
+        [Paragraph("<b>Scan ID</b>", styles["SmallText"]), Paragraph(pdf_safe(scan_id), styles["SmallText"])],
+        [Paragraph("<b>Target URL</b>", styles["SmallText"]), Paragraph(pdf_safe(target), styles["SmallText"])],
+        [Paragraph("<b>User</b>", styles["SmallText"]), Paragraph(pdf_safe(username), styles["SmallText"])],
+        [Paragraph("<b>Scan Date & Time</b>", styles["SmallText"]), Paragraph(pdf_safe(created_at), styles["SmallText"])],
+        [Paragraph("<b>Scan Mode</b>", styles["SmallText"]), Paragraph(pdf_safe(scan_mode), styles["SmallText"])],
+        [Paragraph("<b>Status</b>", styles["SmallText"]), Paragraph(pdf_safe(status), styles["SmallText"])],
+        [Paragraph("<b>Total Findings</b>", styles["SmallText"]), Paragraph(str(len(vulnerabilities)), styles["SmallText"])],
+    ]
+    parameter_table = Table(parameter_data, colWidths=[1.8 * inch, 4.8 * inch])
+    parameter_table.setStyle(TableStyle([
+        ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#cbd5e1")),
+        ("BACKGROUND", (0, 0), (0, -1), colors.HexColor("#f1f5f9")),
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ("LEFTPADDING", (0, 0), (-1, -1), 8),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 8),
+        ("TOPPADDING", (0, 0), (-1, -1), 7),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 7),
+    ]))
+    story.append(parameter_table)
+    story.append(Spacer(1, 14))
 
+    story.append(Paragraph("2. Summary of Findings", styles["Heading"]))
+    story.append(build_summary_table(vulnerabilities, styles))
+    story.append(Spacer(1, 14))
+
+    story.append(Paragraph("3. Risk Distribution", styles["Heading"]))
+    story.append(build_risk_pie_chart(vulnerabilities))
+    story.append(Spacer(1, 14))
+
+    story.append(Paragraph("4. Alert Counts by Vulnerability Type", styles["Heading"]))
     if vulnerabilities:
-        for i, vuln in enumerate(vulnerabilities, start=1):
-            if y < 120:
-                pdf.showPage()
-                y = height - 50
-
-            pdf.setFont("Helvetica-Bold", 12)
-            pdf.drawString(50, y, f"Finding #{i}: {vuln['type']}")
-            y -= 18
-
-            pdf.setFont("Helvetica", 10)
-            y = draw_wrapped_text(pdf, f"Risk: {vuln.get('risk', 'N/A')}", 60, y, 470)
-            y = draw_wrapped_text(pdf, f"CVSS Score: {vuln.get('cvss_score', 'N/A')}", 60, y, 470)
-            y = draw_wrapped_text(pdf, f"CVE ID: {vuln.get('cve_id', 'N/A')}", 60, y, 470)
-            y = draw_wrapped_text(pdf, f"CWE ID: {vuln.get('cwe_id', 'N/A')}", 60, y, 470)
-            y = draw_wrapped_text(pdf, f"WASC ID: {vuln.get('wasc_id', 'N/A')}", 60, y, 470)
-            y = draw_wrapped_text(pdf, f"Plugin ID: {vuln.get('plugin_id', 'N/A')}", 60, y, 470)
-            y = draw_wrapped_text(pdf, f"Affected URL: {vuln.get('url', 'N/A')}", 60, y, 470)
-            y = draw_wrapped_text(pdf, f"Description: {vuln.get('description', 'No description available.')}", 60, y, 470)
-            y = draw_wrapped_text(pdf, f"Recommended Mitigation: {vuln.get('solution', 'No mitigation recommendation available.')}", 60, y, 470)
-            y -= 10
+        story.append(build_alert_type_table(vulnerabilities, styles))
     else:
-        pdf.setFont("Helvetica", 10)
-        y = draw_wrapped_text(pdf, "No vulnerabilities detected or scan time was insufficient.", 50, y, 500)
+        story.append(Paragraph("No vulnerabilities detected or scan time was insufficient.", styles["NormalText"]))
 
-    pdf.save()
+    story.append(Spacer(1, 16))
+    story.append(Paragraph("5. Detailed Vulnerability Findings", styles["Heading"]))
+    if vulnerabilities:
+        for index, vuln in enumerate(vulnerabilities, start=1):
+            story.extend(build_vulnerability_details(vuln, index, styles))
+    else:
+        story.append(Paragraph("No vulnerabilities detected or scan time was insufficient.", styles["NormalText"]))
+
+    story.append(PageBreak())
+    story.append(Paragraph("6. Appendix", styles["Heading"]))
+    story.append(Paragraph(
+        "Risk levels are categorized as High, Medium, Low, and Informational. "
+        "CVSS values in this report are estimated from the detected risk level when an exact CVSS score is not provided by the scanner. "
+        "CVE IDs are displayed when available in the alert details; otherwise N/A is shown.",
+        styles["NormalText"]
+    ))
+
+    doc.build(story, onFirstPage=add_page_footer, onLaterPages=add_page_footer)
     buffer.seek(0)
 
     return send_file(
         buffer,
         as_attachment=True,
-        download_name=f"scan_report_{scan_id}.pdf",
+        download_name=f"security_report_{scan_id}.pdf",
         mimetype="application/pdf"
     )
 
