@@ -166,14 +166,31 @@
 
         .meta-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
             gap: 14px;
             margin-bottom: 16px;
         }
 
-        .meta-item .text-box {
+        .meta-item {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 12px;
+        }
+
+        .meta-label {
+            font-size: 12px;
+            color: #64748b;
+            font-weight: bold;
+            margin-bottom: 6px;
+        }
+
+        .meta-value {
+            font-size: 15px;
             font-weight: bold;
             color: #0f172a;
+            overflow-wrap: break-word;
+            word-break: break-word;
         }
 
         .field {
@@ -329,28 +346,33 @@
 
                     <div class="meta-grid">
                         <div class="meta-item">
-                            <span class="field-label">CVE ID</span>
-                            <div class="text-box">{{ v.cve_id if v.cve_id else "N/A" }}</div>
+                            <div class="meta-label">CVE ID</div>
+                            <div class="meta-value">{{ v.cve_id if v.cve_id else "N/A" }}</div>
                         </div>
 
                         <div class="meta-item">
-                            <span class="field-label">CVSS Score</span>
-                            <div class="text-box">{{ v.cvss_score if v.cvss_score else "N/A" }}</div>
+                            <div class="meta-label">CVSS Score</div>
+                            <div class="meta-value">{{ v.cvss_score if v.cvss_score else "N/A" }}</div>
                         </div>
 
                         <div class="meta-item">
-                            <span class="field-label">CWE ID</span>
-                            <div class="text-box">{{ v.cwe_id if v.cwe_id else "N/A" }}</div>
+                            <div class="meta-label">CWE ID</div>
+                            <div class="meta-value">{{ v.cwe_id if v.cwe_id else "N/A" }}</div>
                         </div>
 
                         <div class="meta-item">
-                            <span class="field-label">WASC ID</span>
-                            <div class="text-box">{{ v.wasc_id if v.wasc_id else "N/A" }}</div>
+                            <div class="meta-label">WASC ID</div>
+                            <div class="meta-value">{{ v.wasc_id if v.wasc_id else "N/A" }}</div>
                         </div>
 
                         <div class="meta-item">
-                            <span class="field-label">Plugin ID</span>
-                            <div class="text-box">{{ v.plugin_id if v.plugin_id else "N/A" }}</div>
+                            <div class="meta-label">Plugin ID</div>
+                            <div class="meta-value">{{ v.plugin_id if v.plugin_id else "N/A" }}</div>
+                        </div>
+
+                        <div class="meta-item">
+                            <div class="meta-label">Confidence</div>
+                            <div class="meta-value">{{ v.confidence if v.confidence else "N/A" }}</div>
                         </div>
                     </div>
 
@@ -372,6 +394,13 @@
                         <span class="field-label">Recommended Mitigation</span>
                         <div class="text-box">{{ v.solution | safe }}</div>
                     </div>
+
+                    {% if v.reference %}
+                        <div class="field">
+                            <span class="field-label">Reference</span>
+                            <div class="text-box">{{ v.reference | safe }}</div>
+                        </div>
+                    {% endif %}
                 </div>
             {% endfor %}
         {% else %}
