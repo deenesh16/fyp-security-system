@@ -87,10 +87,11 @@
 
         .card-scans .stat-value { color: #2563eb; }
         .card-findings .stat-value { color: #7c3aed; }
-        .card-high .stat-value { color: #dc2626; }
-        .card-medium .stat-value { color: #f59e0b; }
-        .card-low .stat-value { color: #16a34a; }
-        .card-info .stat-value { color: #0891b2; }
+
+        .card-high .stat-value { color: #dc2626; }      /* Red */
+        .card-medium .stat-value { color: #f97316; }    /* Orange */
+        .card-low .stat-value { color: #eab308; }       /* Yellow */
+        .card-info .stat-value { color: #2563eb; }      /* Blue */
 
         .chart-box {
             background: #f8fafc;
@@ -98,6 +99,25 @@
             border-radius: 16px;
             padding: 20px;
             margin-bottom: 30px;
+            height: 380px;
+            box-sizing: border-box;
+        }
+
+        .chart-box h3 {
+            text-align: center;
+            margin-top: 0;
+            margin-bottom: 18px;
+            color: #0f172a;
+        }
+
+        .chart-container {
+            width: 100%;
+            height: 300px;
+        }
+
+        #chart {
+            width: 100% !important;
+            height: 100% !important;
         }
 
         label {
@@ -140,6 +160,21 @@
             text-align: center;
             color: #64748b;
         }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 25px auto;
+                padding: 22px;
+            }
+
+            .chart-box {
+                height: 340px;
+            }
+
+            .chart-container {
+                height: 260px;
+            }
+        }
     </style>
 </head>
 
@@ -167,22 +202,27 @@
             <div class="stat-title">Total Scans</div>
             <div class="stat-value">{{ total_scans }}</div>
         </div>
+
         <div class="stat-card card-findings">
             <div class="stat-title">Total Findings</div>
             <div class="stat-value">{{ total_findings }}</div>
         </div>
+
         <div class="stat-card card-high">
             <div class="stat-title">High</div>
             <div class="stat-value">{{ total_high }}</div>
         </div>
+
         <div class="stat-card card-medium">
             <div class="stat-title">Medium</div>
             <div class="stat-value">{{ total_medium }}</div>
         </div>
+
         <div class="stat-card card-low">
             <div class="stat-title">Low</div>
             <div class="stat-value">{{ total_low }}</div>
         </div>
+
         <div class="stat-card card-info">
             <div class="stat-title">Info</div>
             <div class="stat-value">{{ total_info }}</div>
@@ -190,8 +230,10 @@
     </div>
 
     <div class="chart-box">
-        <h3 style="text-align:center;">My Risk Distribution</h3>
-        <canvas id="chart"></canvas>
+        <h3>My Risk Distribution</h3>
+        <div class="chart-container">
+            <canvas id="chart"></canvas>
+        </div>
     </div>
 
     <form action="/start_scan" method="post">
@@ -222,11 +264,39 @@
             labels: ['High', 'Medium', 'Low', 'Info'],
             datasets: [{
                 label: 'Findings',
-                data: chartData
+                data: chartData,
+                backgroundColor: [
+                    '#dc2626', // High = Red
+                    '#f97316', // Medium = Orange
+                    '#eab308', // Low = Yellow
+                    '#2563eb'  // Info = Blue
+                ],
+                borderColor: [
+                    '#991b1b',
+                    '#c2410c',
+                    '#a16207',
+                    '#1d4ed8'
+                ],
+                borderWidth: 1,
+                borderRadius: 6
             }]
         },
         options: {
-            responsive: true
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        precision: 0
+                    }
+                }
+            }
         }
     });
 </script>

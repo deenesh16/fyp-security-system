@@ -84,7 +84,6 @@
         .card-users .stat-value { color: #2563eb; }
         .card-scans .stat-value { color: #7c3aed; }
 
-        /* Updated severity colors */
         .card-high .stat-value { color: #dc2626; }      /* Red */
         .card-medium .stat-value { color: #f97316; }    /* Orange */
         .card-low .stat-value { color: #eab308; }       /* Yellow */
@@ -322,6 +321,7 @@
                             <th>Actions</th>
                         </tr>
                     </thead>
+
                     <tbody>
                         {% for item in history %}
                             <tr>
@@ -335,6 +335,7 @@
                                 <td>
                                     <div class="action-group">
                                         <a href="/result/{{ item['scan_id'] }}" class="result-link">Open</a>
+
                                         <form method="post" action="/admin/delete_scan/{{ item['scan_id'] }}">
                                             <button type="submit" class="delete-btn">Delete</button>
                                         </form>
