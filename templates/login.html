@@ -78,6 +78,26 @@
             margin-bottom: 16px;
         }
 
+        .show-password {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 10px;
+            color: #334155;
+            font-size: 14px;
+        }
+
+        .show-password input {
+            width: auto;
+            cursor: pointer;
+        }
+
+        .show-password label {
+            margin: 0;
+            font-weight: normal;
+            cursor: pointer;
+        }
+
         .links {
             text-align: center;
             margin-top: 18px;
@@ -112,6 +132,11 @@
                 <label for="password">Password</label>
                 <input id="password" type="password" name="password" placeholder="Enter your password" required>
 
+                <div class="show-password">
+                    <input type="checkbox" id="showPassword" onclick="togglePassword()">
+                    <label for="showPassword">Show password</label>
+                </div>
+
                 <button type="submit">Login</button>
             </form>
 
@@ -121,5 +146,18 @@
             </div>
         </div>
     </div>
+
+    <script>
+        function togglePassword() {
+            const passwordInput = document.getElementById("password");
+            const checkbox = document.getElementById("showPassword");
+
+            if (checkbox.checked) {
+                passwordInput.type = "text";
+            } else {
+                passwordInput.type = "password";
+            }
+        }
+    </script>
 </body>
 </html>
