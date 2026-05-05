@@ -822,8 +822,15 @@ def add_page_footer(canvas_obj, doc):
 
 def build_risk_pie_chart(vulnerabilities):
     counts = get_risk_counts(vulnerabilities)
-    labels = ["High", "Medium", "Low", "Informational"]
-    values = [counts["High"], counts["Medium"], counts["Low"], counts["Informational"]]
+
+    values = [
+        counts.get("High", 0),
+        counts.get("Medium", 0),
+        counts.get("Low", 0),
+        counts.get("Informational", 0)
+    ]
+
+    no_findings = sum(values) == 0
 
     drawing = Drawing(420, 220)
 
@@ -832,13 +839,19 @@ def build_risk_pie_chart(vulnerabilities):
     pie.y = 25
     pie.width = 170
     pie.height = 170
-    pie.data = values if sum(values) > 0 else [1]
     pie.labels = None
     pie.slices.strokeWidth = 0.5
-    pie.slices[0].fillColor = colors.HexColor("#dc2626")
-    pie.slices[1].fillColor = colors.HexColor("#f97316")
-    pie.slices[2].fillColor = colors.HexColor("#eab308")
-    pie.slices[3].fillColor = colors.HexColor("#2563eb")
+
+    if no_findings:
+        pie.data = [1]
+        pie.slices[0].fillColor = colors.HexColor("#cbd5e1")
+    else:
+        pie.data = values
+
+        pie.slices[0].fillColor = colors.HexColor("#dc2626")  # High = Red
+        pie.slices[1].fillColor = colors.HexColor("#f97316")  # Medium = Orange
+        pie.slices[2].fillColor = colors.HexColor("#eab308")  # Low = Yellow
+        pie.slices[3].fillColor = colors.HexColor("#2563eb")  # Informational = Blue
 
     legend = Legend()
     legend.x = 270
@@ -850,15 +863,22 @@ def build_risk_pie_chart(vulnerabilities):
     legend.dy = 8
     legend.columnMaximum = 4
     legend.strokeWidth = 0
-    legend.colorNamePairs = [
-        (colors.HexColor("#dc2626"), f"High ({counts['High']})"),
-        (colors.HexColor("#f97316"), f"Medium ({counts['Medium']})"),
-        (colors.HexColor("#eab308"), f"Low ({counts['Low']})"),
-        (colors.HexColor("#2563eb"), f"Informational ({counts['Informational']})"),
-    ]
+
+    if no_findings:
+        legend.colorNamePairs = [
+            (colors.HexColor("#cbd5e1"), "No Findings (0)")
+        ]
+    else:
+        legend.colorNamePairs = [
+            (colors.HexColor("#dc2626"), f"High ({counts.get('High', 0)})"),
+            (colors.HexColor("#f97316"), f"Medium ({counts.get('Medium', 0)})"),
+            (colors.HexColor("#eab308"), f"Low ({counts.get('Low', 0)})"),
+            (colors.HexColor("#2563eb"), f"Informational ({counts.get('Informational', 0)})"),
+        ]
 
     drawing.add(pie)
     drawing.add(legend)
+
     return drawing
 
 
