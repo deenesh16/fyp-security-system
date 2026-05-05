@@ -1,7 +1,4 @@
-from flask import (
-    Flask, render_template, request, jsonify, redirect,
-    url_for, session, send_file
-)
+from flask import Flask, render_template, request, jsonify, redirect, url_for, session, send_file
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 from zapv2 import ZAPv2
@@ -9,12 +6,13 @@ from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 from reportlab.lib.utils import simpleSplit
 from email.message import EmailMessage
+import psycopg2
+import psycopg2.extras
 import smtplib
 import ssl
 import time
 import threading
 import uuid
-import sqlite3
 import json
 import secrets
 import io
@@ -26,67 +24,51 @@ logging.basicConfig(level=logging.INFO)
 
 # ---------------- APP / ENV CONFIG ----------------
 app.secret_key = os.environ.get("SECRET_KEY", "change_this_to_a_random_secret_key")
-DB_PATH = os.environ.get("DB_PATH", "/tmp/scan_history.db")
+DATABASE_URL = os.environ.get("DATABASE_URL")
+BASE_URL = os.environ.get("BASE_URL", "http://127.0.0.1:5000").rstrip("/")
 
-# ====== ADMIN ACCOUNT ======
-ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "deeneshdeenesh66@gmail.com")
+# ---------------- ADMIN ACCOUNT ----------------
+ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "websecurityscanner@gmail.com")
 ADMIN_USERNAME = os.environ.get("ADMIN_USERNAME", "DeeneshAdmin")
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "Admin@@123!")
-# ===========================
 
-# ====== EMAIL CONFIGURATION ======
+# ---------------- EMAIL CONFIGURATION ----------------
 MAIL_SENDER = os.environ.get("MAIL_USERNAME")
-MAIL_APP_PASSWORD = os.environ.get("MAIL_PASSWORD") or os.environ.get("MAIL_APP_PASSWORD")
+MAIL_APP_PASSWORD = os.environ.get("MAIL_PASSWORD")
 MAIL_SERVER = os.environ.get("MAIL_SERVER", "smtp.gmail.com")
 MAIL_PORT = int(os.environ.get("MAIL_PORT", "587"))
 MAIL_USE_TLS = os.environ.get("MAIL_USE_TLS", "True").lower() == "true"
-BASE_URL = os.environ.get("BASE_URL", "http://127.0.0.1:5000").rstrip("/")
-# ================================
 
-# ====== ZAP CONFIGURATION ======
-# Put this in Render Environment for Flask app:
-# ZAP_PROXY=http://zap-service-q0cp:8080
-# ZAP_API_KEY=   leave empty because ZAP API key is disabled
+# ---------------- ZAP CONFIGURATION ----------------
 ZAP_API_KEY = os.environ.get("ZAP_API_KEY", "")
 ZAP_PROXY = os.environ.get("ZAP_PROXY", "http://zap-service-q0cp:8080")
-# ================================
 
 scan_tasks = {}
 
 SCAN_MODES = {
-    "quick": {
-        "spider_timeout": 10,
-        "ascan_timeout": 20,
-        "label": "Quick Scan"
-    },
-    "full": {
-        "spider_timeout": 25,
-        "ascan_timeout": 60,
-        "label": "Full Scan"
-    }
+    "quick": {"spider_timeout": 10, "ascan_timeout": 20, "label": "Quick Scan"},
+    "full": {"spider_timeout": 25, "ascan_timeout": 60, "label": "Full Scan"}
 }
 
 
 # ---------------- DATABASE ----------------
 def get_db_connection():
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
+    if not DATABASE_URL:
+        raise ValueError("DATABASE_URL is not set in Render environment variables.")
+    return psycopg2.connect(DATABASE_URL, sslmode="require")
 
 
-def column_exists(cursor, table_name, column_name):
-    cursor.execute(f"PRAGMA table_info({table_name})")
-    columns = cursor.fetchall()
-    return any(col["name"] == column_name for col in columns)
+def get_cursor(conn):
+    return conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
 
 def init_db():
     conn = get_db_connection()
-    cursor = conn.cursor()
+    cursor = get_cursor(conn)
 
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             username TEXT UNIQUE NOT NULL,
             email TEXT UNIQUE NOT NULL,
             password_hash TEXT NOT NULL,
@@ -99,21 +81,17 @@ def init_db():
 
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS scan_history (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             scan_id TEXT UNIQUE,
-            user_id INTEGER NOT NULL,
+            user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
             target TEXT,
             scan_mode TEXT,
             status TEXT,
             total_findings INTEGER,
             vulnerabilities TEXT,
-            created_at TEXT,
-            FOREIGN KEY (user_id) REFERENCES users (id)
+            created_at TEXT
         )
     """)
-
-    if not column_exists(cursor, "scan_history", "created_at"):
-        cursor.execute("ALTER TABLE scan_history ADD COLUMN created_at TEXT")
 
     conn.commit()
     conn.close()
@@ -121,58 +99,25 @@ def init_db():
 
 def seed_admin():
     conn = get_db_connection()
-    cursor = conn.cursor()
+    cursor = get_cursor(conn)
 
-    cursor.execute("SELECT * FROM users WHERE email = ?", (ADMIN_EMAIL,))
+    cursor.execute("SELECT * FROM users WHERE email = %s", (ADMIN_EMAIL,))
     existing = cursor.fetchone()
 
     if not existing:
         cursor.execute("""
             INSERT INTO users (username, email, password_hash, role, is_verified)
-            VALUES (?, ?, ?, 'admin', 1)
-        """, (
-            ADMIN_USERNAME,
-            ADMIN_EMAIL,
-            generate_password_hash(ADMIN_PASSWORD)
-        ))
+            VALUES (%s, %s, %s, 'admin', 1)
+        """, (ADMIN_USERNAME, ADMIN_EMAIL, generate_password_hash(ADMIN_PASSWORD)))
         conn.commit()
 
     conn.close()
 
 
-def save_scan_history(scan_id):
-    task = scan_tasks.get(scan_id)
-    if not task:
-        return
-
-    created_time = task.get("created_at", time.strftime("%Y-%m-%d %H:%M:%S"))
-
-    conn = get_db_connection()
-    cursor = conn.cursor()
-
-    cursor.execute("""
-        INSERT OR REPLACE INTO scan_history
-        (scan_id, user_id, target, scan_mode, status, total_findings, vulnerabilities, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    """, (
-        scan_id,
-        task["user_id"],
-        task["target"],
-        task["scan_mode"],
-        task["status"] if not task["error"] else f"Error: {task['error']}",
-        len(task["vulnerabilities"]),
-        json.dumps(task["vulnerabilities"]),
-        created_time
-    ))
-
-    conn.commit()
-    conn.close()
-
-
 def get_user_by_id(user_id):
     conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM users WHERE id = ?", (user_id,))
+    cursor = get_cursor(conn)
+    cursor.execute("SELECT * FROM users WHERE id = %s", (user_id,))
     row = cursor.fetchone()
     conn.close()
     return row
@@ -180,8 +125,8 @@ def get_user_by_id(user_id):
 
 def get_user_by_email(email):
     conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM users WHERE email = ?", (email,))
+    cursor = get_cursor(conn)
+    cursor.execute("SELECT * FROM users WHERE email = %s", (email,))
     row = cursor.fetchone()
     conn.close()
     return row
@@ -189,8 +134,8 @@ def get_user_by_email(email):
 
 def get_user_by_verify_token(token):
     conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM users WHERE verify_token = ?", (token,))
+    cursor = get_cursor(conn)
+    cursor.execute("SELECT * FROM users WHERE verify_token = %s", (token,))
     row = cursor.fetchone()
     conn.close()
     return row
@@ -198,8 +143,8 @@ def get_user_by_verify_token(token):
 
 def get_user_by_reset_token(token):
     conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM users WHERE reset_token = ?", (token,))
+    cursor = get_cursor(conn)
+    cursor.execute("SELECT * FROM users WHERE reset_token = %s", (token,))
     row = cursor.fetchone()
     conn.close()
     return row
@@ -207,7 +152,7 @@ def get_user_by_reset_token(token):
 
 def get_all_users():
     conn = get_db_connection()
-    cursor = conn.cursor()
+    cursor = get_cursor(conn)
     cursor.execute("SELECT id, username, email, role, is_verified FROM users ORDER BY id DESC")
     rows = cursor.fetchall()
     conn.close()
@@ -216,7 +161,7 @@ def get_all_users():
 
 def get_all_history():
     conn = get_db_connection()
-    cursor = conn.cursor()
+    cursor = get_cursor(conn)
     cursor.execute("""
         SELECT sh.*, u.username, u.email
         FROM scan_history sh
@@ -230,12 +175,12 @@ def get_all_history():
 
 def get_user_history(user_id):
     conn = get_db_connection()
-    cursor = conn.cursor()
+    cursor = get_cursor(conn)
     cursor.execute("""
         SELECT sh.*, u.username, u.email
         FROM scan_history sh
         JOIN users u ON sh.user_id = u.id
-        WHERE sh.user_id = ?
+        WHERE sh.user_id = %s
         ORDER BY sh.id DESC
     """, (user_id,))
     rows = cursor.fetchall()
@@ -245,40 +190,73 @@ def get_user_history(user_id):
 
 def get_history_by_scan_id(scan_id):
     conn = get_db_connection()
-    cursor = conn.cursor()
+    cursor = get_cursor(conn)
     cursor.execute("""
         SELECT sh.*, u.username, u.email
         FROM scan_history sh
         JOIN users u ON sh.user_id = u.id
-        WHERE sh.scan_id = ?
+        WHERE sh.scan_id = %s
     """, (scan_id,))
     row = cursor.fetchone()
     conn.close()
     return row
 
 
+def save_scan_history(scan_id):
+    task = scan_tasks.get(scan_id)
+    if not task:
+        return
+
+    conn = get_db_connection()
+    cursor = get_cursor(conn)
+
+    cursor.execute("""
+        INSERT INTO scan_history
+        (scan_id, user_id, target, scan_mode, status, total_findings, vulnerabilities, created_at)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+        ON CONFLICT (scan_id) DO UPDATE SET
+            user_id = EXCLUDED.user_id,
+            target = EXCLUDED.target,
+            scan_mode = EXCLUDED.scan_mode,
+            status = EXCLUDED.status,
+            total_findings = EXCLUDED.total_findings,
+            vulnerabilities = EXCLUDED.vulnerabilities,
+            created_at = EXCLUDED.created_at
+    """, (
+        scan_id,
+        task["user_id"],
+        task["target"],
+        task["scan_mode"],
+        task["status"] if not task["error"] else f"Error: {task['error']}",
+        len(task["vulnerabilities"]),
+        json.dumps(task["vulnerabilities"]),
+        task.get("created_at", time.strftime("%Y-%m-%d %H:%M:%S"))
+    ))
+
+    conn.commit()
+    conn.close()
+
+
 def delete_scan_by_id(scan_id):
     conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("DELETE FROM scan_history WHERE scan_id = ?", (scan_id,))
+    cursor = get_cursor(conn)
+    cursor.execute("DELETE FROM scan_history WHERE scan_id = %s", (scan_id,))
     conn.commit()
     conn.close()
 
 
 def delete_user_and_scans(user_id):
     conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("DELETE FROM scan_history WHERE user_id = ?", (user_id,))
-    cursor.execute("DELETE FROM users WHERE id = ?", (user_id,))
+    cursor = get_cursor(conn)
+    cursor.execute("DELETE FROM scan_history WHERE user_id = %s", (user_id,))
+    cursor.execute("DELETE FROM users WHERE id = %s", (user_id,))
     conn.commit()
     conn.close()
 
 
+# ---------------- DASHBOARD HELPERS ----------------
 def calculate_risk_totals(history_rows):
-    high = 0
-    medium = 0
-    low = 0
-    info = 0
+    high = medium = low = info = 0
 
     for row in history_rows:
         vulns = json.loads(row["vulnerabilities"]) if row["vulnerabilities"] else []
@@ -293,36 +271,25 @@ def calculate_risk_totals(history_rows):
             else:
                 info += 1
 
-    return {
-        "high": high,
-        "medium": medium,
-        "low": low,
-        "info": info
-    }
+    return {"high": high, "medium": medium, "low": low, "info": info}
 
 
 def apply_history_filters(rows, search_query="", mode_filter=""):
     filtered = []
-
     search_query = search_query.strip().lower()
     mode_filter = mode_filter.strip().lower()
 
     for row in rows:
         combined_text = " ".join([
-            str(row["target"] if "target" in row.keys() else ""),
-            str(row["status"] if "status" in row.keys() else ""),
-            str(row["scan_mode"] if "scan_mode" in row.keys() else ""),
-            str(row["username"] if "username" in row.keys() else ""),
-            str(row["email"] if "email" in row.keys() else "")
+            str(row.get("target", "")),
+            str(row.get("status", "")),
+            str(row.get("scan_mode", "")),
+            str(row.get("username", "")),
+            str(row.get("email", ""))
         ]).lower()
 
-        mode_match = True
-        if mode_filter:
-            mode_match = mode_filter in str(row["scan_mode"]).lower()
-
-        search_match = True
-        if search_query:
-            search_match = search_query in combined_text
+        mode_match = True if not mode_filter else mode_filter in str(row.get("scan_mode", "")).lower()
+        search_match = True if not search_query else search_query in combined_text
 
         if mode_match and search_match:
             filtered.append(row)
@@ -333,7 +300,6 @@ def apply_history_filters(rows, search_query="", mode_filter=""):
 def get_user_dashboard_stats(user_id):
     history_rows = get_user_history(user_id)
     totals = calculate_risk_totals(history_rows)
-
     return {
         "total_scans": len(history_rows),
         "total_findings": totals["high"] + totals["medium"] + totals["low"] + totals["info"],
@@ -346,31 +312,18 @@ def get_user_dashboard_stats(user_id):
 
 def risk_order_value(risk):
     risk = str(risk).strip().lower()
-    order = {
-        "high": 0,
-        "medium": 1,
-        "low": 2,
-        "informational": 3,
-        "info": 3
-    }
+    order = {"high": 0, "medium": 1, "low": 2, "informational": 3, "info": 3}
     return order.get(risk, 4)
 
 
 def sort_vulnerabilities(vulnerabilities):
     return sorted(
         vulnerabilities,
-        key=lambda v: (
-            risk_order_value(v.get("risk", "")),
-            str(v.get("type", "")).lower()
-        )
+        key=lambda v: (risk_order_value(v.get("risk", "")), str(v.get("type", "")).lower())
     )
 
 
 # ---------------- EMAIL ----------------
-def make_public_url(path):
-    return f"{BASE_URL}{path}"
-
-
 def send_email_message(to_email, subject, body):
     if not MAIL_SENDER or not MAIL_APP_PASSWORD:
         raise ValueError("MAIL_USERNAME or MAIL_PASSWORD is not set in environment variables.")
@@ -382,23 +335,24 @@ def send_email_message(to_email, subject, body):
     msg.set_content(body)
 
     timeout_seconds = 10
+    app_password = MAIL_APP_PASSWORD.replace(" ", "")
 
     try:
         if MAIL_USE_TLS and MAIL_PORT == 587:
             context = ssl.create_default_context()
             with smtplib.SMTP(MAIL_SERVER, MAIL_PORT, timeout=timeout_seconds) as server:
                 server.starttls(context=context)
-                server.login(MAIL_SENDER, MAIL_APP_PASSWORD.replace(" ", ""))
+                server.login(MAIL_SENDER, app_password)
                 server.send_message(msg)
         else:
             context = ssl.create_default_context()
             with smtplib.SMTP_SSL(MAIL_SERVER, MAIL_PORT, context=context, timeout=timeout_seconds) as server:
-                server.login(MAIL_SENDER, MAIL_APP_PASSWORD.replace(" ", ""))
+                server.login(MAIL_SENDER, app_password)
                 server.send_message(msg)
-
     except Exception as e:
-        print("EMAIL ERROR:", e)   # 👈 important for logs
-        raise e   # let register() handle fallback
+        app.logger.error(f"EMAIL ERROR: {e}")
+        raise
+
 
 # ---------------- AUTH HELPERS ----------------
 def current_user():
@@ -444,24 +398,20 @@ def register():
         verify_token = secrets.token_urlsafe(32)
 
         conn = get_db_connection()
-        cursor = conn.cursor()
+        cursor = get_cursor(conn)
         try:
             cursor.execute("""
                 INSERT INTO users (username, email, password_hash, role, is_verified, verify_token)
-                VALUES (?, ?, ?, 'user', 0, ?)
-            """, (
-                username,
-                email,
-                generate_password_hash(password),
-                verify_token
-            ))
+                VALUES (%s, %s, %s, 'user', 0, %s)
+            """, (username, email, generate_password_hash(password), verify_token))
             conn.commit()
-        except sqlite3.IntegrityError:
+        except psycopg2.IntegrityError:
+            conn.rollback()
             conn.close()
             return render_template("register.html", error="Username or email already exists.")
         conn.close()
 
-        verify_link = make_public_url(url_for("verify_email", token=verify_token))
+        verify_link = f"{BASE_URL}/verify/{verify_token}"
 
         subject = "Verify Your Web Security Scanner Account"
         body = f"""
@@ -479,7 +429,6 @@ If you did not create this account, please ignore this email.
             send_email_message(email, subject, body)
             return render_template("verify_notice.html", title="Verification Email Sent", link=None)
         except Exception as e:
-            app.logger.exception("Verification email failed")
             return render_template(
                 "verify_notice.html",
                 title="Email Send Failed - Use This Link",
@@ -497,12 +446,8 @@ def verify_email(token):
         return "Invalid or expired verification link.", 400
 
     conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("""
-        UPDATE users
-        SET is_verified = 1, verify_token = NULL
-        WHERE id = ?
-    """, (user["id"],))
+    cursor = get_cursor(conn)
+    cursor.execute("UPDATE users SET is_verified = 1, verify_token = NULL WHERE id = %s", (user["id"],))
     conn.commit()
     conn.close()
 
@@ -550,16 +495,12 @@ def forgot_password():
         reset_token = secrets.token_urlsafe(32)
 
         conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute("""
-            UPDATE users
-            SET reset_token = ?
-            WHERE id = ?
-        """, (reset_token, user["id"]))
+        cursor = get_cursor(conn)
+        cursor.execute("UPDATE users SET reset_token = %s WHERE id = %s", (reset_token, user["id"]))
         conn.commit()
         conn.close()
 
-        reset_link = make_public_url(url_for("reset_password", token=reset_token))
+        reset_link = f"{BASE_URL}/reset_password/{reset_token}"
 
         subject = "Reset Your Web Security Scanner Password"
         body = f"""
@@ -577,7 +518,6 @@ If you did not request this, please ignore this email.
             send_email_message(email, subject, body)
             return render_template("verify_notice.html", title="Password Reset Email Sent", link=None)
         except Exception as e:
-            app.logger.exception("Password reset email failed")
             return render_template(
                 "verify_notice.html",
                 title="Email Send Failed - Use This Link",
@@ -605,11 +545,11 @@ def reset_password(token):
             return render_template("reset_password.html", token=token, error="Passwords do not match.")
 
         conn = get_db_connection()
-        cursor = conn.cursor()
+        cursor = get_cursor(conn)
         cursor.execute("""
             UPDATE users
-            SET password_hash = ?, reset_token = NULL
-            WHERE id = ?
+            SET password_hash = %s, reset_token = NULL
+            WHERE id = %s
         """, (generate_password_hash(password), user["id"]))
         conn.commit()
         conn.close()
@@ -621,26 +561,15 @@ def reset_password(token):
 
 # ---------------- SCAN LOGIC ----------------
 def get_zap_client(max_retries=10, delay_seconds=5):
-    proxies = {
-        "http": ZAP_PROXY,
-        "https": ZAP_PROXY
-    }
-
+    proxies = {"http": ZAP_PROXY, "https": ZAP_PROXY}
     last_error = None
 
     for attempt in range(1, max_retries + 1):
         try:
             app.logger.info(f"Checking ZAP connection attempt {attempt}/{max_retries} using proxy: {ZAP_PROXY}")
-
-            zap = ZAPv2(
-                apikey=ZAP_API_KEY,
-                proxies=proxies
-            )
-
-            zap_version = zap.core.version
-            app.logger.info(f"Connected to ZAP version: {zap_version}")
+            zap = ZAPv2(apikey=ZAP_API_KEY, proxies=proxies)
+            app.logger.info(f"Connected to ZAP version: {zap.core.version}")
             return zap
-
         except Exception as e:
             last_error = e
             app.logger.warning(f"ZAP not ready yet. Retry {attempt}/{max_retries}. Error: {e}")
@@ -687,16 +616,13 @@ def run_scan(scan_id, target, scan_mode, user_id):
         while True:
             spider_progress = int(zap.spider.status(spider_id))
             elapsed = time.time() - spider_start
-
             scan_tasks[scan_id]["progress"] = min(50, int(spider_progress * 0.5))
 
             if spider_progress >= 100:
                 break
-
             if elapsed > spider_timeout:
                 scan_tasks[scan_id]["status"] = f"{mode_label}: Spider timeout reached. Moving to active scan..."
                 break
-
             time.sleep(2)
 
         scan_tasks[scan_id]["progress"] = 50
@@ -709,16 +635,13 @@ def run_scan(scan_id, target, scan_mode, user_id):
         while True:
             active_progress = int(zap.ascan.status(ascan_id))
             elapsed = time.time() - ascan_start
-
             scan_tasks[scan_id]["progress"] = min(100, 50 + int(active_progress * 0.5))
 
             if active_progress >= 100:
                 break
-
             if elapsed > ascan_timeout:
                 scan_tasks[scan_id]["status"] = f"{mode_label}: Active scan timeout reached. Collecting partial results..."
                 break
-
             time.sleep(3)
 
         scan_tasks[scan_id]["progress"] = 100
@@ -726,7 +649,6 @@ def run_scan(scan_id, target, scan_mode, user_id):
         time.sleep(2)
 
         alerts = zap.core.alerts(baseurl=target)
-
         vulnerabilities = []
         seen = set()
 
@@ -837,6 +759,7 @@ def progress_page(scan_id):
 @login_required
 def scan_status(scan_id):
     task = scan_tasks.get(scan_id)
+
     if not task:
         row = get_history_by_scan_id(scan_id)
         if row:
@@ -912,11 +835,7 @@ def history():
     search_query = request.args.get("q", "").strip()
     mode_filter = request.args.get("mode", "").strip()
 
-    if user["role"] == "admin":
-        history_rows = get_all_history()
-    else:
-        history_rows = get_user_history(user["id"])
-
+    history_rows = get_all_history() if user["role"] == "admin" else get_user_history(user["id"])
     filtered_history = apply_history_filters(history_rows, search_query, mode_filter)
 
     return render_template(
@@ -933,17 +852,14 @@ def history():
 def admin_panel():
     users = get_all_users()
     history_rows = get_all_history()
-
-    total_users = len(users)
-    total_scans = len(history_rows)
     risk_totals = calculate_risk_totals(history_rows)
 
     return render_template(
         "admin.html",
         users=users,
         history=history_rows,
-        total_users=total_users,
-        total_scans=total_scans,
+        total_users=len(users),
+        total_scans=len(history_rows),
         total_high=risk_totals["high"],
         total_medium=risk_totals["medium"],
         total_low=risk_totals["low"],
@@ -1010,7 +926,6 @@ def export_report_pdf(scan_id):
     y = height - 50
 
     pdf.setTitle("Web Security Assessment Report")
-
     pdf.setFont("Helvetica-Bold", 16)
     pdf.drawString(50, y, "WEB APPLICATION SECURITY ASSESSMENT REPORT")
     y -= 30

@@ -1,5 +1,6 @@
 Flask
 gunicorn
+psycopg2-binary
 werkzeug
 reportlab
 python-owasp-zap-v2.4
