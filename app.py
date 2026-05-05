@@ -822,15 +822,8 @@ def add_page_footer(canvas_obj, doc):
 
 def build_risk_pie_chart(vulnerabilities):
     counts = get_risk_counts(vulnerabilities)
-
-    values = [
-        counts.get("High", 0),
-        counts.get("Medium", 0),
-        counts.get("Low", 0),
-        counts.get("Informational", 0)
-    ]
-
-    no_findings = sum(values) == 0
+    labels = ["High", "Medium", "Low", "Informational"]
+    values = [counts["High"], counts["Medium"], counts["Low"], counts["Informational"]]
 
     drawing = Drawing(420, 220)
 
@@ -839,19 +832,13 @@ def build_risk_pie_chart(vulnerabilities):
     pie.y = 25
     pie.width = 170
     pie.height = 170
+    pie.data = values if sum(values) > 0 else [1]
     pie.labels = None
     pie.slices.strokeWidth = 0.5
-
-    if no_findings:
-        pie.data = [1]
-        pie.slices[0].fillColor = colors.HexColor("#cbd5e1")
-    else:
-        pie.data = values
-
-        pie.slices[0].fillColor = colors.HexColor("#dc2626")  # High = Red
-        pie.slices[1].fillColor = colors.HexColor("#f97316")  # Medium = Orange
-        pie.slices[2].fillColor = colors.HexColor("#eab308")  # Low = Yellow
-        pie.slices[3].fillColor = colors.HexColor("#2563eb")  # Informational = Blue
+    pie.slices[0].fillColor = colors.HexColor("#dc2626")
+    pie.slices[1].fillColor = colors.HexColor("#f97316")
+    pie.slices[2].fillColor = colors.HexColor("#eab308")
+    pie.slices[3].fillColor = colors.HexColor("#2563eb")
 
     legend = Legend()
     legend.x = 270
@@ -863,22 +850,15 @@ def build_risk_pie_chart(vulnerabilities):
     legend.dy = 8
     legend.columnMaximum = 4
     legend.strokeWidth = 0
-
-    if no_findings:
-        legend.colorNamePairs = [
-            (colors.HexColor("#cbd5e1"), "No Findings (0)")
-        ]
-    else:
-        legend.colorNamePairs = [
-            (colors.HexColor("#dc2626"), f"High ({counts.get('High', 0)})"),
-            (colors.HexColor("#f97316"), f"Medium ({counts.get('Medium', 0)})"),
-            (colors.HexColor("#eab308"), f"Low ({counts.get('Low', 0)})"),
-            (colors.HexColor("#2563eb"), f"Informational ({counts.get('Informational', 0)})"),
-        ]
+    legend.colorNamePairs = [
+        (colors.HexColor("#dc2626"), f"High ({counts['High']})"),
+        (colors.HexColor("#f97316"), f"Medium ({counts['Medium']})"),
+        (colors.HexColor("#eab308"), f"Low ({counts['Low']})"),
+        (colors.HexColor("#2563eb"), f"Informational ({counts['Informational']})"),
+    ]
 
     drawing.add(pie)
     drawing.add(legend)
-
     return drawing
 
 
@@ -946,17 +926,34 @@ def build_alert_type_table(vulnerabilities, styles):
     return table
 
 
+def shorten_pdf_text(value, max_chars=900):
+    text = clean_pdf_text(value)
+
+    if text == "N/A":
+        return "N/A"
+
+    if len(text) > max_chars:
+        return text[:max_chars] + "..."
+
+    return text
+
+
 def build_vulnerability_details(vuln, index, styles):
     story_items = []
+
     risk = normalize_risk(vuln.get("risk", "Informational"))
     header_color = risk_color(risk)
     light_color = risk_light_color(risk)
     title = clean_pdf_text(vuln.get("type", "Unknown Vulnerability"))
 
     header_table = Table(
-        [[Paragraph(f"<b>Finding #{index}: {pdf_safe(title)}</b>", styles["WhiteHeader"]), Paragraph(f"<b>{pdf_safe(risk)}</b>", styles["WhiteHeaderRight"])]],
+        [[
+            Paragraph(f"<b>Finding #{index}: {pdf_safe(title)}</b>", styles["WhiteHeader"]),
+            Paragraph(f"<b>{pdf_safe(risk)}</b>", styles["WhiteHeaderRight"])
+        ]],
         colWidths=[5.2 * inch, 1.3 * inch]
     )
+
     header_table.setStyle(TableStyle([
         ("BACKGROUND", (0, 0), (-1, -1), header_color),
         ("TEXTCOLOR", (0, 0), (-1, -1), colors.white),
@@ -966,17 +963,43 @@ def build_vulnerability_details(vuln, index, styles):
         ("TOPPADDING", (0, 0), (-1, -1), 9),
         ("BOTTOMPADDING", (0, 0), (-1, -1), 9),
     ]))
+
     story_items.append(header_table)
     story_items.append(Spacer(1, 8))
 
     meta_data = [
-        [Paragraph("<b>CVE ID</b>", styles["SmallText"]), Paragraph("<b>CVSS Score</b>", styles["SmallText"]), Paragraph("<b>CWE ID</b>", styles["SmallText"]), Paragraph("<b>WASC ID</b>", styles["SmallText"]), Paragraph("<b>Plugin ID</b>", styles["SmallText"])],
-        [Paragraph(pdf_safe(vuln.get("cve_id", "N/A")), styles["SmallText"]), Paragraph(pdf_safe(vuln.get("cvss_score", "N/A")), styles["SmallText"]), Paragraph(pdf_safe(vuln.get("cwe_id", "N/A")), styles["SmallText"]), Paragraph(pdf_safe(vuln.get("wasc_id", "N/A")), styles["SmallText"]), Paragraph(pdf_safe(vuln.get("plugin_id", "N/A")), styles["SmallText"])],
-        [Paragraph("<b>Confidence</b>", styles["SmallText"]), Paragraph("<b>Method</b>", styles["SmallText"]), Paragraph("<b>Parameter</b>", styles["SmallText"]), Paragraph("<b>Attack</b>", styles["SmallText"]), Paragraph("<b>Evidence</b>", styles["SmallText"])],
-        [Paragraph(pdf_safe(vuln.get("confidence", "N/A")), styles["SmallText"]), Paragraph(pdf_safe(vuln.get("method", "N/A")), styles["SmallText"]), Paragraph(pdf_safe(vuln.get("param", "N/A")), styles["SmallText"]), Paragraph(pdf_safe(vuln.get("attack", "N/A")), styles["SmallText"]), Paragraph(pdf_safe(vuln.get("evidence", "N/A")), styles["SmallText"])],
+        [
+            Paragraph("<b>CVE ID</b>", styles["SmallText"]),
+            Paragraph("<b>CVSS Score</b>", styles["SmallText"]),
+            Paragraph("<b>CWE ID</b>", styles["SmallText"]),
+            Paragraph("<b>WASC ID</b>", styles["SmallText"]),
+            Paragraph("<b>Plugin ID</b>", styles["SmallText"]),
+        ],
+        [
+            Paragraph(pdf_safe(vuln.get("cve_id", "N/A")), styles["SmallText"]),
+            Paragraph(pdf_safe(vuln.get("cvss_score", "N/A")), styles["SmallText"]),
+            Paragraph(pdf_safe(vuln.get("cwe_id", "N/A")), styles["SmallText"]),
+            Paragraph(pdf_safe(vuln.get("wasc_id", "N/A")), styles["SmallText"]),
+            Paragraph(pdf_safe(vuln.get("plugin_id", "N/A")), styles["SmallText"]),
+        ],
+        [
+            Paragraph("<b>Confidence</b>", styles["SmallText"]),
+            Paragraph("<b>Method</b>", styles["SmallText"]),
+            Paragraph("<b>Parameter</b>", styles["SmallText"]),
+            Paragraph("<b>Source</b>", styles["SmallText"]),
+            Paragraph("<b>Status</b>", styles["SmallText"]),
+        ],
+        [
+            Paragraph(pdf_safe(shorten_pdf_text(vuln.get("confidence", "N/A"), 80)), styles["SmallText"]),
+            Paragraph(pdf_safe(shorten_pdf_text(vuln.get("method", "N/A"), 80)), styles["SmallText"]),
+            Paragraph(pdf_safe(shorten_pdf_text(vuln.get("param", "N/A"), 80)), styles["SmallText"]),
+            Paragraph("Scanner Alert", styles["SmallText"]),
+            Paragraph("Detected", styles["SmallText"]),
+        ],
     ]
 
     meta_table = Table(meta_data, colWidths=[1.3 * inch] * 5)
+
     meta_table.setStyle(TableStyle([
         ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#cbd5e1")),
         ("BACKGROUND", (0, 0), (-1, 0), light_color),
@@ -987,6 +1010,7 @@ def build_vulnerability_details(vuln, index, styles):
         ("TOPPADDING", (0, 0), (-1, -1), 6),
         ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
     ]))
+
     story_items.append(meta_table)
     story_items.append(Spacer(1, 8))
 
@@ -995,17 +1019,30 @@ def build_vulnerability_details(vuln, index, styles):
     story_items.append(Spacer(1, 8))
 
     story_items.append(Paragraph("<b>Description</b>", styles["SectionSmall"]))
-    story_items.append(Paragraph(pdf_safe(vuln.get("description", "No description available.")), styles["NormalText"]))
+    story_items.append(Paragraph(pdf_safe(shorten_pdf_text(vuln.get("description", "No description available."), 1800)), styles["NormalText"]))
     story_items.append(Spacer(1, 8))
 
     story_items.append(Paragraph("<b>Recommended Mitigation</b>", styles["SectionSmall"]))
-    story_items.append(Paragraph(pdf_safe(vuln.get("solution", "No mitigation recommendation available.")), styles["NormalText"]))
+    story_items.append(Paragraph(pdf_safe(shorten_pdf_text(vuln.get("solution", "No mitigation recommendation available."), 1800)), styles["NormalText"]))
     story_items.append(Spacer(1, 8))
+
+    attack = clean_pdf_text(vuln.get("attack", "N/A"))
+    if attack != "N/A":
+        story_items.append(Paragraph("<b>Attack Payload</b>", styles["SectionSmall"]))
+        story_items.append(Paragraph(pdf_safe(shorten_pdf_text(attack, 700)), styles["SmallText"]))
+        story_items.append(Spacer(1, 8))
+
+    evidence = clean_pdf_text(vuln.get("evidence", "N/A"))
+    if evidence != "N/A":
+        story_items.append(Paragraph("<b>Evidence</b>", styles["SectionSmall"]))
+        story_items.append(Paragraph(pdf_safe(shorten_pdf_text(evidence, 700)), styles["SmallText"]))
+        story_items.append(Spacer(1, 8))
 
     reference = clean_pdf_text(vuln.get("reference", "N/A"))
     if reference != "N/A":
         story_items.append(Paragraph("<b>Reference</b>", styles["SectionSmall"]))
-        story_items.append(Paragraph(pdf_safe(reference), styles["SmallText"]))
+        story_items.append(Paragraph(pdf_safe(shorten_pdf_text(reference, 900)), styles["SmallText"]))
+        story_items.append(Spacer(1, 8))
 
     story_items.append(Spacer(1, 16))
     return story_items
