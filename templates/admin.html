@@ -28,6 +28,7 @@
             text-align: center;
             margin-bottom: 10px;
             color: #0f172a;
+            font-size: 34px;
         }
 
         h2 {
@@ -46,6 +47,7 @@
             text-decoration: none;
             color: #2563eb;
             font-weight: bold;
+            font-size: 17px;
         }
 
         .top-links a:hover {
@@ -81,17 +83,37 @@
 
         .card-users .stat-value { color: #2563eb; }
         .card-scans .stat-value { color: #7c3aed; }
-        .card-high .stat-value { color: #dc2626; }
-        .card-medium .stat-value { color: #f59e0b; }
-        .card-low .stat-value { color: #16a34a; }
-        .card-info .stat-value { color: #0891b2; }
+
+        /* Updated severity colors */
+        .card-high .stat-value { color: #dc2626; }      /* Red */
+        .card-medium .stat-value { color: #f97316; }    /* Orange */
+        .card-low .stat-value { color: #eab308; }       /* Yellow */
+        .card-info .stat-value { color: #2563eb; }      /* Blue */
 
         .chart-box {
             background: #f8fafc;
             border: 1px solid #dbe4ee;
             border-radius: 16px;
-            padding: 20px;
+            padding: 25px;
             margin-bottom: 30px;
+        }
+
+        .chart-box h2 {
+            margin-top: 0;
+            margin-bottom: 20px;
+            color: #0f172a;
+        }
+
+        .pie-chart-container {
+            width: 100%;
+            max-width: 450px;
+            height: 320px;
+            margin: 0 auto;
+        }
+
+        #adminChart {
+            width: 100% !important;
+            height: 100% !important;
         }
 
         .section-box {
@@ -169,8 +191,28 @@
             gap: 8px;
             flex-wrap: wrap;
         }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 22px;
+            }
+
+            .pie-chart-container {
+                max-width: 330px;
+                height: 280px;
+            }
+
+            table {
+                font-size: 13px;
+            }
+
+            th, td {
+                padding: 9px;
+            }
+        }
     </style>
 </head>
+
 <body>
     <div class="container">
         <h1>Admin Dashboard</h1>
@@ -214,8 +256,10 @@
         </div>
 
         <div class="chart-box">
-            <h2 style="margin-top:0;">Risk Distribution</h2>
-            <canvas id="adminChart"></canvas>
+            <h2>Risk Distribution</h2>
+            <div class="pie-chart-container">
+                <canvas id="adminChart"></canvas>
+            </div>
         </div>
 
         <div class="section-box">
@@ -243,7 +287,7 @@
                                 <td>{{ u["role"] }}</td>
                                 <td>{{ "Yes" if u["is_verified"] == 1 else "No" }}</td>
                                 <td>
-                                    {% if u["email"] != "deeneshdeenesh66@gmail.com" %}
+                                    {% if u["email"] != "websecurityscanner@gmail.com" %}
                                         <form method="post" action="/admin/delete_user/{{ u['id'] }}">
                                             <button type="submit" class="delete-btn">Delete</button>
                                         </form>
@@ -312,13 +356,33 @@
         new Chart(document.getElementById('adminChart'), {
             type: 'pie',
             data: {
-                labels: ['High', 'Medium', 'Low', 'Info'],
+                labels: ['High', 'Medium', 'Low', 'Informational'],
                 datasets: [{
-                    data: adminData
+                    data: adminData,
+                    backgroundColor: [
+                        '#dc2626', // High = Red
+                        '#f97316', // Medium = Orange
+                        '#eab308', // Low = Yellow
+                        '#2563eb'  // Informational = Blue
+                    ],
+                    borderColor: '#ffffff',
+                    borderWidth: 2
                 }]
             },
             options: {
-                responsive: true
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            font: {
+                                size: 14
+                            },
+                            padding: 18
+                        }
+                    }
+                }
             }
         });
     </script>
