@@ -19,16 +19,20 @@
             border-radius: 16px;
             box-shadow: 0 8px 24px rgba(0,0,0,0.12);
             box-sizing: border-box;
+            overflow: hidden;
         }
 
         h1 {
             text-align: center;
             margin-bottom: 25px;
+            font-size: 34px;
+            color: #0f172a;
         }
 
         .top-bar {
             text-align: center;
             margin-bottom: 20px;
+            font-size: 17px;
         }
 
         .top-bar a {
@@ -61,6 +65,7 @@
             display: block;
             font-weight: bold;
             margin-bottom: 6px;
+            color: #0f172a;
         }
 
         input[type="text"], select {
@@ -69,6 +74,7 @@
             border: 1px solid #cbd5e1;
             border-radius: 8px;
             box-sizing: border-box;
+            font-size: 15px;
         }
 
         .filter-actions {
@@ -77,7 +83,7 @@
         }
 
         .btn-filter, .btn-reset {
-            padding: 10px 14px;
+            padding: 10px 16px;
             border: none;
             border-radius: 8px;
             font-weight: bold;
@@ -85,6 +91,7 @@
             text-decoration: none;
             display: inline-block;
             text-align: center;
+            font-size: 15px;
         }
 
         .btn-filter {
@@ -105,9 +112,20 @@
             background: #cbd5e1;
         }
 
+        /* IMPORTANT: keeps table inside box */
+        .table-wrapper {
+            width: 100%;
+            overflow-x: auto;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+        }
+
         table {
             width: 100%;
+            min-width: 1050px;
             border-collapse: collapse;
+            background: white;
+            table-layout: fixed;
         }
 
         th, td {
@@ -115,10 +133,49 @@
             padding: 12px;
             text-align: left;
             vertical-align: top;
+            overflow-wrap: break-word;
+            word-break: break-word;
         }
 
         th {
             background: #f1f5f9;
+            color: #0f172a;
+        }
+
+        .col-no {
+            width: 45px;
+        }
+
+        .col-user {
+            width: 120px;
+        }
+
+        .col-email {
+            width: 230px;
+        }
+
+        .col-target {
+            width: 180px;
+        }
+
+        .col-mode {
+            width: 90px;
+        }
+
+        .col-status {
+            width: 330px;
+        }
+
+        .col-findings {
+            width: 90px;
+        }
+
+        .col-date {
+            width: 130px;
+        }
+
+        .col-action {
+            width: 80px;
         }
 
         .btn {
@@ -135,12 +192,25 @@
             background: #fefce8;
             padding: 15px;
             border-radius: 10px;
+            border-left: 5px solid #eab308;
         }
 
-        .url-cell {
-            max-width: 280px;
-            overflow-wrap: break-word;
-            word-break: break-word;
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+
+            .filter-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .filter-actions {
+                width: 100%;
+            }
+
+            .btn-filter, .btn-reset {
+                width: 100%;
+            }
         }
     </style>
 </head>
@@ -184,41 +254,45 @@
     </div>
 
     {% if history %}
-    <table>
-        <tr>
-            <th>No</th>
-            {% if user["role"] == "admin" %}
-                <th>User</th>
-                <th>Email</th>
-            {% endif %}
-            <th>Target</th>
-            <th>Mode</th>
-            <th>Status</th>
-            <th>Findings</th>
-            <th>Date & Time</th>
-            <th>Action</th>
-        </tr>
+    <div class="table-wrapper">
+        <table>
+            <tr>
+                <th class="col-no">No</th>
 
-        {% for item in history %}
-        <tr>
-            <td>{{ loop.index }}</td>
+                {% if user["role"] == "admin" %}
+                    <th class="col-user">User</th>
+                    <th class="col-email">Email</th>
+                {% endif %}
 
-            {% if user["role"] == "admin" %}
-                <td>{{ item["username"] }}</td>
-                <td>{{ item["email"] }}</td>
-            {% endif %}
+                <th class="col-target">Target</th>
+                <th class="col-mode">Mode</th>
+                <th class="col-status">Status</th>
+                <th class="col-findings">Findings</th>
+                <th class="col-date">Date & Time</th>
+                <th class="col-action">Action</th>
+            </tr>
 
-            <td class="url-cell">{{ item["target"] }}</td>
-            <td>{{ item["scan_mode"] }}</td>
-            <td>{{ item["status"] }}</td>
-            <td>{{ item["total_findings"] }}</td>
-            <td>{{ item["created_at"] }}</td>
-            <td>
-                <a href="/result/{{ item['scan_id'] }}" class="btn">View</a>
-            </td>
-        </tr>
-        {% endfor %}
-    </table>
+            {% for item in history %}
+            <tr>
+                <td>{{ loop.index }}</td>
+
+                {% if user["role"] == "admin" %}
+                    <td>{{ item["username"] }}</td>
+                    <td>{{ item["email"] }}</td>
+                {% endif %}
+
+                <td>{{ item["target"] }}</td>
+                <td>{{ item["scan_mode"] }}</td>
+                <td>{{ item["status"] }}</td>
+                <td>{{ item["total_findings"] }}</td>
+                <td>{{ item["created_at"] }}</td>
+                <td>
+                    <a href="/result/{{ item['scan_id'] }}" class="btn">View</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
     {% else %}
         <div class="empty">No scan history available.</div>
     {% endif %}
