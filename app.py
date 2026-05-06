@@ -27,6 +27,8 @@ import os
 import logging
 import re
 import html
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 app = Flask(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -53,6 +55,10 @@ ZAP_API_KEY = os.environ.get("ZAP_API_KEY", "")
 ZAP_PROXY = os.environ.get("ZAP_PROXY", "http://zap-service-q0cp:8080")
 
 scan_tasks = {}
+
+
+def get_malaysia_time():
+    return datetime.now(ZoneInfo("Asia/Kuala_Lumpur")).strftime("%Y-%m-%d %H:%M:%S")
 
 SCAN_MODES = {
     "quick": {"spider_timeout": 10, "ascan_timeout": 20, "label": "Quick Scan"},
@@ -239,7 +245,7 @@ def save_scan_history(scan_id):
         task["status"] if not task["error"] else f"Error: {task['error']}",
         len(task["vulnerabilities"]),
         json.dumps(task["vulnerabilities"]),
-        task.get("created_at", time.strftime("%Y-%m-%d %H:%M:%S"))
+        task.get("created_at", get_malaysia_time())
     ))
 
     conn.commit()
@@ -649,7 +655,7 @@ def run_scan(scan_id, target, scan_mode, user_id):
 
     user = get_user_by_id(user_id)
     username = user["username"] if user else "Unknown"
-    created_at = time.strftime("%Y-%m-%d %H:%M:%S")
+    created_at = get_malaysia_time()
 
     scan_tasks[scan_id] = {
         "user_id": user_id,
@@ -830,22 +836,12 @@ def get_risk_counts(vulnerabilities):
 
 def add_page_footer(canvas_obj, doc):
     canvas_obj.saveState()
-
-    # PDF metadata shown in browser/PDF viewer
-    canvas_obj.setTitle("Web Security Scanner Report")
-    canvas_obj.setAuthor("Web Security Scanner")
-    canvas_obj.setSubject("Web Application Security Assessment Report")
-    canvas_obj.setCreator("Web Security Scanner")
-
     width, height = A4
-
     canvas_obj.setFont("Helvetica", 8)
     canvas_obj.setFillColor(colors.HexColor("#64748b"))
     canvas_obj.drawCentredString(width / 2, 25, f"Web Security Scanner Report | Page {doc.page}")
-
     canvas_obj.setStrokeColor(colors.HexColor("#cbd5e1"))
     canvas_obj.line(40, 40, width - 40, 40)
-
     canvas_obj.restoreState()
 
 
@@ -1120,7 +1116,7 @@ def start_scan():
         "vulnerabilities": [],
         "error": None,
         "username": user["username"],
-        "created_at": time.strftime("%Y-%m-%d %H:%M:%S")
+        "created_at": get_malaysia_time()
     }
 
     thread = threading.Thread(target=run_scan, args=(scan_id, target, scan_mode, user["id"]), daemon=True)
