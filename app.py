@@ -56,7 +56,7 @@ scan_tasks = {}
 
 SCAN_MODES = {
     "quick": {"spider_timeout": 10, "ascan_timeout": 20, "label": "Quick Scan"},
-    "full": {"spider_timeout": 25, "ascan_timeout": 60, "label": "Full Scan"}
+    "full": {"spider_timeout": 15, "ascan_timeout": 35, "label": "Full Scan"}
 }
 
 
@@ -616,6 +616,13 @@ def get_cve_from_alert(alert):
 
 
 # ---------------- SCAN LOGIC ----------------
+def safe_zap_progress(value):
+    try:
+        return int(value)
+    except (ValueError, TypeError):
+        return -1
+
+
 def get_zap_client(max_retries=10, delay_seconds=5):
     proxies = {"http": ZAP_PROXY, "https": ZAP_PROXY}
     last_error = None
@@ -670,7 +677,13 @@ def run_scan(scan_id, target, scan_mode, user_id):
         spider_start = time.time()
 
         while True:
-            spider_progress = int(zap.spider.status(spider_id))
+            spider_status = zap.spider.status(spider_id)
+            spider_progress = safe_zap_progress(spider_status)
+
+            if spider_progress == -1:
+                scan_tasks[scan_id]["status"] = "Spider scan session expired or was lost. Moving to active scan..."
+                break
+
             elapsed = time.time() - spider_start
             scan_tasks[scan_id]["progress"] = min(50, int(spider_progress * 0.5))
 
@@ -689,7 +702,13 @@ def run_scan(scan_id, target, scan_mode, user_id):
         ascan_start = time.time()
 
         while True:
-            active_progress = int(zap.ascan.status(ascan_id))
+            active_status = zap.ascan.status(ascan_id)
+            active_progress = safe_zap_progress(active_status)
+
+            if active_progress == -1:
+                scan_tasks[scan_id]["status"] = "Active scan session expired or was lost. Collecting available results..."
+                break
+
             elapsed = time.time() - ascan_start
             scan_tasks[scan_id]["progress"] = min(100, 50 + int(active_progress * 0.5))
 
