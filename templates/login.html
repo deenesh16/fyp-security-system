@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login | Automated Web Application Security Assessment System</title>
+
     <style>
         * {
             margin: 0;
@@ -12,202 +13,211 @@
         }
 
         :root {
-            --primary-dark: #0b2a8f;
-            --primary-blue: #1f57ff;
-            --accent-cyan: #66f0d1;
-            --panel-bg: rgba(13, 49, 90, 0.72);
-            --text-main: #0f172a;
-            --text-soft: #6b7a90;
+            --green: #10b981;
+            --cyan: #22d3ee;
+            --blue: #2563eb;
+            --dark-blue: #061b3a;
+            --navy: #020617;
             --white: #ffffff;
-            --input-border: rgba(255,255,255,0.22);
-            --shadow-main: 0 18px 45px rgba(15, 23, 42, 0.18);
+            --text-dark: #0f172a;
         }
 
         body {
-            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
             min-height: 100vh;
-            background: linear-gradient(135deg, #eaf4ff, #eef5ff, #eef8ff);
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            background: #020617;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 18px;
+            padding: 14px;
             overflow-x: hidden;
         }
 
-        .page-shell {
+        .page {
             width: 100%;
-            max-width: 1500px;
-            min-height: 88vh;
+            max-width: 1360px;
+            height: 86vh;
+            min-height: 620px;
+            max-height: 760px;
             display: grid;
-            grid-template-columns: 1.02fr 0.98fr;
-            border-radius: 28px;
+            grid-template-columns: 0.72fr 1fr;
+            border-radius: 26px;
             overflow: hidden;
-            background: #fff;
-            box-shadow: 0 25px 60px rgba(17, 24, 39, 0.16);
+            background: #020617;
+            box-shadow: 0 24px 70px rgba(0, 0, 0, 0.45);
+            border: 1px solid rgba(125, 211, 252, 0.18);
         }
 
-        /* LEFT PANEL */
+        /* LEFT BLUE PANEL */
         .left-panel {
             position: relative;
-            padding: 34px 42px 28px;
+            padding: 34px 42px;
             color: white;
             background:
-                radial-gradient(circle at 82% 12%, rgba(111, 255, 214, 0.18), transparent 18%),
-                linear-gradient(180deg, #1431a0 0%, #1840c2 48%, #1748dc 100%);
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
+                radial-gradient(circle at 95% 2%, rgba(255,255,255,0.14), transparent 25%),
+                radial-gradient(circle at 8% 92%, rgba(255,255,255,0.09), transparent 20%),
+                linear-gradient(160deg, #0f2f99 0%, #1d4ed8 48%, #0ea5e9 100%);
             overflow: hidden;
-        }
-
-        .left-panel::before,
-        .left-panel::after {
-            content: "";
-            position: absolute;
-            border-radius: 50%;
-            filter: blur(0px);
-            opacity: 0.18;
-            pointer-events: none;
         }
 
         .left-panel::before {
+            content: "";
+            position: absolute;
             width: 230px;
             height: 230px;
-            top: -50px;
-            right: -40px;
-            background: rgba(118, 255, 221, 0.45);
+            top: -60px;
+            right: -75px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.12);
         }
 
         .left-panel::after {
-            width: 160px;
-            height: 160px;
-            bottom: -35px;
-            left: -30px;
-            background: rgba(82, 174, 255, 0.45);
+            content: "";
+            position: absolute;
+            inset: 0;
+            background-image: radial-gradient(rgba(255,255,255,0.18) 1px, transparent 1px);
+            background-size: 18px 18px;
+            opacity: 0.10;
+            mask-image: linear-gradient(to top, black 0%, transparent 55%);
+        }
+
+        .left-content {
+            position: relative;
+            z-index: 2;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
         }
 
         .badge {
+            width: fit-content;
             display: inline-flex;
             align-items: center;
-            gap: 12px;
-            padding: 12px 24px;
+            gap: 10px;
+            padding: 8px 15px;
             border-radius: 999px;
-            background: rgba(255,255,255,0.10);
-            border: 1px solid rgba(255,255,255,0.18);
-            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.04);
-            width: fit-content;
-            margin-bottom: 20px;
+            background: rgba(255,255,255,0.13);
+            border: 1px solid rgba(255,255,255,0.22);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.14);
+            margin-bottom: 24px;
             backdrop-filter: blur(10px);
-        }
-
-        .badge-dot {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            background: #baff8a;
-            box-shadow: 0 0 12px #baff8a;
-        }
-
-        .badge span {
-            font-size: 16px;
             font-weight: 700;
+            font-size: 13px;
         }
 
-        .hero h1 {
-            font-size: clamp(44px, 4vw, 72px);
+        .badge svg {
+            width: 17px;
+            height: 17px;
+            color: #34d399;
+        }
+
+        .left-panel h1 {
+            font-size: clamp(30px, 3.2vw, 48px);
+            line-height: 1.08;
+            letter-spacing: -1.3px;
             font-weight: 900;
-            line-height: 1.05;
-            letter-spacing: -1.5px;
-            margin-bottom: 20px;
-            max-width: 720px;
+            margin-bottom: 18px;
         }
 
-        .hero h1 .accent {
-            color: var(--accent-cyan);
+        .left-panel h1 span {
+            color: #67e8f9;
+            text-shadow: 0 0 24px rgba(103, 232, 249, 0.35);
         }
 
-        .hero p {
-            font-size: 17px;
+        .left-panel .intro {
+            font-size: 14px;
             line-height: 1.65;
-            color: rgba(255,255,255,0.92);
-            max-width: 700px;
-            margin-bottom: 28px;
+            color: rgba(255,255,255,0.90);
+            max-width: 560px;
+            margin-bottom: 24px;
         }
 
         .feature-list {
             display: grid;
-            gap: 16px;
-            max-width: 720px;
+            gap: 11px;
+            max-width: 570px;
         }
 
         .feature-card {
             display: grid;
-            grid-template-columns: 64px 1fr;
-            gap: 16px;
+            grid-template-columns: 50px 1fr;
+            gap: 12px;
             align-items: center;
-            padding: 18px 20px;
-            border-radius: 22px;
+            padding: 12px 15px;
+            border-radius: 16px;
             background: rgba(255,255,255,0.10);
-            border: 1px solid rgba(255,255,255,0.14);
+            border: 1px solid rgba(255,255,255,0.16);
             backdrop-filter: blur(8px);
         }
 
         .feature-number {
-            width: 54px;
-            height: 54px;
-            border-radius: 18px;
-            background: rgba(255,255,255,0.16);
+            width: 40px;
+            height: 40px;
+            border-radius: 13px;
+            background: rgba(255,255,255,0.15);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 28px;
-            font-weight: 800;
-            color: #ffffff;
+            color: #dbeafe;
         }
 
-        .feature-text h3 {
-            font-size: 19px;
-            margin-bottom: 4px;
+        .feature-number svg {
+            width: 22px;
+            height: 22px;
+        }
+
+        .feature-card h3 {
+            font-size: 14px;
+            margin-bottom: 3px;
             font-weight: 800;
         }
 
-        .feature-text p {
-            font-size: 15px;
-            line-height: 1.5;
-            color: rgba(255,255,255,0.88);
+        .feature-card p {
+            font-size: 11.5px;
+            line-height: 1.4;
+            color: rgba(255,255,255,0.84);
         }
 
         .system-label {
-            margin-top: 24px;
-            font-size: 14px;
-            color: rgba(255,255,255,0.92);
+            margin-top: 20px;
+            font-size: 12px;
+            color: rgba(255,255,255,0.80);
         }
 
         .system-label strong {
-            font-weight: 800;
+            color: #86efac;
         }
 
-        /* RIGHT PANEL */
+        /* RIGHT CYBER PANEL */
         .right-panel {
             position: relative;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 30px;
+            padding: 28px;
             overflow: hidden;
             background:
-                radial-gradient(circle at 20% 20%, rgba(102, 240, 209, 0.12), transparent 20%),
-                radial-gradient(circle at 85% 15%, rgba(31, 87, 255, 0.16), transparent 18%),
-                linear-gradient(135deg, #0d3756 0%, #0a2942 45%, #103d60 100%);
+                radial-gradient(circle at 18% 18%, rgba(34, 211, 238, 0.18), transparent 22%),
+                radial-gradient(circle at 80% 75%, rgba(37, 99, 235, 0.22), transparent 28%),
+                linear-gradient(135deg, #04152d 0%, #062449 45%, #020617 100%);
         }
 
         .right-panel::before {
             content: "";
             position: absolute;
-            inset: -20%;
+            inset: -25%;
             background:
-                linear-gradient(120deg, transparent 0%, rgba(102,240,209,0.08) 25%, transparent 50%, rgba(31,87,255,0.10) 75%, transparent 100%);
-            animation: sweep 9s linear infinite;
+                conic-gradient(
+                    from 140deg,
+                    transparent,
+                    rgba(34, 211, 238, 0.14),
+                    rgba(16, 185, 129, 0.18),
+                    rgba(37, 99, 235, 0.16),
+                    transparent
+                );
+            filter: blur(34px);
+            animation: rotateGlow 18s linear infinite;
         }
 
         .right-panel::after {
@@ -215,415 +225,610 @@
             position: absolute;
             inset: 0;
             background-image:
-                radial-gradient(rgba(255,255,255,0.10) 1px, transparent 1px);
-            background-size: 24px 24px;
-            opacity: 0.18;
+                radial-gradient(rgba(125, 211, 252, 0.34) 1px, transparent 1.5px),
+                linear-gradient(115deg, rgba(34,211,238,0.13), transparent 35%, rgba(37,99,235,0.16));
+            background-size: 28px 28px, 100% 100%;
+            opacity: 0.28;
+            animation: meshMove 14s linear infinite;
+        }
+
+        .wave {
+            position: absolute;
+            width: 150%;
+            height: 150px;
+            left: -25%;
+            border-radius: 50%;
+            background: linear-gradient(
+                90deg,
+                transparent,
+                rgba(34, 211, 238, 0.08),
+                rgba(45, 212, 191, 0.85),
+                rgba(37, 99, 235, 0.55),
+                transparent
+            );
+            box-shadow: 0 0 36px rgba(34, 211, 238, 0.30);
+            filter: blur(1px);
+            opacity: 0.58;
+        }
+
+        .wave.one {
+            top: 15%;
+            transform: rotate(-12deg);
+            animation: waveOne 7s ease-in-out infinite alternate;
+        }
+
+        .wave.two {
+            top: 52%;
+            transform: rotate(14deg);
+            opacity: 0.42;
+            animation: waveTwo 8s ease-in-out infinite alternate;
+        }
+
+        .wave.three {
+            bottom: 1%;
+            transform: rotate(-7deg);
+            opacity: 0.35;
+            animation: waveThree 10s ease-in-out infinite alternate;
+        }
+
+        .particle {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(125, 211, 252, 0.9);
+            box-shadow: 0 0 16px rgba(34, 211, 238, 0.85);
+            z-index: 1;
+            animation: particleFloat 9s ease-in-out infinite;
+        }
+
+        .p1 { width: 6px; height: 6px; top: 12%; left: 16%; animation-delay: 0s; }
+        .p2 { width: 4px; height: 4px; top: 24%; right: 18%; animation-delay: 1.2s; }
+        .p3 { width: 8px; height: 8px; bottom: 18%; left: 14%; animation-delay: 2s; }
+        .p4 { width: 5px; height: 5px; bottom: 28%; right: 22%; animation-delay: 3s; }
+
+        .shield-watermark {
+            position: absolute;
+            right: 8%;
+            top: 35%;
+            width: 135px;
+            height: 135px;
+            color: #67e8f9;
+            opacity: 0.16;
+            z-index: 1;
+            animation: shieldFloat 5s ease-in-out infinite alternate;
+        }
+
+        /* LOGIN CARD */
+        .form-card {
+            position: relative;
+            z-index: 3;
+            width: 100%;
+            max-width: 460px;
+            padding: 24px 28px 22px;
+            border-radius: 26px;
+            background: rgba(8, 37, 63, 0.70);
+            border: 1px solid rgba(148, 234, 255, 0.28);
+            box-shadow:
+                0 22px 65px rgba(0,0,0,0.34),
+                0 0 38px rgba(34, 211, 238, 0.22),
+                inset 0 1px 0 rgba(255,255,255,0.14);
+            backdrop-filter: blur(20px);
+        }
+
+        .form-card::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            border-radius: 26px;
+            background:
+                linear-gradient(135deg, rgba(34,211,238,0.15), transparent 42%, rgba(37,99,235,0.14));
             pointer-events: none;
         }
 
-        @keyframes sweep {
-            0% { transform: translateX(-15%) translateY(0) rotate(0deg); }
-            50% { transform: translateX(10%) translateY(2%) rotate(1deg); }
-            100% { transform: translateX(-15%) translateY(0) rotate(0deg); }
-        }
-
-        .form-card {
+        .form-content {
             position: relative;
             z-index: 2;
-            width: 100%;
-            max-width: 620px;
-            padding: 36px 40px 28px;
-            border-radius: 34px;
-            background: linear-gradient(180deg, rgba(14, 57, 90, 0.86), rgba(9, 43, 71, 0.92));
-            border: 1px solid rgba(255,255,255,0.12);
-            box-shadow:
-                0 20px 60px rgba(0,0,0,0.28),
-                inset 0 0 0 1px rgba(255,255,255,0.03);
-            backdrop-filter: blur(16px);
-            color: white;
         }
 
-        .form-icon-wrap {
-            display: flex;
-            justify-content: center;
-            margin-bottom: 14px;
-        }
-
-        .form-icon {
-            width: 84px;
-            height: 84px;
+        .lock-badge {
+            width: 58px;
+            height: 58px;
+            margin: 0 auto 13px;
             border-radius: 50%;
+            background: rgba(34,211,238,0.12);
+            border: 1px solid rgba(125, 211, 252, 0.28);
             display: flex;
             align-items: center;
             justify-content: center;
-            background: rgba(102, 240, 209, 0.08);
-            border: 1px solid rgba(102, 240, 209, 0.16);
-            box-shadow: 0 0 30px rgba(102, 240, 209, 0.12);
+            color: #a7f3d0;
+            box-shadow: 0 0 28px rgba(45, 212, 191, 0.22);
+            animation: iconPulse 2.5s ease-in-out infinite;
         }
 
-        .form-icon svg {
-            width: 34px;
-            height: 34px;
-            fill: #b9ffe8;
+        .lock-badge svg {
+            width: 30px;
+            height: 30px;
         }
 
-        .form-title {
+        .form-card h2 {
             text-align: center;
-            font-size: 38px;
+            color: white;
+            font-size: 32px;
+            line-height: 1.05;
             font-weight: 900;
-            margin-bottom: 10px;
+            margin-bottom: 7px;
+            letter-spacing: -0.7px;
         }
 
-        .form-subtitle {
+        .subtitle {
             text-align: center;
-            color: rgba(255,255,255,0.82);
-            font-size: 16px;
-            margin-bottom: 28px;
+            font-size: 12.5px;
+            color: rgba(226, 232, 240, 0.82);
+            margin-bottom: 19px;
         }
 
         .alert {
-            margin-bottom: 18px;
-            padding: 14px 16px;
-            border-radius: 14px;
-            font-size: 14px;
+            margin-bottom: 14px;
+            padding: 11px 13px;
+            border-radius: 12px;
+            font-size: 13px;
             font-weight: 600;
         }
 
         .alert.error {
-            background: rgba(255, 92, 92, 0.14);
-            border: 1px solid rgba(255, 92, 92, 0.32);
-            color: #ffd0d0;
+            background: rgba(254, 226, 226, 0.95);
+            color: #991b1b;
+            border: 1px solid #fecaca;
         }
 
-        label {
+        .alert.success {
+            background: rgba(220, 252, 231, 0.95);
+            color: #166534;
+            border: 1px solid #86efac;
+        }
+
+        .form-group {
+            margin-bottom: 13px;
+        }
+
+        .form-group label {
             display: block;
-            font-weight: 700;
-            font-size: 14px;
-            margin-bottom: 9px;
-            color: #ffffff;
+            font-size: 12px;
+            color: rgba(255,255,255,0.92);
+            font-weight: 800;
+            margin-bottom: 6px;
         }
 
-        .input-group {
+        .input-wrap {
             position: relative;
-            margin-bottom: 18px;
-        }
-
-        .input-group input {
-            width: 100%;
-            height: 68px;
-            border-radius: 18px;
-            border: 1px solid rgba(255,255,255,0.18);
-            outline: none;
-            background: rgba(255,255,255,0.10);
-            color: white;
-            font-size: 16px;
-            padding: 0 56px 0 58px;
-            transition: all 0.25s ease;
-        }
-
-        .input-group input::placeholder {
-            color: rgba(255,255,255,0.58);
-        }
-
-        .input-group input:focus {
-            border-color: rgba(102,240,209,0.60);
-            box-shadow: 0 0 0 4px rgba(102,240,209,0.12);
-            background: rgba(255,255,255,0.12);
         }
 
         .input-icon {
             position: absolute;
-            left: 18px;
+            left: 14px;
             top: 50%;
             transform: translateY(-50%);
-            color: rgba(255,255,255,0.72);
-            font-size: 22px;
-        }
-
-        .toggle-icon {
-            position: absolute;
-            right: 18px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: rgba(255,255,255,0.72);
-            font-size: 22px;
+            color: #bfdbfe;
+            opacity: 0.78;
+            width: 18px;
+            height: 18px;
             pointer-events: none;
         }
 
-        .show-password-row {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin: 4px 0 20px;
-            color: rgba(255,255,255,0.88);
-            font-size: 14px;
+        .form-group input {
+            width: 100%;
+            height: 40px;
+            border-radius: 11px;
+            border: 1px solid rgba(191, 219, 254, 0.34);
+            background: rgba(255,255,255,0.10);
+            color: white;
+            padding: 0 44px;
+            font-size: 13px;
+            outline: none;
+            transition: 0.25s ease;
         }
 
-        .show-password-row input[type="checkbox"] {
-            width: 18px;
-            height: 18px;
-            accent-color: #66f0d1;
+        .form-group input::placeholder {
+            color: rgba(226,232,240,0.62);
+        }
+
+        .form-group input:focus {
+            border-color: #22d3ee;
+            background: rgba(255,255,255,0.14);
+            box-shadow: 0 0 0 4px rgba(34, 211, 238, 0.12);
+        }
+
+        .eye-btn {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            border: none;
+            background: transparent;
+            color: rgba(226,232,240,0.82);
             cursor: pointer;
+            display: flex;
+            padding: 3px;
+        }
+
+        .show-password {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 4px 0 14px;
+            color: rgba(226,232,240,0.86);
+            font-size: 12px;
+        }
+
+        .show-password input {
+            width: 15px;
+            height: 15px;
+            accent-color: #22d3ee;
         }
 
         .login-btn {
             width: 100%;
-            height: 68px;
+            height: 42px;
             border: none;
-            border-radius: 20px;
-            font-size: 18px;
-            font-weight: 800;
+            border-radius: 11px;
+            background: linear-gradient(90deg, #0ea5e9, #2563eb);
             color: white;
+            font-weight: 900;
+            font-size: 15px;
             cursor: pointer;
-            background: linear-gradient(90deg, #4fbfff, #315cf3);
-            box-shadow: 0 16px 28px rgba(49, 92, 243, 0.28);
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-            margin-bottom: 20px;
+            transition: 0.25s ease;
+            box-shadow: 0 12px 24px rgba(37, 99, 235, 0.30);
         }
 
         .login-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 20px 34px rgba(49, 92, 243, 0.34);
-        }
-
-        .login-btn:active {
-            transform: translateY(0);
+            box-shadow: 0 16px 30px rgba(37, 99, 235, 0.40);
         }
 
         .divider {
-            text-align: center;
-            color: rgba(255,255,255,0.55);
-            font-size: 13px;
-            margin-bottom: 16px;
-            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 17px 0 13px;
+            color: rgba(226,232,240,0.60);
+            font-size: 11.5px;
         }
 
         .divider::before,
         .divider::after {
             content: "";
-            position: absolute;
-            top: 50%;
-            width: 38%;
+            flex: 1;
             height: 1px;
-            background: rgba(255,255,255,0.12);
+            background: rgba(226,232,240,0.22);
         }
 
-        .divider::before {
-            left: 0;
+        .bottom-links {
+            text-align: center;
+            display: grid;
+            gap: 7px;
         }
 
-        .divider::after {
-            right: 0;
-        }
-
-        .link-group {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            align-items: center;
-        }
-
-        .link-group a {
-            color: #79b7ff;
+        .bottom-links a {
+            color: #60a5fa;
             text-decoration: none;
-            font-weight: 700;
-            font-size: 15px;
-            transition: color 0.2s ease;
+            font-size: 12.5px;
+            font-weight: 800;
         }
 
-        .link-group a:hover {
-            color: #bfe2ff;
+        .bottom-links a:hover {
+            color: #93c5fd;
             text-decoration: underline;
         }
 
-        /* RESPONSIVE */
-        @media (max-width: 1200px) {
-            .page-shell {
-                grid-template-columns: 1fr;
-                min-height: auto;
-            }
+        @keyframes rotateGlow {
+            from { transform: rotate(0deg) scale(1); }
+            to { transform: rotate(360deg) scale(1.06); }
+        }
 
-            .left-panel {
-                padding: 28px 28px 24px;
-            }
+        @keyframes meshMove {
+            from { background-position: 0 0, 0 0; }
+            to { background-position: 120px 90px, 0 0; }
+        }
 
-            .hero h1 {
-                font-size: 48px;
-            }
+        @keyframes waveOne {
+            from { transform: translateX(-4%) translateY(0) rotate(-12deg); }
+            to { transform: translateX(8%) translateY(22px) rotate(-9deg); }
+        }
 
-            .right-panel {
-                padding: 24px;
-            }
+        @keyframes waveTwo {
+            from { transform: translateX(7%) translateY(0) rotate(14deg); }
+            to { transform: translateX(-6%) translateY(-22px) rotate(11deg); }
+        }
 
-            .form-card {
-                max-width: 760px;
+        @keyframes waveThree {
+            from { transform: translateX(-5%) translateY(0) rotate(-7deg); }
+            to { transform: translateX(7%) translateY(-18px) rotate(-4deg); }
+        }
+
+        @keyframes particleFloat {
+            0%, 100% { transform: translateY(0) translateX(0); opacity: 0.45; }
+            50% { transform: translateY(-26px) translateX(18px); opacity: 1; }
+        }
+
+        @keyframes shieldFloat {
+            from { transform: translateY(0) scale(1); }
+            to { transform: translateY(-16px) scale(1.04); }
+        }
+
+        @keyframes iconPulse {
+            0%, 100% {
+                transform: scale(1);
+                box-shadow: 0 0 28px rgba(45, 212, 191, 0.22);
+            }
+            50% {
+                transform: scale(1.05);
+                box-shadow: 0 0 38px rgba(45, 212, 191, 0.36);
             }
         }
 
-        @media (max-width: 768px) {
+        @media (max-width: 1180px) {
             body {
-                padding: 12px;
+                align-items: flex-start;
             }
 
-            .page-shell {
-                border-radius: 20px;
+            .page {
+                height: auto;
+                max-height: none;
+                grid-template-columns: 1fr;
             }
 
-            .left-panel,
+            .left-panel {
+                padding: 34px 28px;
+            }
+
+            .left-content {
+                justify-content: flex-start;
+            }
+
             .right-panel {
-                padding: 22px;
-            }
-
-            .hero h1 {
-                font-size: 38px;
-            }
-
-            .hero p {
-                font-size: 15px;
-            }
-
-            .feature-card {
-                grid-template-columns: 54px 1fr;
-                padding: 16px;
-            }
-
-            .feature-number {
-                width: 46px;
-                height: 46px;
-                font-size: 22px;
+                min-height: 620px;
             }
 
             .form-card {
-                padding: 28px 22px 24px;
-                border-radius: 24px;
+                max-width: 500px;
+            }
+        }
+
+        @media (max-width: 640px) {
+            body {
+                padding: 8px;
             }
 
-            .form-title {
+            .page {
+                border-radius: 18px;
+            }
+
+            .left-panel {
+                padding: 28px 20px;
+            }
+
+            .left-panel h1 {
                 font-size: 30px;
             }
 
-            .input-group input,
-            .login-btn {
-                height: 58px;
+            .left-panel .intro {
+                font-size: 13px;
+            }
+
+            .feature-card {
+                grid-template-columns: 45px 1fr;
+                padding: 12px;
+            }
+
+            .feature-number {
+                width: 36px;
+                height: 36px;
+            }
+
+            .form-card {
+                padding: 24px 18px;
             }
         }
     </style>
 </head>
-<body>
-    <div class="page-shell">
 
-        <!-- LEFT SIDE -->
+<body>
+    <main class="page">
         <section class="left-panel">
-            <div>
+            <div class="left-content">
                 <div class="badge">
-                    <span class="badge-dot"></span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                        <path d="m9 12 2 2 4-5"/>
+                    </svg>
                     <span>Secure Access Portal</span>
                 </div>
 
-                <div class="hero">
-                    <h1>
-                        Welcome Back to the Automated Web Application Security
-                        <span class="accent">Assessment System</span>
-                    </h1>
+                <h1>
+                    Welcome Back to the Automated Web Application Security
+                    <span>Assessment System</span>
+                </h1>
 
-                    <p>
-                        Sign in to begin vulnerability scanning, review risk findings,
-                        monitor security trends, and manage your web application
-                        assessment workflows in one professional platform.
-                    </p>
-                </div>
+                <p class="intro">
+                    Sign in to begin vulnerability scanning, review risk findings, monitor security trends,
+                    and manage your web application assessment workflows in one professional platform.
+                </p>
 
                 <div class="feature-list">
                     <div class="feature-card">
-                        <div class="feature-number">01</div>
-                        <div class="feature-text">
+                        <div class="feature-number">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                                <path d="m9 12 2 2 4-5"/>
+                            </svg>
+                        </div>
+                        <div>
                             <h3>Automated Vulnerability Scanning</h3>
                             <p>Run quick and full scans to identify security weaknesses on target websites.</p>
                         </div>
                     </div>
 
                     <div class="feature-card">
-                        <div class="feature-number">02</div>
-                        <div class="feature-text">
+                        <div class="feature-number">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                <path d="M14 2v6h6"/>
+                                <path d="M8 13h8"/>
+                                <path d="M8 17h6"/>
+                            </svg>
+                        </div>
+                        <div>
                             <h3>Centralized Report Tracking</h3>
                             <p>Access scan history, view results, and monitor vulnerability severity clearly.</p>
                         </div>
                     </div>
 
                     <div class="feature-card">
-                        <div class="feature-number">03</div>
-                        <div class="feature-text">
+                        <div class="feature-number">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                                <circle cx="9" cy="7" r="4"/>
+                                <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+                                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                            </svg>
+                        </div>
+                        <div>
                             <h3>Security-Focused Workflow</h3>
                             <p>Support password protection, verification flows, and user-friendly access control.</p>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <div class="system-label">
-                <strong>System:</strong> Automated Web Application Security Assessment System
+                <div class="system-label">
+                    <strong>System:</strong> Automated Web Application Security Assessment System
+                </div>
             </div>
         </section>
 
-        <!-- RIGHT SIDE -->
         <section class="right-panel">
+            <div class="wave one"></div>
+            <div class="wave two"></div>
+            <div class="wave three"></div>
+
+            <span class="particle p1"></span>
+            <span class="particle p2"></span>
+            <span class="particle p3"></span>
+            <span class="particle p4"></span>
+
+            <svg class="shield-watermark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                <path d="M9 12h6"/>
+                <path d="M12 9v6"/>
+            </svg>
+
             <div class="form-card">
-                <div class="form-icon-wrap">
-                    <div class="form-icon">
-                        <svg viewBox="0 0 24 24" aria-hidden="true">
-                            <path d="M12 1l8 4v6c0 5.55-3.84 10.74-8 12-4.16-1.26-8-6.45-8-12V5l8-4zm0 2.18L6 6v5c0 4.39 2.93 8.74 6 9.91 3.07-1.17 6-5.52 6-9.91V6l-6-2.82zM11 10V8h2v2h1a2 2 0 012 2v4h-6v-4a2 2 0 012-2h1zm-1 2v2h4v-2h-4z"/>
+                <div class="form-content">
+                    <div class="lock-badge">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                            <rect x="8" y="10" width="8" height="7" rx="1"/>
+                            <path d="M10 10V8a2 2 0 0 1 4 0v2"/>
                         </svg>
                     </div>
-                </div>
 
-                <h2 class="form-title">Login</h2>
-                <p class="form-subtitle">Access your web security scanner account securely.</p>
+                    <h2>Login</h2>
+                    <p class="subtitle">Access your web security scanner account securely.</p>
 
-                {% if error %}
-                    <div class="alert error">{{ error }}</div>
-                {% endif %}
+                    {% if error %}
+                        <div class="alert error">{{ error }}</div>
+                    {% endif %}
 
-                <form method="POST" action="/login">
-                    <label for="email">Email</label>
-                    <div class="input-group">
-                        <span class="input-icon">✉</span>
-                        <input type="email" id="email" name="email" placeholder="Enter your email" required>
-                    </div>
+                    {% if message %}
+                        <div class="alert success">{{ message }}</div>
+                    {% endif %}
 
-                    <label for="password">Password</label>
-                    <div class="input-group">
-                        <span class="input-icon">🔒</span>
-                        <input type="password" id="password" name="password" placeholder="Enter your password" required>
-                        <span class="toggle-icon">👁</span>
-                    </div>
+                    <form method="POST" action="/login">
+                        <div class="form-group">
+                            <label for="email">Email</label>
+                            <div class="input-wrap">
+                                <span class="input-icon">
+                                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                                        <path d="m22 6-10 7L2 6"/>
+                                    </svg>
+                                </span>
+                                <input
+                                    type="email"
+                                    id="email"
+                                    name="email"
+                                    placeholder="Enter your email"
+                                    value="{{ request.form.get('email', '') }}"
+                                    required
+                                >
+                            </div>
+                        </div>
 
-                    <div class="show-password-row">
-                        <input type="checkbox" id="showPassword">
-                        <label for="showPassword" style="margin:0; font-weight:500; font-size:14px; cursor:pointer;">
-                            Show password
+                        <div class="form-group">
+                            <label for="password">Password</label>
+                            <div class="input-wrap">
+                                <span class="input-icon">
+                                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="3" y="11" width="18" height="11" rx="2"/>
+                                        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                                    </svg>
+                                </span>
+
+                                <input
+                                    type="password"
+                                    id="password"
+                                    name="password"
+                                    placeholder="Enter your password"
+                                    required
+                                >
+
+                                <button type="button" class="eye-btn" id="eyeToggle">
+                                    <svg id="eyeIcon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                        <circle cx="12" cy="12" r="3"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <label class="show-password">
+                            <input type="checkbox" id="showPassword">
+                            <span>Show password</span>
                         </label>
-                    </div>
 
-                    <button type="submit" class="login-btn">Login</button>
+                        <button type="submit" class="login-btn">Login</button>
+                    </form>
 
                     <div class="divider">OR</div>
 
-                    <div class="link-group">
+                    <div class="bottom-links">
                         <a href="/register">Create account</a>
                         <a href="/forgot_password">Forgot password?</a>
                     </div>
-                </form>
+                </div>
             </div>
         </section>
-
-    </div>
+    </main>
 
     <script>
-        const showPassword = document.getElementById("showPassword");
         const passwordInput = document.getElementById("password");
+        const showPassword = document.getElementById("showPassword");
+        const eyeToggle = document.getElementById("eyeToggle");
+        const eyeIcon = document.getElementById("eyeIcon");
+
+        function setPasswordVisibility(visible) {
+            passwordInput.type = visible ? "text" : "password";
+            showPassword.checked = visible;
+
+            eyeIcon.innerHTML = visible
+                ? '<path d="M17.94 17.94A10.94 10.94 0 0 1 12 20C5 20 1 12 1 12a21.8 21.8 0 0 1 5.06-5.94"/><path d="M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a21.74 21.74 0 0 1-3.23 4.31"/><path d="M14.12 14.12A3 3 0 0 1 9.88 9.88"/><path d="M1 1l22 22"/>'
+                : '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+        }
 
         showPassword.addEventListener("change", function () {
-            passwordInput.type = this.checked ? "text" : "password";
+            setPasswordVisibility(this.checked);
+        });
+
+        eyeToggle.addEventListener("click", function () {
+            setPasswordVisibility(passwordInput.type === "password");
         });
     </script>
 </body>
