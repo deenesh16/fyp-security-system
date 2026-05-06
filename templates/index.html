@@ -88,10 +88,10 @@
         .card-scans .stat-value { color: #2563eb; }
         .card-findings .stat-value { color: #7c3aed; }
 
-        .card-high .stat-value { color: #dc2626; }      /* Red */
-        .card-medium .stat-value { color: #f97316; }    /* Orange */
-        .card-low .stat-value { color: #eab308; }       /* Yellow */
-        .card-info .stat-value { color: #2563eb; }      /* Blue */
+        .card-high .stat-value { color: #dc2626; }
+        .card-medium .stat-value { color: #f97316; }
+        .card-low .stat-value { color: #eab308; }
+        .card-info .stat-value { color: #2563eb; }
 
         .chart-box {
             background: #f8fafc;
@@ -266,10 +266,10 @@
                 label: 'Findings',
                 data: chartData,
                 backgroundColor: [
-                    '#dc2626', // High = Red
-                    '#f97316', // Medium = Orange
-                    '#eab308', // Low = Yellow
-                    '#2563eb'  // Info = Blue
+                    '#dc2626',
+                    '#f97316',
+                    '#eab308',
+                    '#2563eb'
                 ],
                 borderColor: [
                     '#991b1b',
@@ -297,6 +297,12 @@
                     }
                 }
             }
+        }
+    });
+
+    window.addEventListener("pageshow", function (event) {
+        if (event.persisted) {
+            window.location.reload();
         }
     });
 </script>

@@ -11,23 +11,21 @@
             color: #1e293b;
         }
 
-        .wrapper {
+        .container {
             max-width: 760px;
             margin: 70px auto;
-            padding: 0 15px;
-        }
-
-        .card {
             background: white;
+            padding: 35px;
             border-radius: 18px;
-            box-shadow: 0 10px 28px rgba(0, 0, 0, 0.12);
-            padding: 34px;
+            box-shadow: 0 10px 28px rgba(0,0,0,0.12);
+            box-sizing: border-box;
         }
 
         h1 {
             text-align: center;
-            margin: 0 0 10px;
+            margin-bottom: 10px;
             color: #0f172a;
+            font-size: 34px;
         }
 
         .subtitle {
@@ -37,186 +35,322 @@
             line-height: 1.6;
         }
 
-        .status-box {
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 14px;
+            margin-bottom: 22px;
+        }
+
+        .info-card {
             background: #f8fafc;
             border: 1px solid #dbe4ee;
+            border-radius: 14px;
+            padding: 16px;
+        }
+
+        .info-label {
+            font-size: 13px;
+            color: #64748b;
+            margin-bottom: 6px;
+            font-weight: bold;
+        }
+
+        .info-value {
+            font-size: 16px;
+            color: #0f172a;
+            font-weight: bold;
+            overflow-wrap: break-word;
+            word-break: break-word;
+        }
+
+        .status-box {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
             border-radius: 14px;
             padding: 18px;
             margin-bottom: 24px;
         }
 
-        .status-row {
-            margin-bottom: 12px;
-        }
-
-        .status-row:last-child {
-            margin-bottom: 0;
-        }
-
         .status-label {
-            font-size: 13px;
-            color: #64748b;
-            margin-bottom: 6px;
-        }
-
-        .status-value {
-            font-size: 16px;
+            font-size: 14px;
+            color: #1d4ed8;
             font-weight: bold;
-            color: #0f172a;
-            overflow-wrap: break-word;
-            word-break: break-word;
+            margin-bottom: 8px;
         }
 
-        .progress-track {
-            width: 100%;
-            height: 24px;
-            background: #e2e8f0;
-            border-radius: 999px;
-            overflow: hidden;
-            margin-top: 18px;
+        .status-text {
+            font-size: 17px;
+            color: #0f172a;
+            font-weight: bold;
+            line-height: 1.5;
+        }
+
+        .progress-wrapper {
+            margin-top: 22px;
+        }
+
+        .progress-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .progress-label {
+            font-weight: bold;
+            color: #334155;
+        }
+
+        .progress-percent {
+            font-weight: bold;
+            color: #2563eb;
         }
 
         .progress-bar {
-            width: 0%;
-            height: 100%;
-            background: linear-gradient(90deg, #2563eb, #3b82f6);
+            width: 100%;
+            height: 26px;
+            background: #e2e8f0;
             border-radius: 999px;
-            transition: width 0.6s ease;
+            overflow: hidden;
+            border: 1px solid #cbd5e1;
         }
 
-        .percent-text {
-            text-align: center;
-            font-size: 28px;
-            font-weight: bold;
-            color: #1d4ed8;
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #2563eb, #16a34a);
+            border-radius: 999px;
+            transition: width 0.5s ease;
+        }
+
+        .time-box {
             margin-top: 18px;
+            background: #f8fafc;
+            border: 1px solid #dbe4ee;
+            border-radius: 14px;
+            padding: 16px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
         }
 
-        .live-status {
+        .time-item {
             text-align: center;
-            font-size: 16px;
-            color: #334155;
-            margin-top: 10px;
-            line-height: 1.6;
         }
 
-        .spinner-wrap {
-            display: flex;
-            justify-content: center;
-            margin: 24px 0 8px;
+        .time-label {
+            font-size: 13px;
+            color: #64748b;
+            font-weight: bold;
+            margin-bottom: 6px;
         }
 
-        .spinner {
-            width: 54px;
-            height: 54px;
-            border: 6px solid #dbeafe;
-            border-top: 6px solid #2563eb;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
+        .time-value {
+            font-size: 18px;
+            color: #0f172a;
+            font-weight: bold;
         }
 
         .note {
-            margin-top: 18px;
-            background: #eff6ff;
-            border: 1px solid #bfdbfe;
-            color: #1d4ed8;
-            border-radius: 10px;
-            padding: 12px 14px;
-            font-size: 14px;
-            line-height: 1.6;
-        }
-
-        .footer-link {
+            margin-top: 20px;
+            color: #64748b;
             text-align: center;
-            margin-top: 24px;
+            line-height: 1.6;
+            font-size: 14px;
         }
 
-        .footer-link a {
-            color: #2563eb;
+        .btn-area {
+            text-align: center;
+            margin-top: 25px;
+        }
+
+        .btn {
+            display: inline-block;
+            background: #2563eb;
+            color: white;
+            padding: 11px 18px;
+            border-radius: 8px;
             text-decoration: none;
             font-weight: bold;
         }
 
-        .footer-link a:hover {
-            text-decoration: underline;
+        .btn:hover {
+            background: #1d4ed8;
         }
 
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        .error-box {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #991b1b;
+            border-radius: 12px;
+            padding: 14px;
+            margin-top: 18px;
+            line-height: 1.5;
+            display: none;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                margin: 30px 15px;
+                padding: 24px;
+            }
+
+            .time-box {
+                grid-template-columns: 1fr;
+            }
+
+            h1 {
+                font-size: 28px;
+            }
         }
     </style>
 </head>
+
 <body>
-    <div class="wrapper">
-        <div class="card">
-            <h1>Scan in Progress</h1>
-            <div class="subtitle">
-                The system is currently scanning the target website. Please wait while the process completes.
+    <div class="container">
+        <h1>Scan in Progress</h1>
+
+        <div class="subtitle">
+            The system is currently scanning the target website. Please wait while the process completes.
+        </div>
+
+        <div class="info-grid">
+            <div class="info-card">
+                <div class="info-label">Scan Mode</div>
+                <div class="info-value" id="scanMode">Loading...</div>
             </div>
 
-            <div class="status-box">
-                <div class="status-row">
-                    <div class="status-label">Scan Mode</div>
-                    <div id="modeText" class="status-value">Loading...</div>
-                </div>
+            <div class="info-card">
+                <div class="info-label">Target Website</div>
+                <div class="info-value" id="targetUrl">Loading...</div>
+            </div>
+        </div>
 
-                <div class="status-row">
-                    <div class="status-label">Current Status</div>
-                    <div id="statusText" class="status-value">Starting scan...</div>
-                </div>
+        <div class="status-box">
+            <div class="status-label">Current Status</div>
+            <div class="status-text" id="statusText">Preparing scan...</div>
+        </div>
+
+        <div class="progress-wrapper">
+            <div class="progress-top">
+                <div class="progress-label">Scan Progress</div>
+                <div class="progress-percent" id="progressText">0%</div>
             </div>
 
-            <div class="progress-track">
-                <div id="progressBar" class="progress-bar"></div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+        </div>
+
+        <div class="time-box">
+            <div class="time-item">
+                <div class="time-label">Elapsed Time</div>
+                <div class="time-value" id="elapsedTime">0 sec</div>
             </div>
 
-            <div id="percentText" class="percent-text">0%</div>
-            <div class="live-status">Live scan progress is being updated automatically.</div>
-
-            <div class="spinner-wrap">
-                <div class="spinner"></div>
+            <div class="time-item">
+                <div class="time-label">Estimated Remaining Time</div>
+                <div class="time-value" id="remainingTime">Calculating...</div>
             </div>
+        </div>
 
-            <div class="note">
-                Depending on the selected scan mode and the target website, the scan may take a little time to complete.
-                You will be redirected automatically to the result page once the scan is finished.
-            </div>
+        <div class="error-box" id="errorBox"></div>
 
-            <div class="footer-link">
-                <a href="/">Back to Home</a>
-            </div>
+        <div class="note">
+            Live scan progress and remaining time are updated automatically.
+            Depending on scan mode, target website, and ZAP service load, timing may vary slightly.
+        </div>
+
+        <div class="btn-area">
+            <a href="/" class="btn">Back to Home</a>
         </div>
     </div>
 
     <script>
         const scanId = "{{ scan_id }}";
+        const startTime = Date.now();
 
-        function updateProgress() {
-            fetch(`/scan_status/${scanId}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.error) {
-                        document.getElementById("statusText").innerText = data.error;
-                        return;
-                    }
+        function formatElapsed(seconds) {
+            seconds = Math.max(0, Math.floor(seconds));
 
-                    document.getElementById("progressBar").style.width = data.progress + "%";
-                    document.getElementById("percentText").innerText = data.progress + "%";
-                    document.getElementById("statusText").innerText = data.status;
-                    document.getElementById("modeText").innerText = data.scan_mode;
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = seconds % 60;
 
-                    if (data.completed) {
-                        window.location.href = `/result/${scanId}`;
-                    }
-                })
-                .catch(() => {
-                    document.getElementById("statusText").innerText = "Unable to retrieve scan progress.";
-                });
+            if (minutes > 0) {
+                return `${minutes} min ${remainingSeconds} sec`;
+            }
+
+            return `${remainingSeconds} sec`;
         }
 
-        setInterval(updateProgress, 2000);
-        updateProgress();
+        function updateElapsedTime() {
+            const elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
+            document.getElementById("elapsedTime").innerText = formatElapsed(elapsedSeconds);
+        }
+
+        async function fetchScanStatus() {
+            try {
+                const response = await fetch(`/scan_status/${scanId}`, {
+                    cache: "no-store"
+                });
+
+                const data = await response.json();
+
+                if (!response.ok || data.error === "Access denied" || data.error === "Invalid scan ID") {
+                    document.getElementById("errorBox").style.display = "block";
+                    document.getElementById("errorBox").innerText = data.error || "Unable to load scan status.";
+                    return;
+                }
+
+                const progress = data.progress || 0;
+
+                document.getElementById("scanMode").innerText = data.scan_mode || "N/A";
+                document.getElementById("targetUrl").innerText = data.target || "N/A";
+                document.getElementById("statusText").innerText = data.status || "Scanning...";
+                document.getElementById("progressText").innerText = `${progress}%`;
+                document.getElementById("progressFill").style.width = `${progress}%`;
+
+                if (data.remaining_time) {
+                    document.getElementById("remainingTime").innerText = data.remaining_time;
+                } else {
+                    document.getElementById("remainingTime").innerText = "Calculating...";
+                }
+
+                if (data.error) {
+                    document.getElementById("errorBox").style.display = "block";
+                    document.getElementById("errorBox").innerText = data.error;
+                }
+
+                if (data.completed) {
+                    document.getElementById("remainingTime").innerText = "Completed";
+                    document.getElementById("progressText").innerText = "100%";
+                    document.getElementById("progressFill").style.width = "100%";
+
+                    setTimeout(() => {
+                        window.location.href = `/result/${scanId}`;
+                    }, 1500);
+                }
+
+            } catch (error) {
+                document.getElementById("errorBox").style.display = "block";
+                document.getElementById("errorBox").innerText = "Unable to connect to scan status. Please wait or try refreshing.";
+            }
+        }
+
+        setInterval(updateElapsedTime, 1000);
+        setInterval(fetchScanStatus, 2000);
+
+        updateElapsedTime();
+        fetchScanStatus();
+
+        window.addEventListener("pageshow", function (event) {
+            if (event.persisted) {
+                window.location.reload();
+            }
+        });
     </script>
 </body>
 </html>

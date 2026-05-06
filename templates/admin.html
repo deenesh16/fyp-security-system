@@ -84,10 +84,10 @@
         .card-users .stat-value { color: #2563eb; }
         .card-scans .stat-value { color: #7c3aed; }
 
-        .card-high .stat-value { color: #dc2626; }      /* Red */
-        .card-medium .stat-value { color: #f97316; }    /* Orange */
-        .card-low .stat-value { color: #eab308; }       /* Yellow */
-        .card-info .stat-value { color: #2563eb; }      /* Blue */
+        .card-high .stat-value { color: #dc2626; }
+        .card-medium .stat-value { color: #f97316; }
+        .card-low .stat-value { color: #eab308; }
+        .card-info .stat-value { color: #2563eb; }
 
         .chart-box {
             background: #f8fafc;
@@ -123,11 +123,20 @@
             margin-bottom: 25px;
         }
 
+        .table-wrapper {
+            width: 100%;
+            overflow-x: auto;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            background: white;
+        }
+
         table {
             width: 100%;
+            min-width: 1000px;
             border-collapse: collapse;
-            margin-top: 10px;
             background: white;
+            table-layout: fixed;
         }
 
         th, td {
@@ -135,6 +144,8 @@
             padding: 12px;
             text-align: left;
             vertical-align: top;
+            overflow-wrap: break-word;
+            word-break: break-word;
         }
 
         th {
@@ -266,38 +277,40 @@
             <p class="small-note">This section displays all users registered in the system.</p>
 
             {% if users %}
-                <table>
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Username</th>
-                            <th>Email</th>
-                            <th>Role</th>
-                            <th>Verified</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for u in users %}
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
                             <tr>
-                                <td>{{ u["id"] }}</td>
-                                <td>{{ u["username"] }}</td>
-                                <td>{{ u["email"] }}</td>
-                                <td>{{ u["role"] }}</td>
-                                <td>{{ "Yes" if u["is_verified"] == 1 else "No" }}</td>
-                                <td>
-                                    {% if u["email"] != "websecurityscanner@gmail.com" %}
-                                        <form method="post" action="/admin/delete_user/{{ u['id'] }}">
-                                            <button type="submit" class="delete-btn">Delete</button>
-                                        </form>
-                                    {% else %}
-                                        Protected
-                                    {% endif %}
-                                </td>
+                                <th style="width: 70px;">ID</th>
+                                <th style="width: 160px;">Username</th>
+                                <th style="width: 260px;">Email</th>
+                                <th style="width: 100px;">Role</th>
+                                <th style="width: 100px;">Verified</th>
+                                <th style="width: 130px;">Action</th>
                             </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            {% for u in users %}
+                                <tr>
+                                    <td>{{ u["id"] }}</td>
+                                    <td>{{ u["username"] }}</td>
+                                    <td>{{ u["email"] }}</td>
+                                    <td>{{ u["role"] }}</td>
+                                    <td>{{ "Yes" if u["is_verified"] == 1 else "No" }}</td>
+                                    <td>
+                                        {% if u["email"] != "websecurityscanner@gmail.com" %}
+                                            <form method="post" action="/admin/delete_user/{{ u['id'] }}">
+                                                <button type="submit" class="delete-btn">Delete</button>
+                                            </form>
+                                        {% else %}
+                                            Protected
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             {% else %}
                 <div class="empty">No users found.</div>
             {% endif %}
@@ -308,43 +321,45 @@
             <p class="small-note">This section shows scan activities from all users.</p>
 
             {% if history %}
-                <table>
-                    <thead>
-                        <tr>
-                            <th>User</th>
-                            <th>Email</th>
-                            <th>Target URL</th>
-                            <th>Scan Mode</th>
-                            <th>Status</th>
-                            <th>Total Findings</th>
-                            <th>Date & Time</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-
-                    <tbody>
-                        {% for item in history %}
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
                             <tr>
-                                <td>{{ item["username"] }}</td>
-                                <td>{{ item["email"] }}</td>
-                                <td class="url-cell">{{ item["target"] }}</td>
-                                <td>{{ item["scan_mode"] }}</td>
-                                <td>{{ item["status"] }}</td>
-                                <td>{{ item["total_findings"] }}</td>
-                                <td>{{ item["created_at"] }}</td>
-                                <td>
-                                    <div class="action-group">
-                                        <a href="/result/{{ item['scan_id'] }}" class="result-link">Open</a>
-
-                                        <form method="post" action="/admin/delete_scan/{{ item['scan_id'] }}">
-                                            <button type="submit" class="delete-btn">Delete</button>
-                                        </form>
-                                    </div>
-                                </td>
+                                <th style="width: 140px;">User</th>
+                                <th style="width: 240px;">Email</th>
+                                <th style="width: 260px;">Target URL</th>
+                                <th style="width: 120px;">Scan Mode</th>
+                                <th style="width: 260px;">Status</th>
+                                <th style="width: 110px;">Findings</th>
+                                <th style="width: 150px;">Date & Time</th>
+                                <th style="width: 140px;">Actions</th>
                             </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                        </thead>
+
+                        <tbody>
+                            {% for item in history %}
+                                <tr>
+                                    <td>{{ item["username"] }}</td>
+                                    <td>{{ item["email"] }}</td>
+                                    <td class="url-cell">{{ item["target"] }}</td>
+                                    <td>{{ item["scan_mode"] }}</td>
+                                    <td>{{ item["status"] }}</td>
+                                    <td>{{ item["total_findings"] }}</td>
+                                    <td>{{ item["created_at"] }}</td>
+                                    <td>
+                                        <div class="action-group">
+                                            <a href="/result/{{ item['scan_id'] }}" class="result-link">Open</a>
+
+                                            <form method="post" action="/admin/delete_scan/{{ item['scan_id'] }}">
+                                                <button type="submit" class="delete-btn">Delete</button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             {% else %}
                 <div class="empty">No scan history available.</div>
             {% endif %}
@@ -361,10 +376,10 @@
                 datasets: [{
                     data: adminData,
                     backgroundColor: [
-                        '#dc2626', // High = Red
-                        '#f97316', // Medium = Orange
-                        '#eab308', // Low = Yellow
-                        '#2563eb'  // Informational = Blue
+                        '#dc2626',
+                        '#f97316',
+                        '#eab308',
+                        '#2563eb'
                     ],
                     borderColor: '#ffffff',
                     borderWidth: 2
@@ -384,6 +399,12 @@
                         }
                     }
                 }
+            }
+        });
+
+        window.addEventListener("pageshow", function (event) {
+            if (event.persisted) {
+                window.location.reload();
             }
         });
     </script>

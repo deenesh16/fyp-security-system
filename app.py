@@ -33,6 +33,14 @@ from zoneinfo import ZoneInfo
 app = Flask(__name__)
 logging.basicConfig(level=logging.INFO)
 
+
+@app.after_request
+def add_no_cache_headers(response):
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    return response
+
 # ---------------- APP / ENV CONFIG ----------------
 app.secret_key = os.environ.get("SECRET_KEY", "change_this_to_a_random_secret_key")
 DATABASE_URL = os.environ.get("DATABASE_URL")
@@ -61,8 +69,8 @@ def get_malaysia_time():
     return datetime.now(ZoneInfo("Asia/Kuala_Lumpur")).strftime("%Y-%m-%d %H:%M:%S")
 
 SCAN_MODES = {
-    "quick": {"spider_timeout": 10, "ascan_timeout": 20, "label": "Quick Scan"},
-    "full": {"spider_timeout": 15, "ascan_timeout": 35, "label": "Full Scan"}
+    "quick": {"spider_timeout": 10, "ascan_timeout": 20, "label": "Quick Scan", "estimated_seconds": 40},
+    "full": {"spider_timeout": 15, "ascan_timeout": 35, "label": "Full Scan", "estimated_seconds": 60}
 }
 
 
@@ -668,6 +676,8 @@ def run_scan(scan_id, target, scan_mode, user_id):
         "user_id": user_id,
         "target": target,
         "scan_mode": mode_label,
+        "estimated_seconds": mode_config.get("estimated_seconds", 40),
+        "started_at_epoch": time.time(),
         "status": "Starting scan...",
         "progress": 0,
         "completed": False,
@@ -1117,6 +1127,8 @@ def start_scan():
         "user_id": user["id"],
         "target": target,
         "scan_mode": SCAN_MODES.get(scan_mode, SCAN_MODES["quick"])["label"],
+        "estimated_seconds": SCAN_MODES.get(scan_mode, SCAN_MODES["quick"]).get("estimated_seconds", 40),
+        "started_at_epoch": time.time(),
         "status": "Queued scan...",
         "progress": 0,
         "completed": False,
@@ -1138,6 +1150,36 @@ def progress_page(scan_id):
     return render_template('progress.html', scan_id=scan_id)
 
 
+def calculate_remaining_time(task):
+    if not task or task.get("completed"):
+        return 0, "Completed"
+
+    progress = int(task.get("progress", 0) or 0)
+    estimated_seconds = int(task.get("estimated_seconds", 40) or 40)
+    started_at_epoch = float(task.get("started_at_epoch", time.time()) or time.time())
+    elapsed = max(0, int(time.time() - started_at_epoch))
+
+    if progress >= 100:
+        remaining_seconds = 0
+    elif progress > 0:
+        total_estimated_by_progress = elapsed / (progress / 100)
+        remaining_seconds = int(max(0, total_estimated_by_progress - elapsed))
+    else:
+        remaining_seconds = int(max(0, estimated_seconds - elapsed))
+
+    minutes = remaining_seconds // 60
+    seconds = remaining_seconds % 60
+
+    if remaining_seconds <= 0:
+        remaining_text = "Finishing soon..."
+    elif minutes > 0:
+        remaining_text = f"About {minutes} min {seconds} sec remaining"
+    else:
+        remaining_text = f"About {seconds} sec remaining"
+
+    return remaining_seconds, remaining_text
+
+
 @app.route('/scan_status/<scan_id>')
 @login_required
 def scan_status(scan_id):
@@ -1152,6 +1194,8 @@ def scan_status(scan_id):
                 "status": row["status"],
                 "progress": 100,
                 "completed": True,
+                "remaining_seconds": 0,
+                "remaining_time": "Completed",
                 "error": None if not str(row["status"]).startswith("Error:") else row["status"]
             })
         return jsonify({"error": "Invalid scan ID"}), 404
@@ -1160,12 +1204,16 @@ def scan_status(scan_id):
     if user["role"] != "admin" and task["user_id"] != user["id"]:
         return jsonify({"error": "Access denied"}), 403
 
+    remaining_seconds, remaining_text = calculate_remaining_time(task)
+
     return jsonify({
         "target": task["target"],
         "scan_mode": task["scan_mode"],
         "status": task["status"],
         "progress": task["progress"],
         "completed": task["completed"],
+        "remaining_seconds": remaining_seconds,
+        "remaining_time": remaining_text,
         "error": task["error"]
     })
 
