@@ -4,192 +4,324 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Create Account | Automated Web Application Security Assessment System</title>
+
     <style>
         * {
             box-sizing: border-box;
         }
 
+        :root {
+            --green1: #0f9d7a;
+            --green2: #16b894;
+            --cyan1: #1fb6ff;
+            --blue1: #2563eb;
+            --navy: #0f172a;
+            --text-dark: #0f172a;
+            --text-muted: #64748b;
+            --white: #ffffff;
+            --border: #cbd5e1;
+            --danger: #dc2626;
+            --success: #16a34a;
+        }
+
         body {
             margin: 0;
-            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-            background:
-                radial-gradient(circle at top left, rgba(16, 185, 129, 0.22), transparent 35%),
-                radial-gradient(circle at bottom right, rgba(37, 99, 235, 0.20), transparent 35%),
-                linear-gradient(135deg, #eef8ff 0%, #f7fbff 48%, #eef9f6 100%);
             min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 24px;
-            color: #0f172a;
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #e6fffb 0%, #eef2ff 100%);
+            overflow-x: hidden;
         }
 
         .page {
-            width: 100%;
-            max-width: 1240px;
-            min-height: 780px;
-            background: rgba(255,255,255,0.93);
-            border: 1px solid rgba(255,255,255,0.7);
-            border-radius: 28px;
-            overflow: hidden;
-            box-shadow: 0 24px 60px rgba(15, 23, 42, 0.12);
+            min-height: 100vh;
             display: grid;
-            grid-template-columns: 1.1fr 1fr;
-            backdrop-filter: blur(10px);
-            animation: fadeUp 0.8s ease;
+            grid-template-columns: 1.02fr 0.98fr;
         }
 
-        .brand-panel {
+        /* LEFT SIDE - KEEP GREEN STYLE */
+        .left-panel {
             position: relative;
-            padding: 56px 52px;
-            background:
-                linear-gradient(165deg, rgba(5, 150, 105, 0.98), rgba(14, 165, 233, 0.96) 60%, rgba(37, 99, 235, 0.94));
-            color: white;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
             overflow: hidden;
+            padding: 42px 58px;
+            display: flex;
+            align-items: center;
+            background: linear-gradient(160deg, #10966c 0%, #16b894 35%, #24a8e8 100%);
+            color: white;
         }
 
-        .brand-panel::before,
-        .brand-panel::after {
+        .left-panel::before {
             content: "";
             position: absolute;
+            width: 360px;
+            height: 360px;
+            top: -90px;
+            right: -110px;
             border-radius: 50%;
             background: rgba(255,255,255,0.10);
         }
 
-        .brand-panel::before {
-            width: 260px;
-            height: 260px;
-            top: -60px;
-            right: -60px;
+        .left-panel::after {
+            content: "";
+            position: absolute;
+            width: 230px;
+            height: 230px;
+            bottom: -90px;
+            left: -70px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.09);
         }
 
-        .brand-panel::after {
-            width: 210px;
-            height: 210px;
-            bottom: -70px;
-            left: -45px;
-        }
-
-        .brand-content {
+        .left-content {
             position: relative;
             z-index: 2;
+            max-width: 690px;
+            animation: fadeInLeft 0.9s ease;
         }
 
-        .system-badge {
+        .tag {
             display: inline-flex;
             align-items: center;
-            gap: 10px;
-            padding: 10px 16px;
-            background: rgba(255,255,255,0.16);
-            border: 1px solid rgba(255,255,255,0.22);
+            gap: 12px;
+            padding: 14px 22px;
             border-radius: 999px;
-            font-size: 14px;
-            font-weight: 600;
-            margin-bottom: 24px;
-            backdrop-filter: blur(8px);
+            background: rgba(255,255,255,0.13);
+            border: 1px solid rgba(255,255,255,0.20);
+            box-shadow: 0 10px 24px rgba(0,0,0,0.12);
+            font-weight: 700;
+            font-size: 18px;
+            margin-bottom: 38px;
         }
 
-        .system-badge .dot {
-            width: 10px;
-            height: 10px;
+        .tag .dot {
+            width: 12px;
+            height: 12px;
             border-radius: 50%;
-            background: #bbf7d0;
-            box-shadow: 0 0 10px rgba(187, 247, 208, 0.8);
+            background: #d9ff9e;
+            box-shadow: 0 0 12px rgba(217,255,158,0.9);
         }
 
-        .brand-panel h1 {
-            font-size: 40px;
-            line-height: 1.15;
-            margin: 0 0 16px;
-            max-width: 530px;
+        .left-content h1 {
+            margin: 0 0 22px;
+            font-size: clamp(38px, 4.8vw, 64px);
+            line-height: 1.1;
+            font-weight: 900;
+            letter-spacing: -1.5px;
         }
 
-        .brand-panel p {
-            font-size: 17px;
-            line-height: 1.75;
+        .left-content p.main-desc {
+            margin: 0 0 36px;
+            font-size: 18px;
+            line-height: 1.8;
             color: rgba(255,255,255,0.92);
-            max-width: 520px;
-            margin: 0 0 28px;
+            max-width: 620px;
         }
 
-        .benefits {
+        .info-list {
             display: grid;
-            gap: 14px;
-            margin-top: 22px;
+            gap: 18px;
         }
 
-        .benefit {
+        .info-card {
             display: flex;
             align-items: flex-start;
-            gap: 14px;
-            padding: 14px 16px;
-            border-radius: 16px;
+            gap: 18px;
+            padding: 18px 20px;
+            border-radius: 22px;
             background: rgba(255,255,255,0.10);
-            border: 1px solid rgba(255,255,255,0.15);
-            backdrop-filter: blur(6px);
+            border: 1px solid rgba(255,255,255,0.14);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
+            backdrop-filter: blur(5px);
         }
 
-        .benefit-icon {
+        .info-number {
+            width: 46px;
+            height: 46px;
+            border-radius: 14px;
+            background: rgba(255,255,255,0.16);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            font-size: 18px;
             flex-shrink: 0;
-            width: 34px;
-            height: 34px;
-            border-radius: 12px;
-            background: rgba(255,255,255,0.18);
-            display: flex;
-            align-items: center;
-            justify-content: center;
+        }
+
+        .info-card h3 {
+            margin: 2px 0 7px;
+            font-size: 18px;
             font-weight: 800;
-            font-size: 15px;
         }
 
-        .benefit-text h4 {
-            margin: 0 0 4px;
-            font-size: 15px;
-        }
-
-        .benefit-text p {
+        .info-card p {
             margin: 0;
-            font-size: 13px;
+            font-size: 15px;
             line-height: 1.6;
-            color: rgba(255,255,255,0.88);
+            color: rgba(255,255,255,0.90);
         }
 
-        .brand-footer {
+        /* RIGHT SIDE - ANIMATED BACKGROUND */
+        .right-panel {
             position: relative;
-            z-index: 2;
-            margin-top: 28px;
-            font-size: 14px;
-            color: rgba(255,255,255,0.87);
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 36px;
+            background: linear-gradient(135deg, #f8fafc 0%, #eef6ff 45%, #f8fffe 100%);
         }
 
-        .form-panel {
-            padding: 46px 38px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background: linear-gradient(180deg, rgba(255,255,255,0.82), rgba(248,250,252,0.96));
+        .animated-bg {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
         }
+
+        .animated-bg::before {
+            content: "";
+            position: absolute;
+            inset: -25%;
+            background:
+                conic-gradient(
+                    from 90deg,
+                    rgba(34, 211, 238, 0.00),
+                    rgba(34, 211, 238, 0.20),
+                    rgba(16, 185, 129, 0.18),
+                    rgba(37, 99, 235, 0.15),
+                    rgba(34, 211, 238, 0.00)
+                );
+            filter: blur(60px);
+            animation: rotateGlow 16s linear infinite;
+            opacity: 0.9;
+        }
+
+        .wave {
+            position: absolute;
+            width: 150%;
+            height: 170px;
+            left: -22%;
+            border-radius: 50%;
+            background: linear-gradient(
+                90deg,
+                transparent,
+                rgba(34, 211, 238, 0.12),
+                rgba(16, 185, 129, 0.45),
+                rgba(59, 130, 246, 0.30),
+                transparent
+            );
+            filter: blur(2px);
+            box-shadow: 0 0 28px rgba(34, 211, 238, 0.18);
+        }
+
+        .wave.one {
+            top: 12%;
+            transform: rotate(-12deg);
+            animation: floatWave1 7s ease-in-out infinite alternate;
+        }
+
+        .wave.two {
+            top: 46%;
+            transform: rotate(10deg);
+            opacity: 0.85;
+            animation: floatWave2 9s ease-in-out infinite alternate;
+        }
+
+        .wave.three {
+            bottom: 2%;
+            transform: rotate(-8deg);
+            opacity: 0.72;
+            animation: floatWave3 10s ease-in-out infinite alternate;
+        }
+
+        .grid-overlay {
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(59,130,246,0.06) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(16,185,129,0.05) 1px, transparent 1px);
+            background-size: 34px 34px;
+            opacity: 0.5;
+            animation: moveGrid 18s linear infinite;
+        }
+
+        .blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(6px);
+            opacity: 0.55;
+        }
+
+        .blob.one {
+            width: 220px;
+            height: 220px;
+            top: 8%;
+            left: 12%;
+            background: rgba(34, 211, 238, 0.18);
+            animation: floatBlob 8s ease-in-out infinite;
+        }
+
+        .blob.two {
+            width: 180px;
+            height: 180px;
+            bottom: 12%;
+            right: 10%;
+            background: rgba(16, 185, 129, 0.18);
+            animation: floatBlob 10s ease-in-out infinite reverse;
+        }
+
+        .blob.three {
+            width: 140px;
+            height: 140px;
+            top: 60%;
+            left: 6%;
+            background: rgba(59, 130, 246, 0.14);
+            animation: floatBlob 9s ease-in-out infinite;
+        }
+
+        .particle {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(59,130,246,0.85);
+            box-shadow: 0 0 14px rgba(34,211,238,0.45);
+            animation: particleFloat 9s ease-in-out infinite;
+        }
+
+        .p1 { width: 6px; height: 6px; top: 16%; left: 18%; animation-delay: 0s; }
+        .p2 { width: 8px; height: 8px; top: 26%; right: 20%; animation-delay: 1s; }
+        .p3 { width: 5px; height: 5px; top: 66%; right: 15%; animation-delay: 2.5s; }
+        .p4 { width: 7px; height: 7px; bottom: 18%; left: 22%; animation-delay: 1.8s; }
+        .p5 { width: 4px; height: 4px; bottom: 28%; right: 40%; animation-delay: 3.2s; }
 
         .form-card {
+            position: relative;
+            z-index: 2;
             width: 100%;
-            max-width: 470px;
-            animation: slideIn 0.9s ease;
+            max-width: 640px;
+            padding: 44px 42px 36px;
+            border-radius: 32px;
+            background: rgba(255,255,255,0.88);
+            border: 1px solid rgba(255,255,255,0.75);
+            box-shadow:
+                0 20px 60px rgba(15,23,42,0.14),
+                0 8px 20px rgba(59,130,246,0.06),
+                inset 0 1px 0 rgba(255,255,255,0.8);
+            backdrop-filter: blur(18px);
+            animation: fadeInUp 0.8s ease;
         }
 
         .form-card h2 {
-            margin: 0 0 10px;
-            font-size: 42px;
+            margin: 0;
+            font-size: 48px;
+            line-height: 1.08;
             color: #0f172a;
+            font-weight: 900;
+            letter-spacing: -1.2px;
         }
 
-        .form-card .subtitle {
-            margin: 0 0 28px;
-            color: #64748b;
+        .subtitle {
+            margin: 20px 0 34px;
             font-size: 17px;
-            line-height: 1.7;
+            color: #64748b;
+            line-height: 1.6;
         }
 
         .alert {
@@ -197,293 +329,322 @@
             padding: 14px 16px;
             border-radius: 14px;
             font-size: 14px;
-            line-height: 1.6;
+            line-height: 1.5;
             border: 1px solid;
-            animation: fadeUp 0.5s ease;
         }
 
         .alert.error {
-            background: #fef2f2;
-            color: #b91c1c;
-            border-color: #fecaca;
+            background: #fee2e2;
+            color: #991b1b;
+            border-color: #fca5a5;
         }
 
         .alert.success {
-            background: #ecfdf5;
-            color: #047857;
-            border-color: #a7f3d0;
+            background: #dcfce7;
+            color: #166534;
+            border-color: #86efac;
         }
 
         .input-group {
-            margin-bottom: 18px;
+            margin-bottom: 22px;
         }
 
         .input-group label {
             display: block;
             margin-bottom: 10px;
-            font-weight: 700;
             color: #1e293b;
+            font-weight: 800;
             font-size: 15px;
         }
 
         .input-group input {
             width: 100%;
-            padding: 16px 18px;
-            border-radius: 16px;
-            border: 1px solid #cbd5e1;
-            background: rgba(255,255,255,0.95);
+            height: 66px;
+            border-radius: 20px;
+            border: 1.5px solid #cbd5e1;
+            background: rgba(255,255,255,0.78);
+            padding: 0 22px;
             font-size: 16px;
             color: #0f172a;
             outline: none;
-            transition: all 0.25s ease;
+            transition: 0.25s ease;
+        }
+
+        .input-group input::placeholder {
+            color: #7c7c7c;
         }
 
         .input-group input:focus {
-            border-color: #0ea5e9;
-            box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.14);
-            transform: translateY(-1px);
+            border-color: #22c55e;
+            box-shadow: 0 0 0 4px rgba(34,197,94,0.10), 0 0 20px rgba(34,211,238,0.12);
+            background: rgba(255,255,255,0.95);
         }
 
         .show-password {
             display: flex;
             align-items: center;
-            gap: 10px;
-            margin: 4px 0 14px;
-            color: #334155;
+            gap: 12px;
+            margin: -4px 0 18px;
+            color: #475569;
             font-size: 15px;
         }
 
         .show-password input {
-            width: 18px;
-            height: 18px;
-            accent-color: #0ea5e9;
+            width: 20px;
+            height: 20px;
+            accent-color: #16a34a;
         }
 
         .password-box {
-            background: linear-gradient(180deg, #f8fafc, #f1f5f9);
-            border: 1px solid #dbe4ee;
-            border-radius: 18px;
-            padding: 20px 18px 16px;
-            margin-bottom: 20px;
-            box-shadow: inset 0 1px 0 rgba(255,255,255,0.6);
+            margin-top: 6px;
+            margin-bottom: 26px;
+            padding: 22px 24px;
+            border-radius: 22px;
+            background: rgba(248,250,252,0.92);
+            border: 1px solid #dbeafe;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.85);
         }
 
         .password-box h4 {
-            margin: 0 0 12px;
-            font-size: 16px;
-            color: #0f172a;
+            margin: 0 0 14px;
+            color: #111827;
+            font-size: 17px;
+            font-weight: 900;
         }
 
         .rule {
             display: flex;
             align-items: center;
-            gap: 10px;
-            font-size: 15px;
-            margin-bottom: 10px;
-            color: #dc2626;
-            transition: 0.25s ease;
+            gap: 12px;
+            margin: 10px 0;
+            color: var(--danger);
+            font-size: 14px;
+            transition: 0.2s ease;
         }
 
         .rule.valid {
-            color: #16a34a;
-            font-weight: 600;
+            color: var(--success);
         }
 
-        .rule-icon {
-            width: 18px;
+        .rule .icon {
+            width: 22px;
             text-align: center;
-            font-weight: 700;
+            font-weight: 900;
+            font-size: 15px;
         }
 
-        .strength-bar-wrap {
-            width: 100%;
-            height: 12px;
-            background: #e2e8f0;
-            border-radius: 999px;
-            overflow: hidden;
-            margin: 16px 0 10px;
-        }
-
-        .strength-bar {
-            width: 0%;
-            height: 100%;
-            border-radius: 999px;
-            transition: all 0.35s ease;
-            background: #ef4444;
-        }
-
-        .strength-text {
+        .strength-status {
+            margin-top: 18px;
             text-align: center;
-            font-size: 16px;
-            font-weight: 700;
-            border-radius: 12px;
-            padding: 12px;
+            padding: 14px 16px;
+            border-radius: 14px;
+            font-weight: 900;
+            font-size: 15px;
             background: #fee2e2;
-            color: #dc2626;
-            transition: all 0.3s ease;
+            color: #b91c1c;
+            transition: 0.25s ease;
         }
 
-        .btn {
+        .strength-status.valid {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .register-btn {
             width: 100%;
-            padding: 16px;
+            height: 62px;
             border: none;
-            border-radius: 16px;
-            background: linear-gradient(135deg, #10b981, #0ea5e9);
+            border-radius: 18px;
+            background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
             color: white;
-            font-size: 19px;
-            font-weight: 700;
+            font-size: 20px;
+            font-weight: 900;
             cursor: pointer;
-            box-shadow: 0 12px 24px rgba(14, 165, 233, 0.22);
-            transition: all 0.25s ease;
+            transition: 0.25s ease;
+            box-shadow: 0 14px 30px rgba(34,197,94,0.20);
         }
 
-        .btn:hover:not(:disabled) {
+        .register-btn:hover:not(:disabled) {
             transform: translateY(-2px);
-            box-shadow: 0 16px 30px rgba(14, 165, 233, 0.28);
+            box-shadow: 0 18px 34px rgba(34,197,94,0.28);
         }
 
-        .btn:disabled {
+        .register-btn:disabled {
             background: #94a3b8;
             cursor: not-allowed;
             box-shadow: none;
         }
 
-        .extra-links {
-            margin-top: 22px;
+        .bottom-link {
             text-align: center;
+            margin-top: 20px;
         }
 
-        .extra-links a {
-            color: #2563eb;
-            font-weight: 700;
+        .bottom-link a {
             text-decoration: none;
+            color: #2563eb;
+            font-weight: 800;
             font-size: 16px;
         }
 
-        .extra-links a:hover {
+        .bottom-link a:hover {
             text-decoration: underline;
         }
 
-        @keyframes fadeUp {
-            from {
-                opacity: 0;
-                transform: translateY(18px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        @keyframes rotateGlow {
+            from { transform: rotate(0deg) scale(1); }
+            to { transform: rotate(360deg) scale(1.08); }
         }
 
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateX(25px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
+        @keyframes floatWave1 {
+            from { transform: translateX(-5%) translateY(0) rotate(-12deg); }
+            to { transform: translateX(7%) translateY(22px) rotate(-8deg); }
         }
 
-        @media (max-width: 980px) {
+        @keyframes floatWave2 {
+            from { transform: translateX(7%) translateY(0) rotate(10deg); }
+            to { transform: translateX(-6%) translateY(-20px) rotate(7deg); }
+        }
+
+        @keyframes floatWave3 {
+            from { transform: translateX(-4%) translateY(0) rotate(-8deg); }
+            to { transform: translateX(6%) translateY(-18px) rotate(-5deg); }
+        }
+
+        @keyframes moveGrid {
+            from { transform: translate(0, 0); }
+            to { transform: translate(34px, 34px); }
+        }
+
+        @keyframes floatBlob {
+            0%, 100% { transform: translateY(0) translateX(0) scale(1); }
+            50% { transform: translateY(-18px) translateX(14px) scale(1.05); }
+        }
+
+        @keyframes particleFloat {
+            0%, 100% { transform: translateY(0) translateX(0); opacity: 0.45; }
+            50% { transform: translateY(-28px) translateX(18px); opacity: 1; }
+        }
+
+        @keyframes fadeInLeft {
+            from { opacity: 0; transform: translateX(-28px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(26px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 1100px) {
             .page {
                 grid-template-columns: 1fr;
             }
 
-            .brand-panel {
-                padding: 42px 28px;
+            .left-panel,
+            .right-panel {
+                padding: 30px 22px;
             }
 
-            .form-panel {
-                padding: 36px 22px;
-            }
-
-            .brand-panel h1 {
-                font-size: 34px;
-            }
-
-            .form-card h2 {
-                font-size: 34px;
+            .form-card {
+                max-width: 760px;
             }
         }
 
-        @media (max-width: 560px) {
-            body {
-                padding: 12px;
+        @media (max-width: 640px) {
+            .left-content h1 {
+                font-size: 34px;
             }
 
-            .page {
-                border-radius: 22px;
+            .left-content p.main-desc {
+                font-size: 16px;
             }
 
-            .brand-panel,
-            .form-panel {
-                padding: 28px 18px;
-            }
-
-            .brand-panel h1 {
-                font-size: 28px;
+            .form-card {
+                padding: 28px 22px 26px;
+                border-radius: 24px;
             }
 
             .form-card h2 {
-                font-size: 30px;
+                font-size: 34px;
             }
 
-            .form-card .subtitle {
+            .subtitle {
                 font-size: 15px;
+            }
+
+            .input-group input {
+                height: 58px;
+                border-radius: 16px;
             }
         }
     </style>
 </head>
 <body>
-    <div class="page">
-        <div class="brand-panel">
-            <div class="brand-content">
-                <div class="system-badge">
+    <main class="page">
+
+        <!-- LEFT PANEL - KEEP GREEN -->
+        <section class="left-panel">
+            <div class="left-content">
+                <div class="tag">
                     <span class="dot"></span>
                     New User Registration
                 </div>
 
                 <h1>Create Your Secure Account</h1>
-                <p>
-                    Join the Automated Web Application Security Assestment System and start performing
+
+                <p class="main-desc">
+                    Join the Automated Web Application Security Assessment System and start performing
                     professional web vulnerability assessments with a secure and user-friendly platform.
                 </p>
 
-                <div class="benefits">
-                    <div class="benefit">
-                        <div class="benefit-icon">01</div>
-                        <div class="benefit-text">
-                            <h4>Scan & Detect</h4>
+                <div class="info-list">
+                    <div class="info-card">
+                        <div class="info-number">01</div>
+                        <div>
+                            <h3>Scan & Detect</h3>
                             <p>Launch automated scans to identify security issues and improve web protection.</p>
                         </div>
                     </div>
 
-                    <div class="benefit">
-                        <div class="benefit-icon">02</div>
-                        <div class="benefit-text">
-                            <h4>Track Findings</h4>
+                    <div class="info-card">
+                        <div class="info-number">02</div>
+                        <div>
+                            <h3>Track Findings</h3>
                             <p>Review result history, severity breakdown, and risk-based vulnerability details.</p>
                         </div>
                     </div>
 
-                    <div class="benefit">
-                        <div class="benefit-icon">03</div>
-                        <div class="benefit-text">
-                            <h4>Stay Secure</h4>
+                    <div class="info-card">
+                        <div class="info-number">03</div>
+                        <div>
+                            <h3>Stay Secure</h3>
                             <p>Strong password policy and email verification help protect your account access.</p>
                         </div>
                     </div>
                 </div>
             </div>
+        </section>
 
-            <div class="brand-footer">
-                <strong>System:</strong> Automated Web Application Security Assestment System
+        <!-- RIGHT PANEL - ONLY THIS PART IS ANIMATED -->
+        <section class="right-panel">
+            <div class="animated-bg">
+                <div class="grid-overlay"></div>
+                <div class="wave one"></div>
+                <div class="wave two"></div>
+                <div class="wave three"></div>
+
+                <div class="blob one"></div>
+                <div class="blob two"></div>
+                <div class="blob three"></div>
+
+                <span class="particle p1"></span>
+                <span class="particle p2"></span>
+                <span class="particle p3"></span>
+                <span class="particle p4"></span>
+                <span class="particle p5"></span>
             </div>
-        </div>
 
-        <div class="form-panel">
             <div class="form-card">
                 <h2>Create Account</h2>
                 <p class="subtitle">Register to use the web security scanner platform.</p>
@@ -496,7 +657,7 @@
                     <div class="alert success">{{ message }}</div>
                 {% endif %}
 
-                <form method="POST" action="/register" id="registerForm">
+                <form method="POST" action="/register">
                     <div class="input-group">
                         <label for="username">Username</label>
                         <input
@@ -541,120 +702,113 @@
                         <h4>Password must contain:</h4>
 
                         <div class="rule" id="rule-length">
-                            <span class="rule-icon">✖</span>
+                            <span class="icon">✖</span>
                             <span>At least 8 characters</span>
                         </div>
 
                         <div class="rule" id="rule-upper">
-                            <span class="rule-icon">✖</span>
+                            <span class="icon">✖</span>
                             <span>At least 1 uppercase letter (A-Z)</span>
                         </div>
 
                         <div class="rule" id="rule-lower">
-                            <span class="rule-icon">✖</span>
+                            <span class="icon">✖</span>
                             <span>At least 1 lowercase letter (a-z)</span>
                         </div>
 
                         <div class="rule" id="rule-number">
-                            <span class="rule-icon">✖</span>
+                            <span class="icon">✖</span>
                             <span>At least 1 number (0-9)</span>
                         </div>
 
                         <div class="rule" id="rule-symbol">
-                            <span class="rule-icon">✖</span>
+                            <span class="icon">✖</span>
                             <span>At least 1 symbol (!@#$%^&*)</span>
                         </div>
 
-                        <div class="strength-bar-wrap">
-                            <div class="strength-bar" id="strengthBar"></div>
+                        <div class="strength-status" id="strengthStatus">
+                            Password is not strong yet
                         </div>
-
-                        <div class="strength-text" id="strengthText">Password is not strong yet</div>
                     </div>
 
-                    <button type="submit" class="btn" id="registerBtn" disabled>Register</button>
+                    <button type="submit" class="register-btn" id="registerBtn" disabled>
+                        Register
+                    </button>
                 </form>
 
-                <div class="extra-links">
+                <div class="bottom-link">
                     <a href="/login">Back to login</a>
                 </div>
             </div>
-        </div>
-    </div>
+        </section>
+    </main>
 
     <script>
         const passwordInput = document.getElementById("password");
         const showPassword = document.getElementById("showPassword");
         const registerBtn = document.getElementById("registerBtn");
-        const strengthBar = document.getElementById("strengthBar");
-        const strengthText = document.getElementById("strengthText");
+        const strengthStatus = document.getElementById("strengthStatus");
 
         const rules = {
-            length: document.getElementById("rule-length"),
-            upper: document.getElementById("rule-upper"),
-            lower: document.getElementById("rule-lower"),
-            number: document.getElementById("rule-number"),
-            symbol: document.getElementById("rule-symbol")
+            length: {
+                element: document.getElementById("rule-length"),
+                test: (value) => value.length >= 8
+            },
+            upper: {
+                element: document.getElementById("rule-upper"),
+                test: (value) => /[A-Z]/.test(value)
+            },
+            lower: {
+                element: document.getElementById("rule-lower"),
+                test: (value) => /[a-z]/.test(value)
+            },
+            number: {
+                element: document.getElementById("rule-number"),
+                test: (value) => /\d/.test(value)
+            },
+            symbol: {
+                element: document.getElementById("rule-symbol"),
+                test: (value) => /[!@#$%^&*(),.?":{}|<>_\-+=/\\[\];'`~]/.test(value)
+            }
         };
 
-        showPassword.addEventListener("change", function () {
-            passwordInput.type = this.checked ? "text" : "password";
-        });
-
-        function setRuleState(ruleElement, isValid) {
-            const icon = ruleElement.querySelector(".rule-icon");
-            if (isValid) {
-                ruleElement.classList.add("valid");
+        function updateRule(ruleObj, valid) {
+            const icon = ruleObj.element.querySelector(".icon");
+            if (valid) {
+                ruleObj.element.classList.add("valid");
                 icon.textContent = "✔";
             } else {
-                ruleElement.classList.remove("valid");
+                ruleObj.element.classList.remove("valid");
                 icon.textContent = "✖";
             }
         }
 
-        function updatePasswordStrength() {
+        function validatePassword() {
             const value = passwordInput.value;
+            let allValid = true;
 
-            const checks = {
-                length: value.length >= 8,
-                upper: /[A-Z]/.test(value),
-                lower: /[a-z]/.test(value),
-                number: /\d/.test(value),
-                symbol: /[!@#$%^&*(),.?":{}|<>_\-+=/\\[\];'`~]/.test(value)
-            };
+            Object.values(rules).forEach(rule => {
+                const valid = rule.test(value);
+                updateRule(rule, valid);
+                if (!valid) allValid = false;
+            });
 
-            setRuleState(rules.length, checks.length);
-            setRuleState(rules.upper, checks.upper);
-            setRuleState(rules.lower, checks.lower);
-            setRuleState(rules.number, checks.number);
-            setRuleState(rules.symbol, checks.symbol);
-
-            const score = Object.values(checks).filter(Boolean).length;
-            const percentage = (score / 5) * 100;
-            strengthBar.style.width = percentage + "%";
-
-            if (score <= 2) {
-                strengthBar.style.background = "#ef4444";
-                strengthText.textContent = "Password is not strong yet";
-                strengthText.style.background = "#fee2e2";
-                strengthText.style.color = "#dc2626";
-                registerBtn.disabled = true;
-            } else if (score === 3 || score === 4) {
-                strengthBar.style.background = "#f59e0b";
-                strengthText.textContent = "Password is getting stronger";
-                strengthText.style.background = "#fef3c7";
-                strengthText.style.color = "#b45309";
-                registerBtn.disabled = true;
-            } else {
-                strengthBar.style.background = "linear-gradient(90deg, #16a34a, #22c55e)";
-                strengthText.textContent = "Strong password ✓";
-                strengthText.style.background = "#dcfce7";
-                strengthText.style.color = "#15803d";
+            if (allValid && value.length > 0) {
+                strengthStatus.textContent = "Strong password ✓";
+                strengthStatus.classList.add("valid");
                 registerBtn.disabled = false;
+            } else {
+                strengthStatus.textContent = "Password is not strong yet";
+                strengthStatus.classList.remove("valid");
+                registerBtn.disabled = true;
             }
         }
 
-        passwordInput.addEventListener("input", updatePasswordStrength);
+        passwordInput.addEventListener("input", validatePassword);
+
+        showPassword.addEventListener("change", function () {
+            passwordInput.type = this.checked ? "text" : "password";
+        });
     </script>
 </body>
 </html>
