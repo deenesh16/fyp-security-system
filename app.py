@@ -2,8 +2,17 @@ from flask import Flask, render_template, request, jsonify, redirect, url_for, s
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 from zapv2 import ZAPv2
+
 from reportlab.lib.pagesizes import A4
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak, Image, KeepTogether
+from reportlab.platypus import (
+    SimpleDocTemplate,
+    Paragraph,
+    Spacer,
+    Table,
+    TableStyle,
+    PageBreak,
+    KeepTogether,
+)
 from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.enums import TA_CENTER
@@ -12,8 +21,12 @@ from reportlab.graphics.shapes import Drawing
 from reportlab.graphics.charts.piecharts import Pie
 from reportlab.graphics.charts.legends import Legend
 from reportlab.pdfgen import canvas as reportlab_canvas
+
 from email.message import EmailMessage
 from collections import Counter
+from datetime import datetime
+from zoneinfo import ZoneInfo
+
 import psycopg2
 import psycopg2.extras
 import smtplib
@@ -28,8 +41,7 @@ import os
 import logging
 import re
 import html
-from datetime import datetime
-from zoneinfo import ZoneInfo
+
 
 app = Flask(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -41,6 +53,7 @@ def add_no_cache_headers(response):
     response.headers["Pragma"] = "no-cache"
     response.headers["Expires"] = "0"
     return response
+
 
 # ---------------- APP / ENV CONFIG ----------------
 app.secret_key = os.environ.get("SECRET_KEY", "change_this_to_a_random_secret_key")
@@ -69,16 +82,27 @@ scan_tasks = {}
 def get_malaysia_time():
     return datetime.now(ZoneInfo("Asia/Kuala_Lumpur")).strftime("%Y-%m-%d %H:%M:%S")
 
+
 SCAN_MODES = {
-    "quick": {"spider_timeout": 10, "ascan_timeout": 20, "label": "Quick Scan", "estimated_seconds": 40},
-    "full": {"spider_timeout": 15, "ascan_timeout": 35, "label": "Full Scan", "estimated_seconds": 60}
+    "quick": {
+        "spider_timeout": 10,
+        "ascan_timeout": 20,
+        "label": "Quick Scan",
+        "estimated_seconds": 40,
+    },
+    "full": {
+        "spider_timeout": 15,
+        "ascan_timeout": 35,
+        "label": "Full Scan",
+        "estimated_seconds": 60,
+    },
 }
 
 
 # ---------------- DATABASE ----------------
 def get_db_connection():
     if not DATABASE_URL:
-        raise ValueError("DATABASE_URL is not set in Render environment variables.")
+        raise ValueError("DATABASE_URL is not set in environment variables.")
     return psycopg2.connect(DATABASE_URL, sslmode="require")
 
 
@@ -254,7 +278,7 @@ def save_scan_history(scan_id):
         task["status"] if not task["error"] else f"Error: {task['error']}",
         len(task["vulnerabilities"]),
         json.dumps(task["vulnerabilities"]),
-        task.get("created_at", get_malaysia_time())
+        task.get("created_at", get_malaysia_time()),
     ))
 
     conn.commit()
@@ -283,7 +307,11 @@ def calculate_risk_totals(history_rows):
     high = medium = low = info = 0
 
     for row in history_rows:
-        vulns = json.loads(row["vulnerabilities"]) if row["vulnerabilities"] else []
+        try:
+            vulns = json.loads(row["vulnerabilities"]) if row["vulnerabilities"] else []
+        except Exception:
+            vulns = []
+
         for vuln in vulns:
             risk = str(vuln.get("risk", "")).strip().lower()
             if risk == "high":
@@ -295,7 +323,12 @@ def calculate_risk_totals(history_rows):
             else:
                 info += 1
 
-    return {"high": high, "medium": medium, "low": low, "info": info}
+    return {
+        "high": high,
+        "medium": medium,
+        "low": low,
+        "info": info,
+    }
 
 
 def apply_history_filters(rows, search_query="", mode_filter=""):
@@ -309,7 +342,7 @@ def apply_history_filters(rows, search_query="", mode_filter=""):
             str(row.get("status", "")),
             str(row.get("scan_mode", "")),
             str(row.get("username", "")),
-            str(row.get("email", ""))
+            str(row.get("email", "")),
         ]).lower()
 
         mode_match = True if not mode_filter else mode_filter in str(row.get("scan_mode", "")).lower()
@@ -324,26 +357,47 @@ def apply_history_filters(rows, search_query="", mode_filter=""):
 def get_user_dashboard_stats(user_id):
     history_rows = get_user_history(user_id)
     totals = calculate_risk_totals(history_rows)
+
     return {
         "total_scans": len(history_rows),
         "total_findings": totals["high"] + totals["medium"] + totals["low"] + totals["info"],
         "high": totals["high"],
         "medium": totals["medium"],
         "low": totals["low"],
-        "info": totals["info"]
+        "info": totals["info"],
     }
 
 
 def risk_order_value(risk):
     risk = str(risk).strip().lower()
-    order = {"high": 0, "medium": 1, "low": 2, "informational": 3, "info": 3}
+    order = {
+        "high": 0,
+        "medium": 1,
+        "low": 2,
+        "informational": 3,
+        "info": 3,
+    }
     return order.get(risk, 4)
 
 
 def sort_vulnerabilities(vulnerabilities):
     return sorted(
         vulnerabilities,
-        key=lambda v: (risk_order_value(v.get("risk", "")), str(v.get("type", "")).lower())
+        key=lambda v: (
+            risk_order_value(v.get("risk", "")),
+            str(v.get("type", "")).lower(),
+        ),
+    )
+
+
+def is_strong_password(password):
+    symbols = set('!@#$%^&*(),.?":{}|<>_-+=/\\[];\'`~')
+    return (
+        len(password) >= 8
+        and any(c.islower() for c in password)
+        and any(c.isupper() for c in password)
+        and any(c.isdigit() for c in password)
+        and any(c in symbols for c in password)
     )
 
 
@@ -406,9 +460,9 @@ def admin_required(f):
 
 
 # ---------------- AUTH ROUTES ----------------
-@app.route('/register', methods=['GET', 'POST'])
+@app.route("/register", methods=["GET", "POST"])
 def register():
-    if request.method == 'POST':
+    if request.method == "POST":
         username = request.form.get("username", "").strip()
         email = request.form.get("email", "").strip().lower()
         password = request.form.get("password", "").strip()
@@ -416,11 +470,10 @@ def register():
         if not username or not email or not password:
             return render_template("register.html", error="All fields are required.")
 
-        password_pattern = r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>_\-+=/\\\[\];\'`~]).{8,}$'
-        if not re.match(password_pattern, password):
+        if not is_strong_password(password):
             return render_template(
                 "register.html",
-                error="Password must be at least 8 characters and include uppercase letter, lowercase letter, number, and symbol."
+                error="Password must be at least 8 characters and include uppercase letter, lowercase letter, number, and symbol.",
             )
 
         if get_user_by_email(email):
@@ -430,6 +483,7 @@ def register():
 
         conn = get_db_connection()
         cursor = get_cursor(conn)
+
         try:
             cursor.execute("""
                 INSERT INTO users (username, email, password_hash, role, is_verified, verify_token)
@@ -440,15 +494,16 @@ def register():
             conn.rollback()
             conn.close()
             return render_template("register.html", error="Username or email already exists.")
+
         conn.close()
 
         verify_link = f"{BASE_URL}/verify/{verify_token}"
 
-        subject = "Verify Your Web Security Scanner Account"
+        subject = "Verify Your Account"
         body = f"""
 Hello {username},
 
-Thank you for registering.
+Thank you for registering with the Automated Web Application Security Assessment System.
 
 Please verify your account by clicking the link below:
 {verify_link}
@@ -464,15 +519,16 @@ If you did not create this account, please ignore this email.
                 "verify_notice.html",
                 title="Email Send Failed - Use This Link",
                 link=verify_link,
-                error=str(e)
+                error=str(e),
             )
 
     return render_template("register.html")
 
 
-@app.route('/verify/<token>')
+@app.route("/verify/<token>")
 def verify_email(token):
     user = get_user_by_verify_token(token)
+
     if not user:
         return "Invalid or expired verification link.", 400
 
@@ -485,9 +541,9 @@ def verify_email(token):
     return redirect(url_for("login"))
 
 
-@app.route('/login', methods=['GET', 'POST'])
+@app.route("/login", methods=["GET", "POST"])
 def login():
-    if request.method == 'POST':
+    if request.method == "POST":
         email = request.form.get("email", "").strip().lower()
         password = request.form.get("password", "").strip()
 
@@ -508,15 +564,15 @@ def login():
     return render_template("login.html")
 
 
-@app.route('/logout')
+@app.route("/logout")
 def logout():
     session.clear()
     return redirect(url_for("login"))
 
 
-@app.route('/forgot_password', methods=['GET', 'POST'])
+@app.route("/forgot_password", methods=["GET", "POST"])
 def forgot_password():
-    if request.method == 'POST':
+    if request.method == "POST":
         email = request.form.get("email", "").strip().lower()
         user = get_user_by_email(email)
 
@@ -533,7 +589,7 @@ def forgot_password():
 
         reset_link = f"{BASE_URL}/reset_password/{reset_token}"
 
-        subject = "Reset Your Web Security Scanner Password"
+        subject = "Reset Your Password"
         body = f"""
 Hello {user['username']},
 
@@ -553,19 +609,20 @@ If you did not request this, please ignore this email.
                 "verify_notice.html",
                 title="Email Send Failed - Use This Link",
                 link=reset_link,
-                error=str(e)
+                error=str(e),
             )
 
     return render_template("forgot_password.html")
 
 
-@app.route('/reset_password/<token>', methods=['GET', 'POST'])
+@app.route("/reset_password/<token>", methods=["GET", "POST"])
 def reset_password(token):
     user = get_user_by_reset_token(token)
+
     if not user:
         return "Invalid or expired reset link.", 400
 
-    if request.method == 'POST':
+    if request.method == "POST":
         password = request.form.get("password", "").strip()
         confirm_password = request.form.get("confirm_password", "").strip()
 
@@ -575,19 +632,18 @@ def reset_password(token):
         if password != confirm_password:
             return render_template("reset_password.html", token=token, error="Passwords do not match.")
 
-        password_pattern = r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>_\-+=/\\\[\];\'`~]).{8,}$'
-        if not re.match(password_pattern, password):
+        if not is_strong_password(password):
             return render_template(
                 "reset_password.html",
                 token=token,
-                error="Password must be at least 8 characters and include uppercase letter, lowercase letter, number, and symbol."
+                error="Password must be at least 8 characters and include uppercase letter, lowercase letter, number, and symbol.",
             )
 
         if check_password_hash(user["password_hash"], password):
             return render_template(
                 "reset_password.html",
                 token=token,
-                error="New password cannot be the same as your old password."
+                error="New password cannot be the same as your old password.",
             )
 
         conn = get_db_connection()
@@ -617,8 +673,8 @@ def get_cvss_score_from_risk(risk):
         return "3.1"
     elif risk in ["informational", "info"]:
         return "0.0"
-    else:
-        return "N/A"
+
+    return "N/A"
 
 
 def get_cve_from_alert(alert):
@@ -626,7 +682,7 @@ def get_cve_from_alert(alert):
         str(alert.get("alert", "")),
         str(alert.get("description", "")),
         str(alert.get("reference", "")),
-        str(alert.get("solution", ""))
+        str(alert.get("solution", "")),
     ])
 
     cve_matches = re.findall(r"CVE-\d{4}-\d{4,7}", possible_text, re.IGNORECASE)
@@ -646,7 +702,11 @@ def safe_zap_progress(value):
 
 
 def get_zap_client(max_retries=10, delay_seconds=5):
-    proxies = {"http": ZAP_PROXY, "https": ZAP_PROXY}
+    proxies = {
+        "http": ZAP_PROXY,
+        "https": ZAP_PROXY,
+    }
+
     last_error = None
 
     for attempt in range(1, max_retries + 1):
@@ -685,11 +745,11 @@ def run_scan(scan_id, target, scan_mode, user_id):
         "vulnerabilities": [],
         "error": None,
         "username": username,
-        "created_at": created_at
+        "created_at": created_at,
     }
 
     try:
-        scan_tasks[scan_id]["status"] = "Connecting to OWASP ZAP..."
+        scan_tasks[scan_id]["status"] = "Connecting to ZAP scanner..."
         zap = get_zap_client()
 
         scan_tasks[scan_id]["status"] = f"{mode_label}: Opening target..."
@@ -713,12 +773,14 @@ def run_scan(scan_id, target, scan_mode, user_id):
 
             if spider_progress >= 100:
                 break
+
             if elapsed > spider_timeout:
                 scan_tasks[scan_id]["status"] = f"{mode_label}: Spider timeout reached. Moving to active scan..."
                 break
+
             time.sleep(2)
 
-        scan_tasks[scan_id]["progress"] = 50
+        scan_tasks[scan_id]["progress"] = max(scan_tasks[scan_id]["progress"], 50)
         time.sleep(2)
 
         scan_tasks[scan_id]["status"] = f"{mode_label}: Active scanning..."
@@ -738,9 +800,11 @@ def run_scan(scan_id, target, scan_mode, user_id):
 
             if active_progress >= 100:
                 break
+
             if elapsed > ascan_timeout:
                 scan_tasks[scan_id]["status"] = f"{mode_label}: Active scan timeout reached. Collecting partial results..."
                 break
+
             time.sleep(3)
 
         scan_tasks[scan_id]["progress"] = 100
@@ -759,6 +823,7 @@ def run_scan(scan_id, target, scan_mode, user_id):
             solution = alert.get("solution", "No mitigation recommendation available.")
 
             unique_key = (vuln_type, risk, url)
+
             if unique_key not in seen:
                 seen.add(unique_key)
                 vulnerabilities.append({
@@ -777,7 +842,7 @@ def run_scan(scan_id, target, scan_mode, user_id):
                     "method": alert.get("method", "N/A"),
                     "param": alert.get("param", "N/A"),
                     "attack": alert.get("attack", "N/A"),
-                    "evidence": alert.get("evidence", "N/A")
+                    "evidence": alert.get("evidence", "N/A"),
                 })
 
         scan_tasks[scan_id]["vulnerabilities"] = sort_vulnerabilities(vulnerabilities)
@@ -793,16 +858,50 @@ def run_scan(scan_id, target, scan_mode, user_id):
     save_scan_history(scan_id)
 
 
+def calculate_remaining_time(task):
+    if not task or task.get("completed"):
+        return 0, "Completed"
+
+    progress = int(task.get("progress", 0) or 0)
+    estimated_seconds = int(task.get("estimated_seconds", 40) or 40)
+    started_at_epoch = float(task.get("started_at_epoch", time.time()) or time.time())
+    elapsed = max(0, int(time.time() - started_at_epoch))
+
+    if progress >= 100:
+        remaining_seconds = 0
+    elif progress > 0:
+        total_estimated_by_progress = elapsed / (progress / 100)
+        remaining_seconds = int(max(0, total_estimated_by_progress - elapsed))
+    else:
+        remaining_seconds = int(max(0, estimated_seconds - elapsed))
+
+    minutes = remaining_seconds // 60
+    seconds = remaining_seconds % 60
+
+    if remaining_seconds <= 0:
+        remaining_text = "Finishing soon..."
+    elif minutes > 0:
+        remaining_text = f"About {minutes} min {seconds} sec remaining"
+    else:
+        remaining_text = f"About {seconds} sec remaining"
+
+    return remaining_seconds, remaining_text
+
+
 # ---------------- PDF REPORT HELPERS ----------------
 def clean_pdf_text(value):
     if value is None:
         return "N/A"
+
     text = str(value)
+
     if not text.strip():
         return "N/A"
+
     text = re.sub(r"<[^>]+>", " ", text)
     text = html.unescape(text)
     text = re.sub(r"\s+", " ", text).strip()
+
     return text if text else "N/A"
 
 
@@ -810,8 +909,21 @@ def pdf_safe(value):
     return html.escape(clean_pdf_text(value))
 
 
+def shorten_pdf_text(value, max_chars=900):
+    text = clean_pdf_text(value)
+
+    if text == "N/A":
+        return "N/A"
+
+    if len(text) > max_chars:
+        return text[:max_chars] + "..."
+
+    return text
+
+
 def normalize_risk(risk):
     risk = str(risk).strip().lower()
+
     if risk == "high":
         return "High"
     elif risk == "medium":
@@ -820,64 +932,119 @@ def normalize_risk(risk):
         return "Low"
     elif risk in ["informational", "info"]:
         return "Informational"
+
     return "Informational"
 
 
 def risk_color(risk):
     risk = normalize_risk(risk)
+
     if risk == "High":
         return colors.HexColor("#dc2626")
     elif risk == "Medium":
         return colors.HexColor("#f97316")
     elif risk == "Low":
         return colors.HexColor("#eab308")
+
     return colors.HexColor("#2563eb")
 
 
 def risk_light_color(risk):
     risk = normalize_risk(risk)
+
     if risk == "High":
         return colors.HexColor("#fee2e2")
     elif risk == "Medium":
         return colors.HexColor("#ffedd5")
     elif risk == "Low":
         return colors.HexColor("#fef9c3")
+
     return colors.HexColor("#dbeafe")
 
 
 def get_risk_counts(vulnerabilities):
-    counts = {"High": 0, "Medium": 0, "Low": 0, "Informational": 0}
+    counts = {
+        "High": 0,
+        "Medium": 0,
+        "Low": 0,
+        "Informational": 0,
+    }
+
     for vuln in vulnerabilities:
-        counts[normalize_risk(vuln.get("risk", "Informational"))] += 1
+        risk = normalize_risk(vuln.get("risk", "Informational"))
+        counts[risk] += 1
+
     return counts
 
 
 class MetadataCanvas(reportlab_canvas.Canvas):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def _apply_metadata(self):
         generated_at = datetime.now(ZoneInfo("Asia/Kuala_Lumpur")).strftime("%Y-%m-%d %H:%M:%S GMT+8")
-        self.setTitle("Web Security Scanner Report")
-        self.setAuthor("Web Security Scanner")
+
+        self.setTitle("Automated Web Application Security Assessment System Report")
+        self.setAuthor("Automated Web Application Security Assessment System")
         self.setSubject(f"Web Application Security Assessment Report | Generated: {generated_at}")
         self.setCreator("")
-        self.setKeywords(f"web security scanner, vulnerability report, scan report, generated {generated_at}")
+        self.setKeywords(
+            f"automated web application security assessment system, "
+            f"vulnerability report, scan report, generated {generated_at}"
+        )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._apply_metadata()
+
+    def showPage(self):
+        self._apply_metadata()
+        super().showPage()
+
+    def save(self):
+        self._apply_metadata()
+        super().save()
 
 
 def add_page_footer(canvas_obj, doc):
     canvas_obj.saveState()
+
+    generated_at = datetime.now(ZoneInfo("Asia/Kuala_Lumpur")).strftime("%Y-%m-%d %H:%M:%S GMT+8")
+
+    canvas_obj.setTitle("Automated Web Application Security Assessment System Report")
+    canvas_obj.setAuthor("Automated Web Application Security Assessment System")
+    canvas_obj.setSubject(f"Web Application Security Assessment Report | Generated: {generated_at}")
+    canvas_obj.setCreator("")
+    canvas_obj.setKeywords(
+        f"automated web application security assessment system, "
+        f"vulnerability report, scan report, generated {generated_at}"
+    )
+
     width, height = A4
+
     canvas_obj.setFont("Helvetica", 8)
     canvas_obj.setFillColor(colors.HexColor("#64748b"))
-    canvas_obj.drawCentredString(width / 2, 25, f"Web Security Scanner Report | Page {doc.page}")
+
+    canvas_obj.drawCentredString(
+        width / 2,
+        25,
+        f"Automated Web Application Security Assessment System Report | Page {doc.page}",
+    )
+
     canvas_obj.setStrokeColor(colors.HexColor("#cbd5e1"))
     canvas_obj.line(40, 40, width - 40, 40)
+
     canvas_obj.restoreState()
 
 
 def build_risk_pie_chart(vulnerabilities):
     counts = get_risk_counts(vulnerabilities)
-    labels = ["High", "Medium", "Low", "Informational"]
-    values = [counts["High"], counts["Medium"], counts["Low"], counts["Informational"]]
+
+    values = [
+        counts.get("High", 0),
+        counts.get("Medium", 0),
+        counts.get("Low", 0),
+        counts.get("Informational", 0),
+    ]
+
+    no_findings = sum(values) == 0
 
     drawing = Drawing(420, 220)
 
@@ -886,13 +1053,18 @@ def build_risk_pie_chart(vulnerabilities):
     pie.y = 25
     pie.width = 170
     pie.height = 170
-    pie.data = values if sum(values) > 0 else [1]
     pie.labels = None
     pie.slices.strokeWidth = 0.5
-    pie.slices[0].fillColor = colors.HexColor("#dc2626")
-    pie.slices[1].fillColor = colors.HexColor("#f97316")
-    pie.slices[2].fillColor = colors.HexColor("#eab308")
-    pie.slices[3].fillColor = colors.HexColor("#2563eb")
+
+    if no_findings:
+        pie.data = [1]
+        pie.slices[0].fillColor = colors.HexColor("#cbd5e1")
+    else:
+        pie.data = values
+        pie.slices[0].fillColor = colors.HexColor("#dc2626")
+        pie.slices[1].fillColor = colors.HexColor("#f97316")
+        pie.slices[2].fillColor = colors.HexColor("#eab308")
+        pie.slices[3].fillColor = colors.HexColor("#2563eb")
 
     legend = Legend()
     legend.x = 270
@@ -904,15 +1076,22 @@ def build_risk_pie_chart(vulnerabilities):
     legend.dy = 8
     legend.columnMaximum = 4
     legend.strokeWidth = 0
-    legend.colorNamePairs = [
-        (colors.HexColor("#dc2626"), f"High ({counts['High']})"),
-        (colors.HexColor("#f97316"), f"Medium ({counts['Medium']})"),
-        (colors.HexColor("#eab308"), f"Low ({counts['Low']})"),
-        (colors.HexColor("#2563eb"), f"Informational ({counts['Informational']})"),
-    ]
+
+    if no_findings:
+        legend.colorNamePairs = [
+            (colors.HexColor("#cbd5e1"), "No Findings (0)")
+        ]
+    else:
+        legend.colorNamePairs = [
+            (colors.HexColor("#dc2626"), f"High ({counts.get('High', 0)})"),
+            (colors.HexColor("#f97316"), f"Medium ({counts.get('Medium', 0)})"),
+            (colors.HexColor("#eab308"), f"Low ({counts.get('Low', 0)})"),
+            (colors.HexColor("#2563eb"), f"Informational ({counts.get('Informational', 0)})"),
+        ]
 
     drawing.add(pie)
     drawing.add(legend)
+
     return drawing
 
 
@@ -920,14 +1099,39 @@ def build_summary_table(vulnerabilities, styles):
     counts = get_risk_counts(vulnerabilities)
 
     data = [
-        [Paragraph("<b>Risk Level</b>", styles["TableHeader"]), Paragraph("<b>Total Findings</b>", styles["TableHeader"]), Paragraph("<b>Description</b>", styles["TableHeader"])],
-        [Paragraph("High", styles["NormalText"]), Paragraph(str(counts["High"]), styles["NormalText"]), Paragraph("Critical attention required", styles["NormalText"])],
-        [Paragraph("Medium", styles["NormalText"]), Paragraph(str(counts["Medium"]), styles["NormalText"]), Paragraph("Important remediation needed", styles["NormalText"])],
-        [Paragraph("Low", styles["NormalText"]), Paragraph(str(counts["Low"]), styles["NormalText"]), Paragraph("Lower priority improvement", styles["NormalText"])],
-        [Paragraph("Informational", styles["NormalText"]), Paragraph(str(counts["Informational"]), styles["NormalText"]), Paragraph("Useful security information", styles["NormalText"])],
+        [
+            Paragraph("<b>Risk Level</b>", styles["TableHeader"]),
+            Paragraph("<b>Total Findings</b>", styles["TableHeader"]),
+            Paragraph("<b>Description</b>", styles["TableHeader"]),
+        ],
+        [
+            Paragraph("High", styles["NormalText"]),
+            Paragraph(str(counts["High"]), styles["NormalText"]),
+            Paragraph("Critical attention required", styles["NormalText"]),
+        ],
+        [
+            Paragraph("Medium", styles["NormalText"]),
+            Paragraph(str(counts["Medium"]), styles["NormalText"]),
+            Paragraph("Important remediation needed", styles["NormalText"]),
+        ],
+        [
+            Paragraph("Low", styles["NormalText"]),
+            Paragraph(str(counts["Low"]), styles["NormalText"]),
+            Paragraph("Lower priority improvement", styles["NormalText"]),
+        ],
+        [
+            Paragraph("Informational", styles["NormalText"]),
+            Paragraph(str(counts["Informational"]), styles["NormalText"]),
+            Paragraph("Useful security information", styles["NormalText"]),
+        ],
     ]
 
-    table = Table(data, colWidths=[1.5 * inch, 1.4 * inch, 3.8 * inch], repeatRows=1)
+    table = Table(
+        data,
+        colWidths=[1.5 * inch, 1.4 * inch, 3.8 * inch],
+        repeatRows=1,
+    )
+
     table.setStyle(TableStyle([
         ("GRID", (0, 0), (-1, -1), 0.6, colors.HexColor("#cbd5e1")),
         ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#0f172a")),
@@ -943,23 +1147,47 @@ def build_summary_table(vulnerabilities, styles):
         ("BACKGROUND", (0, 3), (-1, 3), colors.HexColor("#fef9c3")),
         ("BACKGROUND", (0, 4), (-1, 4), colors.HexColor("#dbeafe")),
     ]))
+
     return table
 
 
 def build_alert_type_table(vulnerabilities, styles):
     counter = Counter()
+
     for vuln in vulnerabilities:
         alert_type = clean_pdf_text(vuln.get("type", "Unknown"))
         risk = normalize_risk(vuln.get("risk", "Informational"))
         counter[(alert_type, risk)] += 1
 
-    data = [[Paragraph("<b>Alert Type</b>", styles["TableHeader"]), Paragraph("<b>Risk</b>", styles["TableHeader"]), Paragraph("<b>Count</b>", styles["TableHeader"])] ]
+    data = [
+        [
+            Paragraph("<b>Alert Type</b>", styles["TableHeader"]),
+            Paragraph("<b>Risk</b>", styles["TableHeader"]),
+            Paragraph("<b>Count</b>", styles["TableHeader"]),
+        ]
+    ]
 
-    sorted_items = sorted(counter.items(), key=lambda item: (risk_order_value(item[0][1]), item[0][0].lower()))
+    sorted_items = sorted(
+        counter.items(),
+        key=lambda item: (
+            risk_order_value(item[0][1]),
+            item[0][0].lower(),
+        ),
+    )
+
     for (alert_type, risk), count in sorted_items:
-        data.append([Paragraph(pdf_safe(alert_type), styles["SmallText"]), Paragraph(pdf_safe(risk), styles["SmallText"]), Paragraph(str(count), styles["SmallText"])])
+        data.append([
+            Paragraph(pdf_safe(alert_type), styles["SmallText"]),
+            Paragraph(pdf_safe(risk), styles["SmallText"]),
+            Paragraph(str(count), styles["SmallText"]),
+        ])
 
-    table = Table(data, colWidths=[4.1 * inch, 1.4 * inch, 1.1 * inch], repeatRows=1)
+    table = Table(
+        data,
+        colWidths=[4.1 * inch, 1.4 * inch, 1.1 * inch],
+        repeatRows=1,
+    )
+
     table_style = [
         ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#cbd5e1")),
         ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#0f172a")),
@@ -977,19 +1205,8 @@ def build_alert_type_table(vulnerabilities, styles):
         table_style.append(("BACKGROUND", (1, row_index), (1, row_index), risk_light_color(risk_text)))
 
     table.setStyle(TableStyle(table_style))
+
     return table
-
-
-def shorten_pdf_text(value, max_chars=900):
-    text = clean_pdf_text(value)
-
-    if text == "N/A":
-        return "N/A"
-
-    if len(text) > max_chars:
-        return text[:max_chars] + "..."
-
-    return text
 
 
 def build_vulnerability_details(vuln, index, styles):
@@ -1003,9 +1220,9 @@ def build_vulnerability_details(vuln, index, styles):
     header_table = Table(
         [[
             Paragraph(f"<b>Finding #{index}: {pdf_safe(title)}</b>", styles["WhiteHeader"]),
-            Paragraph(f"<b>{pdf_safe(risk)}</b>", styles["WhiteHeaderRight"])
+            Paragraph(f"<b>{pdf_safe(risk)}</b>", styles["WhiteHeaderRight"]),
         ]],
-        colWidths=[5.2 * inch, 1.3 * inch]
+        colWidths=[5.2 * inch, 1.3 * inch],
     )
 
     header_table.setStyle(TableStyle([
@@ -1052,7 +1269,10 @@ def build_vulnerability_details(vuln, index, styles):
         ],
     ]
 
-    meta_table = Table(meta_data, colWidths=[1.3 * inch] * 5)
+    meta_table = Table(
+        meta_data,
+        colWidths=[1.3 * inch] * 5,
+    )
 
     meta_table.setStyle(TableStyle([
         ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#cbd5e1")),
@@ -1073,11 +1293,21 @@ def build_vulnerability_details(vuln, index, styles):
     story_items.append(Spacer(1, 8))
 
     story_items.append(Paragraph("<b>Description</b>", styles["SectionSmall"]))
-    story_items.append(Paragraph(pdf_safe(shorten_pdf_text(vuln.get("description", "No description available."), 1800)), styles["NormalText"]))
+    story_items.append(
+        Paragraph(
+            pdf_safe(shorten_pdf_text(vuln.get("description", "No description available."), 1800)),
+            styles["NormalText"],
+        )
+    )
     story_items.append(Spacer(1, 8))
 
     story_items.append(Paragraph("<b>Recommended Mitigation</b>", styles["SectionSmall"]))
-    story_items.append(Paragraph(pdf_safe(shorten_pdf_text(vuln.get("solution", "No mitigation recommendation available."), 1800)), styles["NormalText"]))
+    story_items.append(
+        Paragraph(
+            pdf_safe(shorten_pdf_text(vuln.get("solution", "No mitigation recommendation available."), 1800)),
+            styles["NormalText"],
+        )
+    )
     story_items.append(Spacer(1, 8))
 
     attack = clean_pdf_text(vuln.get("attack", "N/A"))
@@ -1099,11 +1329,12 @@ def build_vulnerability_details(vuln, index, styles):
         story_items.append(Spacer(1, 8))
 
     story_items.append(Spacer(1, 16))
+
     return story_items
 
 
 # ---------------- MAIN ROUTES ----------------
-@app.route('/')
+@app.route("/")
 @login_required
 def index():
     user = current_user()
@@ -1117,15 +1348,15 @@ def index():
         total_high=stats["high"],
         total_medium=stats["medium"],
         total_low=stats["low"],
-        total_info=stats["info"]
+        total_info=stats["info"],
     )
 
 
-@app.route('/start_scan', methods=['POST'])
+@app.route("/start_scan", methods=["POST"])
 @login_required
 def start_scan():
-    target = request.form.get('url', '').strip()
-    scan_mode = request.form.get('scan_mode', 'quick')
+    target = request.form.get("url", "").strip()
+    scan_mode = request.form.get("scan_mode", "quick")
     user = current_user()
 
     if not target:
@@ -1134,12 +1365,15 @@ def start_scan():
     if not target.startswith("http://") and not target.startswith("https://"):
         target = "http://" + target
 
+    mode_config = SCAN_MODES.get(scan_mode, SCAN_MODES["quick"])
+
     scan_id = str(uuid.uuid4())
+
     scan_tasks[scan_id] = {
         "user_id": user["id"],
         "target": target,
-        "scan_mode": SCAN_MODES.get(scan_mode, SCAN_MODES["quick"])["label"],
-        "estimated_seconds": SCAN_MODES.get(scan_mode, SCAN_MODES["quick"]).get("estimated_seconds", 40),
+        "scan_mode": mode_config["label"],
+        "estimated_seconds": mode_config.get("estimated_seconds", 40),
         "started_at_epoch": time.time(),
         "status": "Queued scan...",
         "progress": 0,
@@ -1147,58 +1381,33 @@ def start_scan():
         "vulnerabilities": [],
         "error": None,
         "username": user["username"],
-        "created_at": get_malaysia_time()
+        "created_at": get_malaysia_time(),
     }
 
-    thread = threading.Thread(target=run_scan, args=(scan_id, target, scan_mode, user["id"]), daemon=True)
+    thread = threading.Thread(
+        target=run_scan,
+        args=(scan_id, target, scan_mode, user["id"]),
+        daemon=True,
+    )
     thread.start()
 
-    return redirect(url_for('progress_page', scan_id=scan_id))
+    return redirect(url_for("progress_page", scan_id=scan_id))
 
 
-@app.route('/progress/<scan_id>')
+@app.route("/progress/<scan_id>")
 @login_required
 def progress_page(scan_id):
-    return render_template('progress.html', scan_id=scan_id)
+    return render_template("progress.html", scan_id=scan_id)
 
 
-def calculate_remaining_time(task):
-    if not task or task.get("completed"):
-        return 0, "Completed"
-
-    progress = int(task.get("progress", 0) or 0)
-    estimated_seconds = int(task.get("estimated_seconds", 40) or 40)
-    started_at_epoch = float(task.get("started_at_epoch", time.time()) or time.time())
-    elapsed = max(0, int(time.time() - started_at_epoch))
-
-    if progress >= 100:
-        remaining_seconds = 0
-    elif progress > 0:
-        total_estimated_by_progress = elapsed / (progress / 100)
-        remaining_seconds = int(max(0, total_estimated_by_progress - elapsed))
-    else:
-        remaining_seconds = int(max(0, estimated_seconds - elapsed))
-
-    minutes = remaining_seconds // 60
-    seconds = remaining_seconds % 60
-
-    if remaining_seconds <= 0:
-        remaining_text = "Finishing soon..."
-    elif minutes > 0:
-        remaining_text = f"About {minutes} min {seconds} sec remaining"
-    else:
-        remaining_text = f"About {seconds} sec remaining"
-
-    return remaining_seconds, remaining_text
-
-
-@app.route('/scan_status/<scan_id>')
+@app.route("/scan_status/<scan_id>")
 @login_required
 def scan_status(scan_id):
     task = scan_tasks.get(scan_id)
 
     if not task:
         row = get_history_by_scan_id(scan_id)
+
         if row:
             return jsonify({
                 "target": row["target"],
@@ -1208,11 +1417,13 @@ def scan_status(scan_id):
                 "completed": True,
                 "remaining_seconds": 0,
                 "remaining_time": "Completed",
-                "error": None if not str(row["status"]).startswith("Error:") else row["status"]
+                "error": None if not str(row["status"]).startswith("Error:") else row["status"],
             })
+
         return jsonify({"error": "Invalid scan ID"}), 404
 
     user = current_user()
+
     if user["role"] != "admin" and task["user_id"] != user["id"]:
         return jsonify({"error": "Access denied"}), 403
 
@@ -1226,11 +1437,11 @@ def scan_status(scan_id):
         "completed": task["completed"],
         "remaining_seconds": remaining_seconds,
         "remaining_time": remaining_text,
-        "error": task["error"]
+        "error": task["error"],
     })
 
 
-@app.route('/result/<scan_id>')
+@app.route("/result/<scan_id>")
 @login_required
 def result(scan_id):
     user = current_user()
@@ -1247,16 +1458,19 @@ def result(scan_id):
             "status": task["status"] if not task["error"] else f"Error: {task['error']}",
             "vulnerabilities": sort_vulnerabilities(task["vulnerabilities"]),
             "username": task["username"],
-            "created_at": task["created_at"]
+            "created_at": task["created_at"],
         }
-        return render_template('result.html', result=result_data)
+
+        return render_template("result.html", result=result_data)
 
     row = get_history_by_scan_id(scan_id)
+
     if row:
         if user["role"] != "admin" and row["user_id"] != user["id"]:
             return "Access denied", 403
 
         parsed_vulns = json.loads(row["vulnerabilities"]) if row["vulnerabilities"] else []
+
         result_data = {
             "scan_id": row["scan_id"],
             "url": row["target"],
@@ -1264,17 +1478,19 @@ def result(scan_id):
             "status": row["status"],
             "vulnerabilities": sort_vulnerabilities(parsed_vulns),
             "username": row["username"],
-            "created_at": row["created_at"]
+            "created_at": row["created_at"],
         }
-        return render_template('result.html', result=result_data)
+
+        return render_template("result.html", result=result_data)
 
     return "Invalid scan ID", 404
 
 
-@app.route('/history')
+@app.route("/history")
 @login_required
 def history():
     user = current_user()
+
     search_query = request.args.get("q", "").strip()
     mode_filter = request.args.get("mode", "").strip()
 
@@ -1282,15 +1498,15 @@ def history():
     filtered_history = apply_history_filters(history_rows, search_query, mode_filter)
 
     return render_template(
-        'history.html',
+        "history.html",
         history=filtered_history,
         user=user,
         search_query=search_query,
-        mode_filter=mode_filter
+        mode_filter=mode_filter,
     )
 
 
-@app.route('/admin')
+@app.route("/admin")
 @admin_required
 def admin_panel():
     users = get_all_users()
@@ -1306,11 +1522,11 @@ def admin_panel():
         total_high=risk_totals["high"],
         total_medium=risk_totals["medium"],
         total_low=risk_totals["low"],
-        total_info=risk_totals["info"]
+        total_info=risk_totals["info"],
     )
 
 
-@app.route('/admin/delete_user/<int:user_id>', methods=['POST'])
+@app.route("/admin/delete_user/<int:user_id>", methods=["POST"])
 @admin_required
 def admin_delete_user(user_id):
     user = get_user_by_id(user_id)
@@ -1323,17 +1539,18 @@ def admin_delete_user(user_id):
         return redirect(url_for("admin_panel"))
 
     delete_user_and_scans(user_id)
+
     return redirect(url_for("admin_panel"))
 
 
-@app.route('/admin/delete_scan/<scan_id>', methods=['POST'])
+@app.route("/admin/delete_scan/<scan_id>", methods=["POST"])
 @admin_required
 def admin_delete_scan(scan_id):
     delete_scan_by_id(scan_id)
     return redirect(url_for("admin_panel"))
 
 
-@app.route('/export_report_pdf/<scan_id>')
+@app.route("/export_report_pdf/<scan_id>")
 @login_required
 def export_report_pdf(scan_id):
     user = current_user()
@@ -1349,10 +1566,13 @@ def export_report_pdf(scan_id):
         vulnerabilities = sort_vulnerabilities(task["vulnerabilities"])
         username = task["username"]
         created_at = task["created_at"]
+
     else:
         row = get_history_by_scan_id(scan_id)
+
         if not row:
             return "Invalid scan ID", 404
+
         if user["role"] != "admin" and row["user_id"] != user["id"]:
             return "Access denied", 403
 
@@ -1364,45 +1584,166 @@ def export_report_pdf(scan_id):
         created_at = row["created_at"]
 
     buffer = io.BytesIO()
+
     doc = SimpleDocTemplate(
         buffer,
         pagesize=A4,
         rightMargin=40,
         leftMargin=40,
         topMargin=50,
-        bottomMargin=55
+        bottomMargin=55,
+        title="Automated Web Application Security Assessment System Report",
+        author="Automated Web Application Security Assessment System",
     )
 
     base_styles = getSampleStyleSheet()
+
     styles = {
-        "Title": ParagraphStyle("Title", parent=base_styles["Title"], fontName="Helvetica-Bold", fontSize=22, leading=28, alignment=TA_CENTER, textColor=colors.HexColor("#0f172a"), spaceAfter=12),
-        "Subtitle": ParagraphStyle("Subtitle", parent=base_styles["Normal"], fontSize=10, leading=14, alignment=TA_CENTER, textColor=colors.HexColor("#475569"), spaceAfter=18),
-        "Heading": ParagraphStyle("Heading", parent=base_styles["Heading2"], fontName="Helvetica-Bold", fontSize=14, leading=18, textColor=colors.HexColor("#0f172a"), spaceBefore=12, spaceAfter=8),
-        "SectionSmall": ParagraphStyle("SectionSmall", parent=base_styles["Normal"], fontName="Helvetica-Bold", fontSize=10, leading=14, textColor=colors.HexColor("#0f172a"), spaceAfter=4),
-        "NormalText": ParagraphStyle("NormalText", parent=base_styles["Normal"], fontSize=9, leading=13, textColor=colors.HexColor("#0f172a")),
-        "SmallText": ParagraphStyle("SmallText", parent=base_styles["Normal"], fontSize=8, leading=11, textColor=colors.HexColor("#0f172a")),
-        "TableHeader": ParagraphStyle("TableHeader", parent=base_styles["Normal"], fontName="Helvetica-Bold", fontSize=9, leading=12, textColor=colors.white),
-        "WhiteHeader": ParagraphStyle("WhiteHeader", parent=base_styles["Normal"], fontName="Helvetica-Bold", fontSize=11, leading=14, textColor=colors.white),
-        "WhiteHeaderRight": ParagraphStyle("WhiteHeaderRight", parent=base_styles["Normal"], fontName="Helvetica-Bold", fontSize=10, leading=14, textColor=colors.white, alignment=TA_CENTER),
-        "URLText": ParagraphStyle("URLText", parent=base_styles["Normal"], fontSize=8, leading=11, textColor=colors.HexColor("#1d4ed8"), backColor=colors.HexColor("#eff6ff"), borderColor=colors.HexColor("#bfdbfe"), borderWidth=0.5, borderPadding=6, spaceAfter=4)
+        "Title": ParagraphStyle(
+            "Title",
+            parent=base_styles["Title"],
+            fontName="Helvetica-Bold",
+            fontSize=22,
+            leading=28,
+            alignment=TA_CENTER,
+            textColor=colors.HexColor("#0f172a"),
+            spaceAfter=12,
+        ),
+        "Subtitle": ParagraphStyle(
+            "Subtitle",
+            parent=base_styles["Normal"],
+            fontSize=10,
+            leading=14,
+            alignment=TA_CENTER,
+            textColor=colors.HexColor("#475569"),
+            spaceAfter=18,
+        ),
+        "Heading": ParagraphStyle(
+            "Heading",
+            parent=base_styles["Heading2"],
+            fontName="Helvetica-Bold",
+            fontSize=14,
+            leading=18,
+            textColor=colors.HexColor("#0f172a"),
+            spaceBefore=12,
+            spaceAfter=8,
+        ),
+        "SectionSmall": ParagraphStyle(
+            "SectionSmall",
+            parent=base_styles["Normal"],
+            fontName="Helvetica-Bold",
+            fontSize=10,
+            leading=14,
+            textColor=colors.HexColor("#0f172a"),
+            spaceAfter=4,
+        ),
+        "NormalText": ParagraphStyle(
+            "NormalText",
+            parent=base_styles["Normal"],
+            fontSize=9,
+            leading=13,
+            textColor=colors.HexColor("#0f172a"),
+        ),
+        "SmallText": ParagraphStyle(
+            "SmallText",
+            parent=base_styles["Normal"],
+            fontSize=8,
+            leading=11,
+            textColor=colors.HexColor("#0f172a"),
+        ),
+        "TableHeader": ParagraphStyle(
+            "TableHeader",
+            parent=base_styles["Normal"],
+            fontName="Helvetica-Bold",
+            fontSize=9,
+            leading=12,
+            textColor=colors.white,
+        ),
+        "WhiteHeader": ParagraphStyle(
+            "WhiteHeader",
+            parent=base_styles["Normal"],
+            fontName="Helvetica-Bold",
+            fontSize=11,
+            leading=14,
+            textColor=colors.white,
+        ),
+        "WhiteHeaderRight": ParagraphStyle(
+            "WhiteHeaderRight",
+            parent=base_styles["Normal"],
+            fontName="Helvetica-Bold",
+            fontSize=10,
+            leading=14,
+            textColor=colors.white,
+            alignment=TA_CENTER,
+        ),
+        "URLText": ParagraphStyle(
+            "URLText",
+            parent=base_styles["Normal"],
+            fontSize=8,
+            leading=11,
+            textColor=colors.HexColor("#1d4ed8"),
+            backColor=colors.HexColor("#eff6ff"),
+            borderColor=colors.HexColor("#bfdbfe"),
+            borderWidth=0.5,
+            borderPadding=6,
+            spaceAfter=4,
+        ),
     }
 
     story = []
-    story.append(Paragraph("Web Application Security Assessment Report", styles["Title"]))
-    story.append(Paragraph(f"Generated by Web Security Scanner | {get_malaysia_time()} GMT+8", styles["Subtitle"]))
+
+    story.append(Paragraph(
+        "Automated Web Application Security Assessment System Report",
+        styles["Title"],
+    ))
+
+    story.append(Paragraph(
+        f"Generated by Automated Web Application Security Assessment System | {get_malaysia_time()} GMT+8",
+        styles["Subtitle"],
+    ))
 
     story.append(Paragraph("1. Report Parameters", styles["Heading"]))
+
     parameter_data = [
-        [Paragraph("<b>Scan ID</b>", styles["SmallText"]), Paragraph(pdf_safe(scan_id), styles["SmallText"])],
-        [Paragraph("<b>Target URL</b>", styles["SmallText"]), Paragraph(pdf_safe(target), styles["SmallText"])],
-        [Paragraph("<b>User</b>", styles["SmallText"]), Paragraph(pdf_safe(username), styles["SmallText"])],
-        [Paragraph("<b>Scan Date & Time</b>", styles["SmallText"]), Paragraph(pdf_safe(created_at), styles["SmallText"])],
-        [Paragraph("<b>Report Generated At</b>", styles["SmallText"]), Paragraph(pdf_safe(f"{get_malaysia_time()} GMT+8"), styles["SmallText"])],
-        [Paragraph("<b>Scan Mode</b>", styles["SmallText"]), Paragraph(pdf_safe(scan_mode), styles["SmallText"])],
-        [Paragraph("<b>Status</b>", styles["SmallText"]), Paragraph(pdf_safe(status), styles["SmallText"])],
-        [Paragraph("<b>Total Findings</b>", styles["SmallText"]), Paragraph(str(len(vulnerabilities)), styles["SmallText"])],
+        [
+            Paragraph("<b>Scan ID</b>", styles["SmallText"]),
+            Paragraph(pdf_safe(scan_id), styles["SmallText"]),
+        ],
+        [
+            Paragraph("<b>Target URL</b>", styles["SmallText"]),
+            Paragraph(pdf_safe(target), styles["SmallText"]),
+        ],
+        [
+            Paragraph("<b>User</b>", styles["SmallText"]),
+            Paragraph(pdf_safe(username), styles["SmallText"]),
+        ],
+        [
+            Paragraph("<b>Scan Date & Time</b>", styles["SmallText"]),
+            Paragraph(pdf_safe(created_at), styles["SmallText"]),
+        ],
+        [
+            Paragraph("<b>Report Generated At</b>", styles["SmallText"]),
+            Paragraph(pdf_safe(f"{get_malaysia_time()} GMT+8"), styles["SmallText"]),
+        ],
+        [
+            Paragraph("<b>Scan Mode</b>", styles["SmallText"]),
+            Paragraph(pdf_safe(scan_mode), styles["SmallText"]),
+        ],
+        [
+            Paragraph("<b>Status</b>", styles["SmallText"]),
+            Paragraph(pdf_safe(status), styles["SmallText"]),
+        ],
+        [
+            Paragraph("<b>Total Findings</b>", styles["SmallText"]),
+            Paragraph(str(len(vulnerabilities)), styles["SmallText"]),
+        ],
     ]
-    parameter_table = Table(parameter_data, colWidths=[1.8 * inch, 4.8 * inch])
+
+    parameter_table = Table(
+        parameter_data,
+        colWidths=[1.8 * inch, 4.8 * inch],
+    )
+
     parameter_table.setStyle(TableStyle([
         ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#cbd5e1")),
         ("BACKGROUND", (0, 0), (0, -1), colors.HexColor("#f1f5f9")),
@@ -1412,6 +1753,7 @@ def export_report_pdf(scan_id):
         ("TOPPADDING", (0, 0), (-1, -1), 7),
         ("BOTTOMPADDING", (0, 0), (-1, -1), 7),
     ]))
+
     story.append(parameter_table)
     story.append(Spacer(1, 14))
 
@@ -1423,45 +1765,57 @@ def export_report_pdf(scan_id):
         Paragraph("3. Risk Distribution", styles["Heading"]),
         Spacer(1, 8),
         build_risk_pie_chart(vulnerabilities),
-        Spacer(1, 14)
+        Spacer(1, 14),
     ]))
 
     story.append(Paragraph("4. Alert Counts by Vulnerability Type", styles["Heading"]))
+
     if vulnerabilities:
         story.append(build_alert_type_table(vulnerabilities, styles))
     else:
-        story.append(Paragraph("No vulnerabilities detected or scan time was insufficient.", styles["NormalText"]))
+        story.append(Paragraph(
+            "No vulnerabilities detected or scan time was insufficient.",
+            styles["NormalText"],
+        ))
 
     story.append(Spacer(1, 16))
+
     story.append(Paragraph("5. Detailed Vulnerability Findings", styles["Heading"]))
+
     if vulnerabilities:
         for index, vuln in enumerate(vulnerabilities, start=1):
             story.extend(build_vulnerability_details(vuln, index, styles))
     else:
-        story.append(Paragraph("No vulnerabilities detected or scan time was insufficient.", styles["NormalText"]))
+        story.append(Paragraph(
+            "No vulnerabilities detected or scan time was insufficient.",
+            styles["NormalText"],
+        ))
 
     story.append(PageBreak())
+
     story.append(Paragraph("6. Appendix", styles["Heading"]))
+
     story.append(Paragraph(
         "Risk levels are categorized as High, Medium, Low, and Informational. "
         "CVSS values in this report are estimated from the detected risk level when an exact CVSS score is not provided by the scanner. "
         "CVE IDs are displayed when available in the alert details; otherwise N/A is shown.",
-        styles["NormalText"]
+        styles["NormalText"],
     ))
 
     doc.build(
         story,
         onFirstPage=add_page_footer,
         onLaterPages=add_page_footer,
-        canvasmaker=MetadataCanvas
+        canvasmaker=MetadataCanvas,
     )
+
     buffer.seek(0)
 
     return send_file(
         buffer,
         as_attachment=True,
-        download_name=f"Web_Security_Scanner_Report_{scan_id}.pdf",
-        mimetype="application/pdf"
+        download_name=f"Automated_Web_Application_Security_Assessment_Report_{scan_id}.pdf",
+        mimetype="application/pdf",
     )
 
 
@@ -1469,5 +1823,5 @@ def export_report_pdf(scan_id):
 init_db()
 seed_admin()
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app.run(debug=True)

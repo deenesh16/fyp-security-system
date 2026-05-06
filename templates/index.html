@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Web Security Scanner</title>
+    <title>Automated Web Application Security Assessment System</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
@@ -9,6 +9,7 @@
             font-family: Arial, sans-serif;
             background: linear-gradient(135deg, #eef2ff, #f8fafc);
             margin: 0;
+            color: #0f172a;
         }
 
         .container {
@@ -24,16 +25,28 @@
         h1 {
             text-align: center;
             color: #0f172a;
+            font-size: 36px;
+            line-height: 1.25;
+            margin: 10px 0;
         }
 
-        p {
+        .subtitle {
             color: #475569;
             text-align: center;
+            font-size: 17px;
+            line-height: 1.6;
+            margin-bottom: 25px;
         }
 
         .top-bar {
             text-align: center;
-            margin-bottom: 20px;
+            margin-bottom: 25px;
+        }
+
+        .top-bar p {
+            color: #334155;
+            font-size: 16px;
+            margin-bottom: 12px;
         }
 
         .top-bar a {
@@ -47,6 +60,19 @@
             text-decoration: underline;
         }
 
+        .system-badge {
+            display: block;
+            width: fit-content;
+            margin: 0 auto 16px;
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            color: #1d4ed8;
+            padding: 9px 15px;
+            border-radius: 999px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
         .warning {
             background-color: #fff7ed;
             border-left: 5px solid #f97316;
@@ -55,6 +81,7 @@
             margin: 20px 0;
             color: #9a3412;
             font-size: 14px;
+            line-height: 1.6;
         }
 
         .stats-grid {
@@ -80,18 +107,34 @@
         }
 
         .stat-value {
-            font-size: 28px;
+            font-size: 30px;
             font-weight: bold;
             color: #0f172a;
         }
 
-        .card-scans .stat-value { color: #2563eb; }
-        .card-findings .stat-value { color: #7c3aed; }
+        .card-scans .stat-value {
+            color: #2563eb;
+        }
 
-        .card-high .stat-value { color: #dc2626; }
-        .card-medium .stat-value { color: #f97316; }
-        .card-low .stat-value { color: #eab308; }
-        .card-info .stat-value { color: #2563eb; }
+        .card-findings .stat-value {
+            color: #7c3aed;
+        }
+
+        .card-high .stat-value {
+            color: #dc2626;
+        }
+
+        .card-medium .stat-value {
+            color: #f97316;
+        }
+
+        .card-low .stat-value {
+            color: #eab308;
+        }
+
+        .card-info .stat-value {
+            color: #2563eb;
+        }
 
         .chart-box {
             background: #f8fafc;
@@ -120,6 +163,19 @@
             height: 100% !important;
         }
 
+        .scan-form-box {
+            background: #f8fafc;
+            border: 1px solid #dbe4ee;
+            border-radius: 16px;
+            padding: 24px;
+        }
+
+        .scan-form-box h3 {
+            margin-top: 0;
+            color: #0f172a;
+            text-align: center;
+        }
+
         label {
             display: block;
             margin-top: 20px;
@@ -137,21 +193,31 @@
             box-sizing: border-box;
         }
 
+        input[type="text"]:focus,
+        select:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+        }
+
         button {
             margin-top: 20px;
             width: 100%;
-            padding: 12px;
-            background-color: #2563eb;
+            padding: 13px;
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
             color: white;
             border: none;
             border-radius: 8px;
             font-size: 16px;
             font-weight: bold;
             cursor: pointer;
+            box-shadow: 0 10px 20px rgba(37, 99, 235, 0.22);
+            transition: 0.25s ease;
         }
 
         button:hover {
-            background-color: #1d4ed8;
+            background: linear-gradient(135deg, #1d4ed8, #1e40af);
+            transform: translateY(-1px);
         }
 
         .footer {
@@ -159,12 +225,17 @@
             font-size: 13px;
             text-align: center;
             color: #64748b;
+            line-height: 1.6;
         }
 
         @media (max-width: 768px) {
             .container {
                 margin: 25px auto;
                 padding: 22px;
+            }
+
+            h1 {
+                font-size: 28px;
             }
 
             .chart-box {
@@ -183,18 +254,28 @@
 
     <div class="top-bar">
         <p>Welcome, <strong>{{ user["username"] }}</strong> ({{ user["role"] }})</p>
+
         <a href="/history">My History</a>
+
         {% if user["role"] == "admin" %}
             | <a href="/admin">Admin Dashboard</a>
         {% endif %}
+
         | <a href="/logout">Logout</a>
     </div>
 
-    <h1>User Dashboard</h1>
-    <p>Scan web applications and detect vulnerabilities.</p>
+    <span class="system-badge">Security Assessment Dashboard</span>
+
+    <h1>Automated Web Application Security Assessment System</h1>
+
+    <p class="subtitle">
+        Scan web applications, detect vulnerabilities, review risk distribution,
+        and generate professional security assessment reports.
+    </p>
 
     <div class="warning">
-        <strong>Warning:</strong> Only scan authorized or test websites.
+        <strong>Warning:</strong> Only scan websites that you own or have permission to test.
+        Unauthorized scanning may violate rules, laws, or terms of service.
     </div>
 
     <div class="stats-grid">
@@ -224,7 +305,7 @@
         </div>
 
         <div class="stat-card card-info">
-            <div class="stat-title">Info</div>
+            <div class="stat-title">Informational</div>
             <div class="stat-value">{{ total_info }}</div>
         </div>
     </div>
@@ -236,21 +317,25 @@
         </div>
     </div>
 
-    <form action="/start_scan" method="post">
-        <label for="url">Enter Website URL</label>
-        <input id="url" type="text" name="url" placeholder="http://testphp.vulnweb.com" required>
+    <div class="scan-form-box">
+        <h3>Start New Security Assessment</h3>
 
-        <label for="scan_mode">Scan Mode</label>
-        <select id="scan_mode" name="scan_mode">
-            <option value="quick">Quick Scan</option>
-            <option value="full">Full Scan</option>
-        </select>
+        <form action="/start_scan" method="post">
+            <label for="url">Target Website URL</label>
+            <input id="url" type="text" name="url" placeholder="https://example.com" required>
 
-        <button type="submit">Start Scan</button>
-    </form>
+            <label for="scan_mode">Scan Mode</label>
+            <select id="scan_mode" name="scan_mode">
+                <option value="quick">Quick Scan</option>
+                <option value="full">Full Scan</option>
+            </select>
+
+            <button type="submit">Start Assessment Scan</button>
+        </form>
+    </div>
 
     <div class="footer">
-        Recommended: DVWA | testphp.vulnweb.com
+        Recommended test targets: testphp.vulnweb.com or authorized lab systems only.
     </div>
 
 </div>
@@ -261,7 +346,7 @@
     new Chart(document.getElementById('chart'), {
         type: 'bar',
         data: {
-            labels: ['High', 'Medium', 'Low', 'Info'],
+            labels: ['High', 'Medium', 'Low', 'Informational'],
             datasets: [{
                 label: 'Findings',
                 data: chartData,
