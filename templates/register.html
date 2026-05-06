@@ -1,276 +1,660 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Register - Web Security Scanner</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Account | Automated Web Application Security Assessment System</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: linear-gradient(135deg, #eef2ff, #f8fafc);
-            margin: 0;
-            min-height: 100vh;
-        }
-
-        .wrapper {
-            max-width: 520px;
-            margin: 45px auto;
-            padding: 0 15px;
-        }
-
-        .card {
-            background: white;
-            border-radius: 18px;
-            box-shadow: 0 10px 28px rgba(0, 0, 0, 0.12);
-            padding: 32px;
-        }
-
-        h1 {
-            text-align: center;
-            margin: 0 0 8px;
-            color: #0f172a;
-            font-size: 34px;
-        }
-
-        .subtitle {
-            text-align: center;
-            color: #64748b;
-            margin-bottom: 24px;
-            font-size: 18px;
-        }
-
-        label {
-            display: block;
-            font-weight: bold;
-            color: #334155;
-            margin-bottom: 8px;
-            margin-top: 16px;
-            font-size: 17px;
-        }
-
-        input {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #cbd5e1;
-            border-radius: 10px;
+        * {
             box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            background:
+                radial-gradient(circle at top left, rgba(16, 185, 129, 0.22), transparent 35%),
+                radial-gradient(circle at bottom right, rgba(37, 99, 235, 0.20), transparent 35%),
+                linear-gradient(135deg, #eef8ff 0%, #f7fbff 48%, #eef9f6 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            color: #0f172a;
+        }
+
+        .page {
+            width: 100%;
+            max-width: 1240px;
+            min-height: 780px;
+            background: rgba(255,255,255,0.93);
+            border: 1px solid rgba(255,255,255,0.7);
+            border-radius: 28px;
+            overflow: hidden;
+            box-shadow: 0 24px 60px rgba(15, 23, 42, 0.12);
+            display: grid;
+            grid-template-columns: 1.1fr 1fr;
+            backdrop-filter: blur(10px);
+            animation: fadeUp 0.8s ease;
+        }
+
+        .brand-panel {
+            position: relative;
+            padding: 56px 52px;
+            background:
+                linear-gradient(165deg, rgba(5, 150, 105, 0.98), rgba(14, 165, 233, 0.96) 60%, rgba(37, 99, 235, 0.94));
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            overflow: hidden;
+        }
+
+        .brand-panel::before,
+        .brand-panel::after {
+            content: "";
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.10);
+        }
+
+        .brand-panel::before {
+            width: 260px;
+            height: 260px;
+            top: -60px;
+            right: -60px;
+        }
+
+        .brand-panel::after {
+            width: 210px;
+            height: 210px;
+            bottom: -70px;
+            left: -45px;
+        }
+
+        .brand-content {
+            position: relative;
+            z-index: 2;
+        }
+
+        .system-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 16px;
+            background: rgba(255,255,255,0.16);
+            border: 1px solid rgba(255,255,255,0.22);
+            border-radius: 999px;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 24px;
+            backdrop-filter: blur(8px);
+        }
+
+        .system-badge .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #bbf7d0;
+            box-shadow: 0 0 10px rgba(187, 247, 208, 0.8);
+        }
+
+        .brand-panel h1 {
+            font-size: 40px;
+            line-height: 1.15;
+            margin: 0 0 16px;
+            max-width: 530px;
+        }
+
+        .brand-panel p {
+            font-size: 17px;
+            line-height: 1.75;
+            color: rgba(255,255,255,0.92);
+            max-width: 520px;
+            margin: 0 0 28px;
+        }
+
+        .benefits {
+            display: grid;
+            gap: 14px;
+            margin-top: 22px;
+        }
+
+        .benefit {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            padding: 14px 16px;
+            border-radius: 16px;
+            background: rgba(255,255,255,0.10);
+            border: 1px solid rgba(255,255,255,0.15);
+            backdrop-filter: blur(6px);
+        }
+
+        .benefit-icon {
+            flex-shrink: 0;
+            width: 34px;
+            height: 34px;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.18);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
             font-size: 15px;
         }
 
-        button {
-            width: 100%;
-            margin-top: 22px;
-            padding: 13px;
-            border: none;
-            border-radius: 10px;
-            background: #16a34a;
-            color: white;
-            font-size: 17px;
-            font-weight: bold;
-            cursor: pointer;
+        .benefit-text h4 {
+            margin: 0 0 4px;
+            font-size: 15px;
         }
 
-        button:hover {
-            background: #15803d;
+        .benefit-text p {
+            margin: 0;
+            font-size: 13px;
+            line-height: 1.6;
+            color: rgba(255,255,255,0.88);
         }
 
-        button:disabled {
-            background: #94a3b8;
-            cursor: not-allowed;
-        }
-
-        .error {
-            background: #fef2f2;
-            border: 1px solid #fecaca;
-            color: #b91c1c;
-            padding: 12px;
-            border-radius: 10px;
-            margin-bottom: 16px;
-        }
-
-        .password-box {
-            margin-top: 12px;
-            background: #f8fafc;
-            border: 1px solid #dbe4ee;
-            border-radius: 12px;
-            padding: 14px;
-        }
-
-        .password-title {
-            font-weight: bold;
-            color: #0f172a;
-            margin-bottom: 10px;
-        }
-
-        .rule {
+        .brand-footer {
+            position: relative;
+            z-index: 2;
+            margin-top: 28px;
             font-size: 14px;
-            margin: 7px 0;
-            color: #dc2626;
+            color: rgba(255,255,255,0.87);
         }
 
-        .rule.valid {
-            color: #16a34a;
-            font-weight: bold;
+        .form-panel {
+            padding: 46px 38px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(180deg, rgba(255,255,255,0.82), rgba(248,250,252,0.96));
         }
 
-        .password-strength {
-            margin-top: 12px;
-            padding: 10px;
-            border-radius: 8px;
-            font-weight: bold;
-            text-align: center;
-            background: #fee2e2;
+        .form-card {
+            width: 100%;
+            max-width: 470px;
+            animation: slideIn 0.9s ease;
+        }
+
+        .form-card h2 {
+            margin: 0 0 10px;
+            font-size: 42px;
+            color: #0f172a;
+        }
+
+        .form-card .subtitle {
+            margin: 0 0 28px;
+            color: #64748b;
+            font-size: 17px;
+            line-height: 1.7;
+        }
+
+        .alert {
+            margin-bottom: 18px;
+            padding: 14px 16px;
+            border-radius: 14px;
+            font-size: 14px;
+            line-height: 1.6;
+            border: 1px solid;
+            animation: fadeUp 0.5s ease;
+        }
+
+        .alert.error {
+            background: #fef2f2;
             color: #b91c1c;
+            border-color: #fecaca;
         }
 
-        .password-strength.strong {
-            background: #dcfce7;
-            color: #166534;
+        .alert.success {
+            background: #ecfdf5;
+            color: #047857;
+            border-color: #a7f3d0;
+        }
+
+        .input-group {
+            margin-bottom: 18px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 700;
+            color: #1e293b;
+            font-size: 15px;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 16px 18px;
+            border-radius: 16px;
+            border: 1px solid #cbd5e1;
+            background: rgba(255,255,255,0.95);
+            font-size: 16px;
+            color: #0f172a;
+            outline: none;
+            transition: all 0.25s ease;
+        }
+
+        .input-group input:focus {
+            border-color: #0ea5e9;
+            box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.14);
+            transform: translateY(-1px);
         }
 
         .show-password {
             display: flex;
             align-items: center;
-            gap: 8px;
-            margin-top: 10px;
+            gap: 10px;
+            margin: 4px 0 14px;
             color: #334155;
-            font-size: 14px;
+            font-size: 15px;
         }
 
         .show-password input {
-            width: auto;
-            cursor: pointer;
+            width: 18px;
+            height: 18px;
+            accent-color: #0ea5e9;
         }
 
-        .show-password label {
-            margin: 0;
-            font-weight: normal;
-            cursor: pointer;
-            font-size: 14px;
+        .password-box {
+            background: linear-gradient(180deg, #f8fafc, #f1f5f9);
+            border: 1px solid #dbe4ee;
+            border-radius: 18px;
+            padding: 20px 18px 16px;
+            margin-bottom: 20px;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.6);
         }
 
-        .links {
+        .password-box h4 {
+            margin: 0 0 12px;
+            font-size: 16px;
+            color: #0f172a;
+        }
+
+        .rule {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 15px;
+            margin-bottom: 10px;
+            color: #dc2626;
+            transition: 0.25s ease;
+        }
+
+        .rule.valid {
+            color: #16a34a;
+            font-weight: 600;
+        }
+
+        .rule-icon {
+            width: 18px;
             text-align: center;
-            margin-top: 18px;
+            font-weight: 700;
         }
 
-        .links a {
+        .strength-bar-wrap {
+            width: 100%;
+            height: 12px;
+            background: #e2e8f0;
+            border-radius: 999px;
+            overflow: hidden;
+            margin: 16px 0 10px;
+        }
+
+        .strength-bar {
+            width: 0%;
+            height: 100%;
+            border-radius: 999px;
+            transition: all 0.35s ease;
+            background: #ef4444;
+        }
+
+        .strength-text {
+            text-align: center;
+            font-size: 16px;
+            font-weight: 700;
+            border-radius: 12px;
+            padding: 12px;
+            background: #fee2e2;
+            color: #dc2626;
+            transition: all 0.3s ease;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 16px;
+            background: linear-gradient(135deg, #10b981, #0ea5e9);
+            color: white;
+            font-size: 19px;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 12px 24px rgba(14, 165, 233, 0.22);
+            transition: all 0.25s ease;
+        }
+
+        .btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 16px 30px rgba(14, 165, 233, 0.28);
+        }
+
+        .btn:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .extra-links {
+            margin-top: 22px;
+            text-align: center;
+        }
+
+        .extra-links a {
             color: #2563eb;
+            font-weight: 700;
             text-decoration: none;
-            font-weight: bold;
-            font-size: 17px;
+            font-size: 16px;
         }
 
-        .links a:hover {
+        .extra-links a:hover {
             text-decoration: underline;
+        }
+
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(18px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(25px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @media (max-width: 980px) {
+            .page {
+                grid-template-columns: 1fr;
+            }
+
+            .brand-panel {
+                padding: 42px 28px;
+            }
+
+            .form-panel {
+                padding: 36px 22px;
+            }
+
+            .brand-panel h1 {
+                font-size: 34px;
+            }
+
+            .form-card h2 {
+                font-size: 34px;
+            }
+        }
+
+        @media (max-width: 560px) {
+            body {
+                padding: 12px;
+            }
+
+            .page {
+                border-radius: 22px;
+            }
+
+            .brand-panel,
+            .form-panel {
+                padding: 28px 18px;
+            }
+
+            .brand-panel h1 {
+                font-size: 28px;
+            }
+
+            .form-card h2 {
+                font-size: 30px;
+            }
+
+            .form-card .subtitle {
+                font-size: 15px;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="wrapper">
-        <div class="card">
-            <h1>Create Account</h1>
-            <div class="subtitle">Register to use the web security scanner.</div>
-
-            {% if error %}
-                <div class="error">{{ error }}</div>
-            {% endif %}
-
-            <form method="post" onsubmit="return validateBeforeSubmit()">
-                <label for="username">Username</label>
-                <input id="username" type="text" name="username" placeholder="Choose a username" required>
-
-                <label for="email">Email</label>
-                <input id="email" type="email" name="email" placeholder="Enter your email" required>
-
-                <label for="password">Password</label>
-                <input id="password" type="password" name="password" placeholder="Create a strong password" required oninput="checkPasswordStrength()">
-
-                <div class="show-password">
-                    <input type="checkbox" id="showPassword" onclick="togglePassword()">
-                    <label for="showPassword">Show password</label>
+    <div class="page">
+        <div class="brand-panel">
+            <div class="brand-content">
+                <div class="system-badge">
+                    <span class="dot"></span>
+                    New User Registration
                 </div>
 
-                <div class="password-box">
-                    <div class="password-title">Password must contain:</div>
+                <h1>Create Your Secure Account</h1>
+                <p>
+                    Join the Automated Web Application Security Assestment System and start performing
+                    professional web vulnerability assessments with a secure and user-friendly platform.
+                </p>
 
-                    <div id="lengthRule" class="rule">✘ At least 8 characters</div>
-                    <div id="upperRule" class="rule">✘ At least 1 uppercase letter (A-Z)</div>
-                    <div id="lowerRule" class="rule">✘ At least 1 lowercase letter (a-z)</div>
-                    <div id="numberRule" class="rule">✘ At least 1 number (0-9)</div>
-                    <div id="symbolRule" class="rule">✘ At least 1 symbol (!@#$%^&*)</div>
+                <div class="benefits">
+                    <div class="benefit">
+                        <div class="benefit-icon">01</div>
+                        <div class="benefit-text">
+                            <h4>Scan & Detect</h4>
+                            <p>Launch automated scans to identify security issues and improve web protection.</p>
+                        </div>
+                    </div>
 
-                    <div id="strengthMessage" class="password-strength">
-                        Password is not strong yet
+                    <div class="benefit">
+                        <div class="benefit-icon">02</div>
+                        <div class="benefit-text">
+                            <h4>Track Findings</h4>
+                            <p>Review result history, severity breakdown, and risk-based vulnerability details.</p>
+                        </div>
+                    </div>
+
+                    <div class="benefit">
+                        <div class="benefit-icon">03</div>
+                        <div class="benefit-text">
+                            <h4>Stay Secure</h4>
+                            <p>Strong password policy and email verification help protect your account access.</p>
+                        </div>
                     </div>
                 </div>
+            </div>
 
-                <button id="registerBtn" type="submit" disabled>Register</button>
-            </form>
+            <div class="brand-footer">
+                <strong>System:</strong> Automated Web Application Security Assestment System
+            </div>
+        </div>
 
-            <div class="links">
-                <a href="/login">Back to login</a>
+        <div class="form-panel">
+            <div class="form-card">
+                <h2>Create Account</h2>
+                <p class="subtitle">Register to use the web security scanner platform.</p>
+
+                {% if error %}
+                    <div class="alert error">{{ error }}</div>
+                {% endif %}
+
+                {% if message %}
+                    <div class="alert success">{{ message }}</div>
+                {% endif %}
+
+                <form method="POST" action="/register" id="registerForm">
+                    <div class="input-group">
+                        <label for="username">Username</label>
+                        <input
+                            type="text"
+                            id="username"
+                            name="username"
+                            placeholder="Choose a username"
+                            value="{{ request.form.get('username', '') }}"
+                            required
+                        >
+                    </div>
+
+                    <div class="input-group">
+                        <label for="email">Email</label>
+                        <input
+                            type="email"
+                            id="email"
+                            name="email"
+                            placeholder="Enter your email"
+                            value="{{ request.form.get('email', '') }}"
+                            required
+                        >
+                    </div>
+
+                    <div class="input-group">
+                        <label for="password">Password</label>
+                        <input
+                            type="password"
+                            id="password"
+                            name="password"
+                            placeholder="Create a strong password"
+                            required
+                        >
+                    </div>
+
+                    <label class="show-password">
+                        <input type="checkbox" id="showPassword">
+                        <span>Show password</span>
+                    </label>
+
+                    <div class="password-box">
+                        <h4>Password must contain:</h4>
+
+                        <div class="rule" id="rule-length">
+                            <span class="rule-icon">✖</span>
+                            <span>At least 8 characters</span>
+                        </div>
+
+                        <div class="rule" id="rule-upper">
+                            <span class="rule-icon">✖</span>
+                            <span>At least 1 uppercase letter (A-Z)</span>
+                        </div>
+
+                        <div class="rule" id="rule-lower">
+                            <span class="rule-icon">✖</span>
+                            <span>At least 1 lowercase letter (a-z)</span>
+                        </div>
+
+                        <div class="rule" id="rule-number">
+                            <span class="rule-icon">✖</span>
+                            <span>At least 1 number (0-9)</span>
+                        </div>
+
+                        <div class="rule" id="rule-symbol">
+                            <span class="rule-icon">✖</span>
+                            <span>At least 1 symbol (!@#$%^&*)</span>
+                        </div>
+
+                        <div class="strength-bar-wrap">
+                            <div class="strength-bar" id="strengthBar"></div>
+                        </div>
+
+                        <div class="strength-text" id="strengthText">Password is not strong yet</div>
+                    </div>
+
+                    <button type="submit" class="btn" id="registerBtn" disabled>Register</button>
+                </form>
+
+                <div class="extra-links">
+                    <a href="/login">Back to login</a>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
-        function togglePassword() {
-            const passwordInput = document.getElementById("password");
-            const checkbox = document.getElementById("showPassword");
+        const passwordInput = document.getElementById("password");
+        const showPassword = document.getElementById("showPassword");
+        const registerBtn = document.getElementById("registerBtn");
+        const strengthBar = document.getElementById("strengthBar");
+        const strengthText = document.getElementById("strengthText");
 
-            passwordInput.type = checkbox.checked ? "text" : "password";
-        }
+        const rules = {
+            length: document.getElementById("rule-length"),
+            upper: document.getElementById("rule-upper"),
+            lower: document.getElementById("rule-lower"),
+            number: document.getElementById("rule-number"),
+            symbol: document.getElementById("rule-symbol")
+        };
 
-        function updateRule(ruleId, isValid, text) {
-            const rule = document.getElementById(ruleId);
+        showPassword.addEventListener("change", function () {
+            passwordInput.type = this.checked ? "text" : "password";
+        });
 
+        function setRuleState(ruleElement, isValid) {
+            const icon = ruleElement.querySelector(".rule-icon");
             if (isValid) {
-                rule.classList.add("valid");
-                rule.innerHTML = "✔ " + text;
+                ruleElement.classList.add("valid");
+                icon.textContent = "✔";
             } else {
-                rule.classList.remove("valid");
-                rule.innerHTML = "✘ " + text;
+                ruleElement.classList.remove("valid");
+                icon.textContent = "✖";
             }
         }
 
-        function checkPasswordStrength() {
-            const password = document.getElementById("password").value;
-            const registerBtn = document.getElementById("registerBtn");
-            const strengthMessage = document.getElementById("strengthMessage");
+        function updatePasswordStrength() {
+            const value = passwordInput.value;
 
-            const hasLength = password.length >= 8;
-            const hasUpper = /[A-Z]/.test(password);
-            const hasLower = /[a-z]/.test(password);
-            const hasNumber = /[0-9]/.test(password);
-            const hasSymbol = /[!@#$%^&*(),.?":{}|<>_\-+=/\\[\];'`~]/.test(password);
+            const checks = {
+                length: value.length >= 8,
+                upper: /[A-Z]/.test(value),
+                lower: /[a-z]/.test(value),
+                number: /\d/.test(value),
+                symbol: /[!@#$%^&*(),.?":{}|<>_\-+=/\\[\];'`~]/.test(value)
+            };
 
-            updateRule("lengthRule", hasLength, "At least 8 characters");
-            updateRule("upperRule", hasUpper, "At least 1 uppercase letter (A-Z)");
-            updateRule("lowerRule", hasLower, "At least 1 lowercase letter (a-z)");
-            updateRule("numberRule", hasNumber, "At least 1 number (0-9)");
-            updateRule("symbolRule", hasSymbol, "At least 1 symbol (!@#$%^&*)");
+            setRuleState(rules.length, checks.length);
+            setRuleState(rules.upper, checks.upper);
+            setRuleState(rules.lower, checks.lower);
+            setRuleState(rules.number, checks.number);
+            setRuleState(rules.symbol, checks.symbol);
 
-            const strongPassword = hasLength && hasUpper && hasLower && hasNumber && hasSymbol;
+            const score = Object.values(checks).filter(Boolean).length;
+            const percentage = (score / 5) * 100;
+            strengthBar.style.width = percentage + "%";
 
-            if (strongPassword) {
-                strengthMessage.classList.add("strong");
-                strengthMessage.innerHTML = "Strong password ✓";
-                registerBtn.disabled = false;
-            } else {
-                strengthMessage.classList.remove("strong");
-                strengthMessage.innerHTML = "Password is not strong yet";
+            if (score <= 2) {
+                strengthBar.style.background = "#ef4444";
+                strengthText.textContent = "Password is not strong yet";
+                strengthText.style.background = "#fee2e2";
+                strengthText.style.color = "#dc2626";
                 registerBtn.disabled = true;
+            } else if (score === 3 || score === 4) {
+                strengthBar.style.background = "#f59e0b";
+                strengthText.textContent = "Password is getting stronger";
+                strengthText.style.background = "#fef3c7";
+                strengthText.style.color = "#b45309";
+                registerBtn.disabled = true;
+            } else {
+                strengthBar.style.background = "linear-gradient(90deg, #16a34a, #22c55e)";
+                strengthText.textContent = "Strong password ✓";
+                strengthText.style.background = "#dcfce7";
+                strengthText.style.color = "#15803d";
+                registerBtn.disabled = false;
             }
-
-            return strongPassword;
         }
 
-        function validateBeforeSubmit() {
-            if (!checkPasswordStrength()) {
-                alert("Please create a strong password before registering.");
-                return false;
-            }
-            return true;
-        }
+        passwordInput.addEventListener("input", updatePasswordStrength);
     </script>
 </body>
 </html>

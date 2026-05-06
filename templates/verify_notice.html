@@ -1,110 +1,277 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>{{ title }}</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title if title else "Account Notice" }} | Automated Web Application Security Assessment System</title>
+
     <style>
+        * {
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: Arial, sans-serif;
-            background: linear-gradient(135deg, #eef2ff, #f8fafc);
             margin: 0;
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            background:
+                radial-gradient(circle at top left, rgba(37, 99, 235, 0.23), transparent 35%),
+                radial-gradient(circle at bottom right, rgba(16, 185, 129, 0.18), transparent 35%),
+                linear-gradient(135deg, #eef4ff 0%, #f8fbff 45%, #eef9f6 100%);
             min-height: 100vh;
-        }
-
-        .wrapper {
-            max-width: 700px;
-            margin: 80px auto;
-            padding: 0 15px;
-        }
-
-        .card {
-            background: white;
-            border-radius: 18px;
-            box-shadow: 0 10px 28px rgba(0, 0, 0, 0.12);
-            padding: 32px;
-        }
-
-        h1 {
-            text-align: center;
-            margin: 0 0 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
             color: #0f172a;
         }
 
-        .message {
+        .card {
+            width: 100%;
+            max-width: 760px;
+            background: rgba(255,255,255,0.95);
+            border: 1px solid rgba(255,255,255,0.7);
+            border-radius: 28px;
+            padding: 46px;
+            box-shadow: 0 24px 60px rgba(15, 23, 42, 0.12);
             text-align: center;
-            color: #475569;
-            line-height: 1.7;
-            margin-bottom: 22px;
+            animation: fadeUp 0.8s ease;
+            backdrop-filter: blur(10px);
+            position: relative;
+            overflow: hidden;
         }
 
-        .error {
+        .card::before {
+            content: "";
+            position: absolute;
+            width: 260px;
+            height: 260px;
+            border-radius: 50%;
+            background: rgba(37, 99, 235, 0.10);
+            top: -120px;
+            right: -100px;
+        }
+
+        .card::after {
+            content: "";
+            position: absolute;
+            width: 220px;
+            height: 220px;
+            border-radius: 50%;
+            background: rgba(16, 185, 129, 0.10);
+            bottom: -110px;
+            left: -90px;
+        }
+
+        .content {
+            position: relative;
+            z-index: 2;
+        }
+
+        .icon-circle {
+            width: 76px;
+            height: 76px;
+            margin: 0 auto 22px;
+            border-radius: 26px;
+            background: linear-gradient(135deg, #2563eb, #10b981);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 34px;
+            box-shadow: 0 14px 28px rgba(37, 99, 235, 0.22);
+        }
+
+        h1 {
+            margin: 0 0 14px;
+            font-size: 36px;
+            color: #0f172a;
+        }
+
+        .subtitle {
+            max-width: 600px;
+            margin: 0 auto 24px;
+            color: #64748b;
+            line-height: 1.7;
+            font-size: 16px;
+        }
+
+        .system-name {
+            display: inline-block;
+            margin-bottom: 24px;
+            padding: 10px 16px;
+            border-radius: 999px;
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            color: #1d4ed8;
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        .alert {
+            margin: 20px auto;
+            max-width: 620px;
+            padding: 14px 16px;
+            border-radius: 14px;
+            font-size: 14px;
+            line-height: 1.6;
+            text-align: left;
+            border: 1px solid;
+        }
+
+        .alert.error {
             background: #fff7ed;
-            border: 1px solid #fdba74;
             color: #9a3412;
-            padding: 12px;
-            border-radius: 10px;
-            margin-bottom: 18px;
+            border-color: #fed7aa;
         }
 
         .link-box {
+            max-width: 620px;
+            margin: 22px auto;
             background: #f8fafc;
             border: 1px solid #dbe4ee;
-            border-radius: 12px;
-            padding: 14px;
-            overflow-wrap: break-word;
-            word-break: break-word;
-            margin-bottom: 22px;
+            border-radius: 18px;
+            padding: 18px;
+            text-align: left;
+        }
+
+        .link-label {
+            font-weight: 700;
+            color: #334155;
+            margin-bottom: 10px;
+            font-size: 14px;
         }
 
         .link-box a {
             color: #2563eb;
+            font-weight: 700;
+            overflow-wrap: break-word;
+            word-break: break-word;
+            line-height: 1.6;
+        }
+
+        .btn-group {
+            margin-top: 28px;
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 13px 20px;
+            border-radius: 14px;
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            color: white;
             text-decoration: none;
-            font-weight: bold;
+            font-weight: 700;
+            box-shadow: 0 12px 24px rgba(37, 99, 235, 0.22);
+            transition: all 0.25s ease;
         }
 
-        .link-box a:hover {
-            text-decoration: underline;
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 16px 30px rgba(37, 99, 235, 0.28);
         }
 
-        .actions {
-            text-align: center;
+        .btn.secondary {
+            background: #e2e8f0;
+            color: #0f172a;
+            box-shadow: none;
         }
 
-        .actions a {
-            color: #2563eb;
-            text-decoration: none;
-            font-weight: bold;
+        .btn.secondary:hover {
+            background: #cbd5e1;
         }
 
-        .actions a:hover {
-            text-decoration: underline;
+        .footer-note {
+            margin-top: 28px;
+            color: #64748b;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(18px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 560px) {
+            .card {
+                padding: 32px 22px;
+                border-radius: 22px;
+            }
+
+            h1 {
+                font-size: 28px;
+            }
+
+            .subtitle {
+                font-size: 15px;
+            }
+
+            .btn {
+                width: 100%;
+            }
         }
     </style>
 </head>
+
 <body>
-    <div class="wrapper">
-        <div class="card">
-            <h1>{{ title }}</h1>
+    <div class="card">
+        <div class="content">
+            <div class="icon-circle">
+                {% if error %}
+                    ⚠️
+                {% else %}
+                    ✉️
+                {% endif %}
+            </div>
+
+            <div class="system-name">
+                Automated Web Application Security Assessment System
+            </div>
+
+            <h1>{{ title if title else "Account Notice" }}</h1>
+
+            {% if link %}
+                <p class="subtitle">
+                    The email could not be sent successfully. You can continue using the secure link below.
+                </p>
+            {% else %}
+                <p class="subtitle">
+                    Please check your email inbox and follow the instruction provided to continue.
+                </p>
+            {% endif %}
 
             {% if error %}
-                <div class="error">{{ error }}</div>
+                <div class="alert error">
+                    <strong>Notice:</strong> {{ error }}
+                </div>
             {% endif %}
 
             {% if link %}
-                <div class="message">
-                    Use the link below to continue:
-                </div>
-
                 <div class="link-box">
+                    <div class="link-label">Secure continuation link</div>
                     <a href="{{ link }}">{{ link }}</a>
-                </div>
-            {% else %}
-                <div class="message">
-                    Please check your email inbox. If you do not see the message, check your spam folder as well.
                 </div>
             {% endif %}
 
-            <div class="actions">
-                <a href="/login">Back to login</a>
+            <div class="btn-group">
+                {% if link %}
+                    <a href="{{ link }}" class="btn">Continue</a>
+                {% endif %}
+                <a href="/login" class="btn secondary">Back to Login</a>
+            </div>
+
+            <div class="footer-note">
+                For security reasons, do not share verification or password reset links with others.
             </div>
         </div>
     </div>
