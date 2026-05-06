@@ -830,12 +830,22 @@ def get_risk_counts(vulnerabilities):
 
 def add_page_footer(canvas_obj, doc):
     canvas_obj.saveState()
+
+    # PDF metadata shown in browser/PDF viewer
+    canvas_obj.setTitle("Web Security Scanner Report")
+    canvas_obj.setAuthor("Web Security Scanner")
+    canvas_obj.setSubject("Web Application Security Assessment Report")
+    canvas_obj.setCreator("Web Security Scanner")
+
     width, height = A4
+
     canvas_obj.setFont("Helvetica", 8)
     canvas_obj.setFillColor(colors.HexColor("#64748b"))
     canvas_obj.drawCentredString(width / 2, 25, f"Web Security Scanner Report | Page {doc.page}")
+
     canvas_obj.setStrokeColor(colors.HexColor("#cbd5e1"))
     canvas_obj.line(40, 40, width - 40, 40)
+
     canvas_obj.restoreState()
 
 
