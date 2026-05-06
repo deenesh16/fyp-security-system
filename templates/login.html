@@ -4,860 +4,626 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login | Automated Web Application Security Assessment System</title>
-
     <style>
         * {
+            margin: 0;
+            padding: 0;
             box-sizing: border-box;
         }
 
         :root {
-            --blue-dark: #071a4d;
-            --blue-main: #123fcb;
-            --blue-bright: #2563eb;
-            --cyan: #22d3ee;
-            --green: #34d399;
+            --primary-dark: #0b2a8f;
+            --primary-blue: #1f57ff;
+            --accent-cyan: #66f0d1;
+            --panel-bg: rgba(13, 49, 90, 0.72);
+            --text-main: #0f172a;
+            --text-soft: #6b7a90;
             --white: #ffffff;
-            --text-dark: #0f172a;
-            --text-muted: #64748b;
+            --input-border: rgba(255,255,255,0.22);
+            --shadow-main: 0 18px 45px rgba(15, 23, 42, 0.18);
         }
 
         body {
-            margin: 0;
-            min-height: 100vh;
             font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-            background: #020617;
-            color: var(--white);
+            min-height: 100vh;
+            background: linear-gradient(135deg, #eaf4ff, #eef5ff, #eef8ff);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 18px;
             overflow-x: hidden;
         }
 
-        .page {
-            min-height: 100vh;
-            display: grid;
-            grid-template-columns: 0.95fr 1.05fr;
-            background: #020617;
-        }
-
-        /* LEFT BRAND PANEL */
-        .brand-panel {
-            position: relative;
-            padding: 48px 58px;
-            background:
-                radial-gradient(circle at 20% 15%, rgba(56, 189, 248, 0.20), transparent 30%),
-                radial-gradient(circle at 85% 70%, rgba(52, 211, 153, 0.14), transparent 32%),
-                linear-gradient(145deg, #071a4d 0%, #102fa4 48%, #0b4fd6 100%);
-            overflow: hidden;
-            display: flex;
-            align-items: center;
-        }
-
-        .brand-panel::before {
-            content: "";
-            position: absolute;
-            inset: 0;
-            background-image:
-                linear-gradient(rgba(255,255,255,0.045) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255,255,255,0.045) 1px, transparent 1px);
-            background-size: 44px 44px;
-            opacity: 0.18;
-            animation: gridMove 18s linear infinite;
-        }
-
-        .brand-panel::after {
-            content: "";
-            position: absolute;
-            width: 420px;
-            height: 420px;
-            right: -190px;
-            bottom: -170px;
-            border-radius: 50%;
-            background: rgba(255,255,255,0.08);
-            filter: blur(2px);
-        }
-
-        .brand-content {
-            position: relative;
-            z-index: 2;
+        .page-shell {
             width: 100%;
-            max-width: 720px;
-            animation: fadeSlideLeft 0.9s ease;
+            max-width: 1500px;
+            min-height: 88vh;
+            display: grid;
+            grid-template-columns: 1.02fr 0.98fr;
+            border-radius: 28px;
+            overflow: hidden;
+            background: #fff;
+            box-shadow: 0 25px 60px rgba(17, 24, 39, 0.16);
+        }
+
+        /* LEFT PANEL */
+        .left-panel {
+            position: relative;
+            padding: 34px 42px 28px;
+            color: white;
+            background:
+                radial-gradient(circle at 82% 12%, rgba(111, 255, 214, 0.18), transparent 18%),
+                linear-gradient(180deg, #1431a0 0%, #1840c2 48%, #1748dc 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            overflow: hidden;
+        }
+
+        .left-panel::before,
+        .left-panel::after {
+            content: "";
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(0px);
+            opacity: 0.18;
+            pointer-events: none;
+        }
+
+        .left-panel::before {
+            width: 230px;
+            height: 230px;
+            top: -50px;
+            right: -40px;
+            background: rgba(118, 255, 221, 0.45);
+        }
+
+        .left-panel::after {
+            width: 160px;
+            height: 160px;
+            bottom: -35px;
+            left: -30px;
+            background: rgba(82, 174, 255, 0.45);
         }
 
         .badge {
             display: inline-flex;
             align-items: center;
-            gap: 10px;
-            padding: 11px 18px;
+            gap: 12px;
+            padding: 12px 24px;
             border-radius: 999px;
-            background: rgba(255,255,255,0.12);
+            background: rgba(255,255,255,0.10);
             border: 1px solid rgba(255,255,255,0.18);
-            color: #e0f2fe;
-            font-weight: 700;
-            font-size: 15px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.18);
+            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.04);
+            width: fit-content;
+            margin-bottom: 20px;
             backdrop-filter: blur(10px);
-            margin-bottom: 40px;
         }
 
-        .badge-icon {
-            width: 24px;
-            height: 24px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            color: #34d399;
+        .badge-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #baff8a;
+            box-shadow: 0 0 12px #baff8a;
         }
 
-        .brand-title {
-            margin: 0;
-            font-size: clamp(38px, 5vw, 64px);
-            line-height: 1.08;
-            letter-spacing: -1.5px;
-            color: white;
+        .badge span {
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        .hero h1 {
+            font-size: clamp(44px, 4vw, 72px);
             font-weight: 900;
+            line-height: 1.05;
+            letter-spacing: -1.5px;
+            margin-bottom: 20px;
+            max-width: 720px;
         }
 
-        .brand-title span {
-            color: #5eead4;
-            text-shadow: 0 0 28px rgba(45, 212, 191, 0.35);
+        .hero h1 .accent {
+            color: var(--accent-cyan);
         }
 
-        .brand-desc {
-            max-width: 640px;
-            margin: 24px 0 34px;
-            font-size: 18px;
-            line-height: 1.75;
-            color: rgba(255,255,255,0.86);
+        .hero p {
+            font-size: 17px;
+            line-height: 1.65;
+            color: rgba(255,255,255,0.92);
+            max-width: 700px;
+            margin-bottom: 28px;
         }
 
         .feature-list {
             display: grid;
-            gap: 14px;
+            gap: 16px;
+            max-width: 720px;
         }
 
         .feature-card {
-            display: flex;
+            display: grid;
+            grid-template-columns: 64px 1fr;
+            gap: 16px;
             align-items: center;
-            gap: 18px;
             padding: 18px 20px;
-            border-radius: 18px;
-            background: rgba(255,255,255,0.105);
-            border: 1px solid rgba(255,255,255,0.16);
-            box-shadow: inset 0 1px 0 rgba(255,255,255,0.12);
-            backdrop-filter: blur(12px);
-            transition: 0.3s ease;
+            border-radius: 22px;
+            background: rgba(255,255,255,0.10);
+            border: 1px solid rgba(255,255,255,0.14);
+            backdrop-filter: blur(8px);
         }
 
-        .feature-card:hover {
-            transform: translateX(5px);
-            background: rgba(255,255,255,0.15);
-        }
-
-        .feature-icon {
+        .feature-number {
             width: 54px;
             height: 54px;
-            flex: 0 0 54px;
-            border-radius: 16px;
-            background: rgba(255,255,255,0.15);
-            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 18px;
+            background: rgba(255,255,255,0.16);
             display: flex;
             align-items: center;
             justify-content: center;
-            color: #dbeafe;
+            font-size: 28px;
+            font-weight: 800;
+            color: #ffffff;
         }
 
-        .feature-card h3 {
-            margin: 0 0 5px;
-            font-size: 18px;
-            color: white;
+        .feature-text h3 {
+            font-size: 19px;
+            margin-bottom: 4px;
+            font-weight: 800;
         }
 
-        .feature-card p {
-            margin: 0;
-            color: rgba(255,255,255,0.78);
-            line-height: 1.45;
+        .feature-text p {
+            font-size: 15px;
+            line-height: 1.5;
+            color: rgba(255,255,255,0.88);
+        }
+
+        .system-label {
+            margin-top: 24px;
             font-size: 14px;
+            color: rgba(255,255,255,0.92);
         }
 
-        .brand-footer {
-            margin-top: 30px;
-            color: rgba(255,255,255,0.80);
-            font-size: 14px;
+        .system-label strong {
+            font-weight: 800;
         }
 
-        .brand-footer strong {
-            color: #86efac;
-        }
-
-        /* RIGHT LOGIN PANEL */
-        .auth-panel {
+        /* RIGHT PANEL */
+        .right-panel {
             position: relative;
-            overflow: hidden;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 40px;
-            background:
-                radial-gradient(circle at 20% 20%, rgba(34, 211, 238, 0.32), transparent 28%),
-                radial-gradient(circle at 80% 70%, rgba(37, 99, 235, 0.28), transparent 32%),
-                linear-gradient(135deg, #03101f 0%, #061b38 50%, #020617 100%);
-        }
-
-        .animated-bg {
-            position: absolute;
-            inset: 0;
+            padding: 30px;
             overflow: hidden;
+            background:
+                radial-gradient(circle at 20% 20%, rgba(102, 240, 209, 0.12), transparent 20%),
+                radial-gradient(circle at 85% 15%, rgba(31, 87, 255, 0.16), transparent 18%),
+                linear-gradient(135deg, #0d3756 0%, #0a2942 45%, #103d60 100%);
         }
 
-        .animated-bg::before {
+        .right-panel::before {
             content: "";
             position: absolute;
-            inset: -30%;
+            inset: -20%;
             background:
-                conic-gradient(
-                    from 120deg,
-                    transparent,
-                    rgba(34, 211, 238, 0.22),
-                    rgba(52, 211, 153, 0.24),
-                    rgba(37, 99, 235, 0.26),
-                    transparent,
-                    rgba(34, 211, 238, 0.18),
-                    transparent
-                );
-            filter: blur(38px);
-            animation: rotateGlow 18s linear infinite;
+                linear-gradient(120deg, transparent 0%, rgba(102,240,209,0.08) 25%, transparent 50%, rgba(31,87,255,0.10) 75%, transparent 100%);
+            animation: sweep 9s linear infinite;
         }
 
-        .animated-bg::after {
+        .right-panel::after {
             content: "";
-            position: absolute;
-            inset: 0;
-            background:
-                radial-gradient(circle at 30% 35%, rgba(45, 212, 191, 0.28), transparent 18%),
-                radial-gradient(circle at 72% 62%, rgba(96, 165, 250, 0.26), transparent 20%),
-                radial-gradient(circle at 40% 78%, rgba(14, 165, 233, 0.18), transparent 22%);
-            animation: pulseGlow 5.5s ease-in-out infinite alternate;
-        }
-
-        .wave {
-            position: absolute;
-            width: 145%;
-            height: 180px;
-            left: -20%;
-            border-radius: 50%;
-            opacity: 0.55;
-            filter: blur(1px);
-            background: linear-gradient(90deg, transparent, rgba(34, 211, 238, 0.05), rgba(45, 212, 191, 0.95), rgba(37, 99, 235, 0.70), transparent);
-            box-shadow: 0 0 35px rgba(34, 211, 238, 0.45);
-            transform: rotate(-13deg);
-        }
-
-        .wave.one {
-            top: 16%;
-            animation: waveMoveOne 7s ease-in-out infinite alternate;
-        }
-
-        .wave.two {
-            top: 54%;
-            opacity: 0.42;
-            transform: rotate(15deg);
-            animation: waveMoveTwo 8s ease-in-out infinite alternate;
-        }
-
-        .wave.three {
-            bottom: 2%;
-            opacity: 0.35;
-            transform: rotate(-7deg);
-            animation: waveMoveThree 10s ease-in-out infinite alternate;
-        }
-
-        .mesh {
             position: absolute;
             inset: 0;
             background-image:
-                radial-gradient(circle, rgba(125, 211, 252, 0.42) 1px, transparent 1.7px),
-                linear-gradient(115deg, rgba(34,211,238,0.15), transparent 32%, rgba(37,99,235,0.16));
-            background-size: 26px 26px, 100% 100%;
-            opacity: 0.28;
-            animation: meshDrift 14s linear infinite;
-        }
-
-        .particle {
-            position: absolute;
-            border-radius: 50%;
-            background: rgba(125, 211, 252, 0.88);
-            box-shadow: 0 0 16px rgba(34, 211, 238, 0.85);
-            animation: floatParticle 9s ease-in-out infinite;
-        }
-
-        .particle.p1 { width: 7px; height: 7px; top: 14%; left: 20%; animation-delay: 0s; }
-        .particle.p2 { width: 5px; height: 5px; top: 24%; right: 18%; animation-delay: 1.2s; }
-        .particle.p3 { width: 9px; height: 9px; bottom: 18%; left: 15%; animation-delay: 2s; }
-        .particle.p4 { width: 6px; height: 6px; bottom: 28%; right: 22%; animation-delay: 3.1s; }
-        .particle.p5 { width: 4px; height: 4px; top: 65%; left: 46%; animation-delay: 4s; }
-
-        .shield-watermark {
-            position: absolute;
-            right: 8%;
-            top: 43%;
-            width: 165px;
-            height: 165px;
-            opacity: 0.16;
-            color: #67e8f9;
-            animation: shieldFloat 5.5s ease-in-out infinite alternate;
-        }
-
-        .login-card {
-            position: relative;
-            z-index: 3;
-            width: 100%;
-            max-width: 540px;
-            padding: 46px;
-            border-radius: 32px;
-            background: rgba(8, 37, 63, 0.62);
-            border: 1px solid rgba(148, 234, 255, 0.30);
-            box-shadow:
-                0 25px 80px rgba(0, 0, 0, 0.40),
-                inset 0 1px 0 rgba(255,255,255,0.18),
-                0 0 55px rgba(34, 211, 238, 0.18);
-            backdrop-filter: blur(22px);
-            animation: cardEnter 0.9s ease;
-        }
-
-        .login-card::before {
-            content: "";
-            position: absolute;
-            inset: 0;
-            border-radius: 32px;
-            background: linear-gradient(135deg, rgba(34,211,238,0.18), transparent 45%, rgba(37,99,235,0.18));
+                radial-gradient(rgba(255,255,255,0.10) 1px, transparent 1px);
+            background-size: 24px 24px;
+            opacity: 0.18;
             pointer-events: none;
         }
 
-        .card-content {
-            position: relative;
-            z-index: 2;
+        @keyframes sweep {
+            0% { transform: translateX(-15%) translateY(0) rotate(0deg); }
+            50% { transform: translateX(10%) translateY(2%) rotate(1deg); }
+            100% { transform: translateX(-15%) translateY(0) rotate(0deg); }
         }
 
-        .lock-badge {
-            width: 74px;
-            height: 74px;
-            margin: 0 auto 18px;
+        .form-card {
+            position: relative;
+            z-index: 2;
+            width: 100%;
+            max-width: 620px;
+            padding: 36px 40px 28px;
+            border-radius: 34px;
+            background: linear-gradient(180deg, rgba(14, 57, 90, 0.86), rgba(9, 43, 71, 0.92));
+            border: 1px solid rgba(255,255,255,0.12);
+            box-shadow:
+                0 20px 60px rgba(0,0,0,0.28),
+                inset 0 0 0 1px rgba(255,255,255,0.03);
+            backdrop-filter: blur(16px);
+            color: white;
+        }
+
+        .form-icon-wrap {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 14px;
+        }
+
+        .form-icon {
+            width: 84px;
+            height: 84px;
             border-radius: 50%;
-            background: rgba(34,211,238,0.12);
-            border: 1px solid rgba(125, 211, 252, 0.28);
             display: flex;
             align-items: center;
             justify-content: center;
-            color: #a7f3d0;
-            box-shadow: 0 0 30px rgba(45, 212, 191, 0.24);
-            animation: iconPulse 2.5s ease-in-out infinite;
+            background: rgba(102, 240, 209, 0.08);
+            border: 1px solid rgba(102, 240, 209, 0.16);
+            box-shadow: 0 0 30px rgba(102, 240, 209, 0.12);
         }
 
-        .login-card h2 {
+        .form-icon svg {
+            width: 34px;
+            height: 34px;
+            fill: #b9ffe8;
+        }
+
+        .form-title {
             text-align: center;
-            margin: 0;
-            font-size: 42px;
-            line-height: 1;
-            color: white;
+            font-size: 38px;
             font-weight: 900;
+            margin-bottom: 10px;
         }
 
-        .login-card .subtitle {
-            margin: 14px 0 30px;
+        .form-subtitle {
             text-align: center;
-            color: rgba(226, 232, 240, 0.86);
-            font-size: 15px;
+            color: rgba(255,255,255,0.82);
+            font-size: 16px;
+            margin-bottom: 28px;
         }
 
         .alert {
             margin-bottom: 18px;
-            padding: 13px 15px;
+            padding: 14px 16px;
             border-radius: 14px;
             font-size: 14px;
-            line-height: 1.5;
-            border: 1px solid;
+            font-weight: 600;
         }
 
         .alert.error {
-            background: rgba(254, 226, 226, 0.95);
-            color: #991b1b;
-            border-color: rgba(252, 165, 165, 0.9);
+            background: rgba(255, 92, 92, 0.14);
+            border: 1px solid rgba(255, 92, 92, 0.32);
+            color: #ffd0d0;
         }
 
-        .alert.success {
-            background: rgba(220, 252, 231, 0.95);
-            color: #166534;
-            border-color: rgba(134, 239, 172, 0.9);
+        label {
+            display: block;
+            font-weight: 700;
+            font-size: 14px;
+            margin-bottom: 9px;
+            color: #ffffff;
         }
 
         .input-group {
-            margin-bottom: 22px;
-        }
-
-        .input-group label {
-            display: block;
-            color: rgba(255,255,255,0.94);
-            font-weight: 800;
-            margin-bottom: 10px;
-            font-size: 15px;
-        }
-
-        .input-wrap {
             position: relative;
-        }
-
-        .input-icon {
-            position: absolute;
-            left: 16px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #bfdbfe;
-            width: 22px;
-            height: 22px;
-            pointer-events: none;
+            margin-bottom: 18px;
         }
 
         .input-group input {
             width: 100%;
-            height: 58px;
-            border-radius: 14px;
-            border: 1px solid rgba(191, 219, 254, 0.36);
+            height: 68px;
+            border-radius: 18px;
+            border: 1px solid rgba(255,255,255,0.18);
+            outline: none;
             background: rgba(255,255,255,0.10);
             color: white;
-            padding: 0 52px 0 50px;
             font-size: 16px;
-            outline: none;
-            transition: 0.25s ease;
-            box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
+            padding: 0 56px 0 58px;
+            transition: all 0.25s ease;
         }
 
         .input-group input::placeholder {
-            color: rgba(226,232,240,0.65);
+            color: rgba(255,255,255,0.58);
         }
 
         .input-group input:focus {
-            border-color: rgba(34, 211, 238, 0.86);
-            background: rgba(255,255,255,0.14);
-            box-shadow:
-                0 0 0 4px rgba(34,211,238,0.12),
-                0 0 22px rgba(34,211,238,0.22);
+            border-color: rgba(102,240,209,0.60);
+            box-shadow: 0 0 0 4px rgba(102,240,209,0.12);
+            background: rgba(255,255,255,0.12);
         }
 
-        .password-toggle {
+        .input-icon {
             position: absolute;
-            right: 14px;
+            left: 18px;
             top: 50%;
             transform: translateY(-50%);
-            border: none;
-            background: transparent;
-            color: rgba(226,232,240,0.84);
-            cursor: pointer;
-            padding: 6px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            color: rgba(255,255,255,0.72);
+            font-size: 22px;
         }
 
-        .show-password {
+        .toggle-icon {
+            position: absolute;
+            right: 18px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: rgba(255,255,255,0.72);
+            font-size: 22px;
+            pointer-events: none;
+        }
+
+        .show-password-row {
             display: flex;
             align-items: center;
             gap: 10px;
-            margin: -8px 0 24px;
-            color: rgba(255,255,255,0.86);
-            font-size: 15px;
+            margin: 4px 0 20px;
+            color: rgba(255,255,255,0.88);
+            font-size: 14px;
         }
 
-        .show-password input {
+        .show-password-row input[type="checkbox"] {
             width: 18px;
             height: 18px;
-            accent-color: #22d3ee;
+            accent-color: #66f0d1;
+            cursor: pointer;
         }
 
         .login-btn {
             width: 100%;
-            height: 60px;
+            height: 68px;
             border: none;
-            border-radius: 15px;
-            background: linear-gradient(135deg, #0ea5e9, #2563eb, #1d4ed8);
+            border-radius: 20px;
+            font-size: 18px;
+            font-weight: 800;
             color: white;
-            font-size: 20px;
-            font-weight: 900;
             cursor: pointer;
-            box-shadow:
-                0 16px 35px rgba(37, 99, 235, 0.36),
-                0 0 28px rgba(14, 165, 233, 0.20);
-            transition: 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .login-btn::before {
-            content: "";
-            position: absolute;
-            inset: 0;
-            left: -110%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.28), transparent);
-            transition: 0.5s ease;
+            background: linear-gradient(90deg, #4fbfff, #315cf3);
+            box-shadow: 0 16px 28px rgba(49, 92, 243, 0.28);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            margin-bottom: 20px;
         }
 
         .login-btn:hover {
             transform: translateY(-2px);
-            box-shadow:
-                0 20px 45px rgba(37, 99, 235, 0.44),
-                0 0 34px rgba(14, 165, 233, 0.28);
+            box-shadow: 0 20px 34px rgba(49, 92, 243, 0.34);
         }
 
-        .login-btn:hover::before {
-            left: 110%;
+        .login-btn:active {
+            transform: translateY(0);
         }
 
         .divider {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            margin: 28px 0 20px;
-            color: rgba(226,232,240,0.68);
-            font-size: 14px;
+            text-align: center;
+            color: rgba(255,255,255,0.55);
+            font-size: 13px;
+            margin-bottom: 16px;
+            position: relative;
         }
 
         .divider::before,
         .divider::after {
             content: "";
-            flex: 1;
+            position: absolute;
+            top: 50%;
+            width: 38%;
             height: 1px;
-            background: rgba(226,232,240,0.22);
+            background: rgba(255,255,255,0.12);
         }
 
-        .extra-links {
-            display: grid;
-            gap: 12px;
-            text-align: center;
+        .divider::before {
+            left: 0;
         }
 
-        .extra-links a {
-            color: #60a5fa;
-            font-weight: 800;
+        .divider::after {
+            right: 0;
+        }
+
+        .link-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .link-group a {
+            color: #79b7ff;
             text-decoration: none;
-            transition: 0.2s ease;
+            font-weight: 700;
+            font-size: 15px;
+            transition: color 0.2s ease;
         }
 
-        .extra-links a:hover {
-            color: #93c5fd;
+        .link-group a:hover {
+            color: #bfe2ff;
             text-decoration: underline;
         }
 
-        @keyframes gridMove {
-            from { transform: translate(0, 0); }
-            to { transform: translate(44px, 44px); }
-        }
-
-        @keyframes rotateGlow {
-            from { transform: rotate(0deg) scale(1); }
-            to { transform: rotate(360deg) scale(1.05); }
-        }
-
-        @keyframes pulseGlow {
-            from { opacity: 0.55; transform: scale(1); }
-            to { opacity: 0.95; transform: scale(1.05); }
-        }
-
-        @keyframes waveMoveOne {
-            from { transform: translateX(-5%) translateY(0) rotate(-13deg); }
-            to { transform: translateX(8%) translateY(28px) rotate(-10deg); }
-        }
-
-        @keyframes waveMoveTwo {
-            from { transform: translateX(8%) translateY(0) rotate(15deg); }
-            to { transform: translateX(-6%) translateY(-26px) rotate(12deg); }
-        }
-
-        @keyframes waveMoveThree {
-            from { transform: translateX(-6%) translateY(0) rotate(-7deg); }
-            to { transform: translateX(7%) translateY(-18px) rotate(-4deg); }
-        }
-
-        @keyframes meshDrift {
-            from { background-position: 0 0, 0 0; }
-            to { background-position: 120px 80px, 0 0; }
-        }
-
-        @keyframes floatParticle {
-            0%, 100% { transform: translateY(0) translateX(0); opacity: 0.45; }
-            50% { transform: translateY(-35px) translateX(22px); opacity: 1; }
-        }
-
-        @keyframes shieldFloat {
-            from { transform: translateY(0) scale(1); }
-            to { transform: translateY(-18px) scale(1.04); }
-        }
-
-        @keyframes iconPulse {
-            0%, 100% { transform: scale(1); box-shadow: 0 0 30px rgba(45, 212, 191, 0.24); }
-            50% { transform: scale(1.05); box-shadow: 0 0 42px rgba(45, 212, 191, 0.42); }
-        }
-
-        @keyframes cardEnter {
-            from { opacity: 0; transform: translateY(24px) scale(0.98); }
-            to { opacity: 1; transform: translateY(0) scale(1); }
-        }
-
-        @keyframes fadeSlideLeft {
-            from { opacity: 0; transform: translateX(-28px); }
-            to { opacity: 1; transform: translateX(0); }
-        }
-
-        @media (max-width: 1050px) {
-            .page {
+        /* RESPONSIVE */
+        @media (max-width: 1200px) {
+            .page-shell {
                 grid-template-columns: 1fr;
-            }
-
-            .brand-panel {
                 min-height: auto;
-                padding: 40px 28px;
             }
 
-            .auth-panel {
-                min-height: 720px;
-                padding: 32px 20px;
+            .left-panel {
+                padding: 28px 28px 24px;
             }
 
-            .brand-title {
-                font-size: 42px;
+            .hero h1 {
+                font-size: 48px;
+            }
+
+            .right-panel {
+                padding: 24px;
+            }
+
+            .form-card {
+                max-width: 760px;
             }
         }
 
-        @media (max-width: 560px) {
-            .brand-panel {
-                padding: 32px 20px;
+        @media (max-width: 768px) {
+            body {
+                padding: 12px;
             }
 
-            .brand-title {
-                font-size: 32px;
+            .page-shell {
+                border-radius: 20px;
             }
 
-            .brand-desc {
+            .left-panel,
+            .right-panel {
+                padding: 22px;
+            }
+
+            .hero h1 {
+                font-size: 38px;
+            }
+
+            .hero p {
                 font-size: 15px;
             }
 
             .feature-card {
-                align-items: flex-start;
+                grid-template-columns: 54px 1fr;
+                padding: 16px;
             }
 
-            .login-card {
-                padding: 30px 22px;
+            .feature-number {
+                width: 46px;
+                height: 46px;
+                font-size: 22px;
+            }
+
+            .form-card {
+                padding: 28px 22px 24px;
                 border-radius: 24px;
             }
 
-            .login-card h2 {
-                font-size: 34px;
+            .form-title {
+                font-size: 30px;
+            }
+
+            .input-group input,
+            .login-btn {
+                height: 58px;
             }
         }
     </style>
 </head>
-
 <body>
-    <main class="page">
-        <section class="brand-panel">
-            <div class="brand-content">
+    <div class="page-shell">
+
+        <!-- LEFT SIDE -->
+        <section class="left-panel">
+            <div>
                 <div class="badge">
-                    <span class="badge-icon">
-                        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                            <path d="m9 12 2 2 4-5"/>
-                        </svg>
-                    </span>
-                    Secure Access Portal
+                    <span class="badge-dot"></span>
+                    <span>Secure Access Portal</span>
                 </div>
 
-                <h1 class="brand-title">
-                    Welcome Back to the Automated Web Application Security <span>Assessment System</span>
-                </h1>
+                <div class="hero">
+                    <h1>
+                        Welcome Back to the Automated Web Application Security
+                        <span class="accent">Assessment System</span>
+                    </h1>
 
-                <p class="brand-desc">
-                    Sign in to begin vulnerability scanning, review risk findings,
-                    monitor security trends, and manage your web application assessment
-                    workflows in one professional platform.
-                </p>
+                    <p>
+                        Sign in to begin vulnerability scanning, review risk findings,
+                        monitor security trends, and manage your web application
+                        assessment workflows in one professional platform.
+                    </p>
+                </div>
 
                 <div class="feature-list">
                     <div class="feature-card">
-                        <div class="feature-icon">
-                            <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                                <path d="m9 12 2 2 4-5"/>
-                            </svg>
-                        </div>
-                        <div>
+                        <div class="feature-number">01</div>
+                        <div class="feature-text">
                             <h3>Automated Vulnerability Scanning</h3>
                             <p>Run quick and full scans to identify security weaknesses on target websites.</p>
                         </div>
                     </div>
 
                     <div class="feature-card">
-                        <div class="feature-icon">
-                            <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                                <path d="M14 2v6h6"/>
-                                <path d="M8 13h8"/>
-                                <path d="M8 17h6"/>
-                            </svg>
-                        </div>
-                        <div>
+                        <div class="feature-number">02</div>
+                        <div class="feature-text">
                             <h3>Centralized Report Tracking</h3>
                             <p>Access scan history, view results, and monitor vulnerability severity clearly.</p>
                         </div>
                     </div>
 
                     <div class="feature-card">
-                        <div class="feature-icon">
-                            <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
-                                <circle cx="9" cy="7" r="4"/>
-                                <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
-                                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                            </svg>
-                        </div>
-                        <div>
+                        <div class="feature-number">03</div>
+                        <div class="feature-text">
                             <h3>Security-Focused Workflow</h3>
                             <p>Support password protection, verification flows, and user-friendly access control.</p>
                         </div>
                     </div>
                 </div>
+            </div>
 
-                <div class="brand-footer">
-                    <strong>System:</strong> Automated Web Application Security Assessment System
-                </div>
+            <div class="system-label">
+                <strong>System:</strong> Automated Web Application Security Assessment System
             </div>
         </section>
 
-        <section class="auth-panel">
-            <div class="animated-bg">
-                <div class="mesh"></div>
-                <div class="wave one"></div>
-                <div class="wave two"></div>
-                <div class="wave three"></div>
-
-                <span class="particle p1"></span>
-                <span class="particle p2"></span>
-                <span class="particle p3"></span>
-                <span class="particle p4"></span>
-                <span class="particle p5"></span>
-
-                <svg class="shield-watermark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
-                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                    <path d="M9 12h6"/>
-                    <path d="M12 9v6"/>
-                </svg>
-            </div>
-
-            <div class="login-card">
-                <div class="card-content">
-                    <div class="lock-badge">
-                        <svg viewBox="0 0 24 24" width="38" height="38" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                            <rect x="8" y="10" width="8" height="7" rx="1"/>
-                            <path d="M10 10V8a2 2 0 0 1 4 0v2"/>
+        <!-- RIGHT SIDE -->
+        <section class="right-panel">
+            <div class="form-card">
+                <div class="form-icon-wrap">
+                    <div class="form-icon">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M12 1l8 4v6c0 5.55-3.84 10.74-8 12-4.16-1.26-8-6.45-8-12V5l8-4zm0 2.18L6 6v5c0 4.39 2.93 8.74 6 9.91 3.07-1.17 6-5.52 6-9.91V6l-6-2.82zM11 10V8h2v2h1a2 2 0 012 2v4h-6v-4a2 2 0 012-2h1zm-1 2v2h4v-2h-4z"/>
                         </svg>
                     </div>
+                </div>
 
-                    <h2>Login</h2>
-                    <p class="subtitle">Access your web security scanner account securely.</p>
+                <h2 class="form-title">Login</h2>
+                <p class="form-subtitle">Access your web security scanner account securely.</p>
 
-                    {% if error %}
-                        <div class="alert error">{{ error }}</div>
-                    {% endif %}
+                {% if error %}
+                    <div class="alert error">{{ error }}</div>
+                {% endif %}
 
-                    {% if message %}
-                        <div class="alert success">{{ message }}</div>
-                    {% endif %}
+                <form method="POST" action="/login">
+                    <label for="email">Email</label>
+                    <div class="input-group">
+                        <span class="input-icon">✉</span>
+                        <input type="email" id="email" name="email" placeholder="Enter your email" required>
+                    </div>
 
-                    <form method="POST" action="/login">
-                        <div class="input-group">
-                            <label for="email">Email</label>
-                            <div class="input-wrap">
-                                <span class="input-icon">
-                                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
-                                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-                                        <path d="m22 6-10 7L2 6"/>
-                                    </svg>
-                                </span>
-                                <input
-                                    type="email"
-                                    id="email"
-                                    name="email"
-                                    placeholder="Enter your email"
-                                    value="{{ request.form.get('email', '') }}"
-                                    required
-                                >
-                            </div>
-                        </div>
+                    <label for="password">Password</label>
+                    <div class="input-group">
+                        <span class="input-icon">🔒</span>
+                        <input type="password" id="password" name="password" placeholder="Enter your password" required>
+                        <span class="toggle-icon">👁</span>
+                    </div>
 
-                        <div class="input-group">
-                            <label for="password">Password</label>
-                            <div class="input-wrap">
-                                <span class="input-icon">
-                                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
-                                        <rect x="3" y="11" width="18" height="11" rx="2"/>
-                                        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                                    </svg>
-                                </span>
-
-                                <input
-                                    type="password"
-                                    id="password"
-                                    name="password"
-                                    placeholder="Enter your password"
-                                    required
-                                >
-
-                                <button type="button" class="password-toggle" id="eyeToggle" aria-label="Show or hide password">
-                                    <svg id="eyeIcon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
-                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                                        <circle cx="12" cy="12" r="3"/>
-                                    </svg>
-                                </button>
-                            </div>
-                        </div>
-
-                        <label class="show-password">
-                            <input type="checkbox" id="showPassword">
-                            <span>Show password</span>
+                    <div class="show-password-row">
+                        <input type="checkbox" id="showPassword">
+                        <label for="showPassword" style="margin:0; font-weight:500; font-size:14px; cursor:pointer;">
+                            Show password
                         </label>
+                    </div>
 
-                        <button type="submit" class="login-btn">Login</button>
-                    </form>
+                    <button type="submit" class="login-btn">Login</button>
 
                     <div class="divider">OR</div>
 
-                    <div class="extra-links">
+                    <div class="link-group">
                         <a href="/register">Create account</a>
                         <a href="/forgot_password">Forgot password?</a>
                     </div>
-                </div>
+                </form>
             </div>
         </section>
-    </main>
+
+    </div>
 
     <script>
         const showPassword = document.getElementById("showPassword");
-        const passwordField = document.getElementById("password");
-        const eyeToggle = document.getElementById("eyeToggle");
-        const eyeIcon = document.getElementById("eyeIcon");
-
-        function setPasswordVisibility(visible) {
-            passwordField.type = visible ? "text" : "password";
-            showPassword.checked = visible;
-
-            eyeIcon.innerHTML = visible
-                ? '<path d="M17.94 17.94A10.94 10.94 0 0 1 12 20C5 20 1 12 1 12a21.8 21.8 0 0 1 5.06-5.94"/><path d="M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a21.74 21.74 0 0 1-3.23 4.31"/><path d="M14.12 14.12A3 3 0 0 1 9.88 9.88"/><path d="M1 1l22 22"/>'
-                : '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
-        }
+        const passwordInput = document.getElementById("password");
 
         showPassword.addEventListener("change", function () {
-            setPasswordVisibility(this.checked);
-        });
-
-        eyeToggle.addEventListener("click", function () {
-            setPasswordVisibility(passwordField.type === "password");
+            passwordInput.type = this.checked ? "text" : "password";
         });
     </script>
 </body>

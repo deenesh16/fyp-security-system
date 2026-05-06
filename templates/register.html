@@ -4,324 +4,291 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Create Account | Automated Web Application Security Assessment System</title>
-
     <style>
         * {
+            margin: 0;
+            padding: 0;
             box-sizing: border-box;
         }
 
         :root {
-            --green1: #0f9d7a;
-            --green2: #16b894;
-            --cyan1: #1fb6ff;
-            --blue1: #2563eb;
-            --navy: #0f172a;
-            --text-dark: #0f172a;
-            --text-muted: #64748b;
-            --white: #ffffff;
-            --border: #cbd5e1;
-            --danger: #dc2626;
+            --green-1: #15b38a;
+            --green-2: #23c4a2;
+            --green-3: #2aaee8;
+            --dark: #0f172a;
+            --soft-text: #64748b;
+            --light-bg: #f8fbff;
+            --border: #dbe7f3;
+            --danger: #ef4444;
             --success: #16a34a;
+            --card-shadow: 0 20px 55px rgba(15, 23, 42, 0.12);
         }
 
         body {
-            margin: 0;
-            min-height: 100vh;
             font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #e6fffb 0%, #eef2ff 100%);
+            min-height: 100vh;
+            background: linear-gradient(135deg, #eef7fb, #edf4ff);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 18px;
             overflow-x: hidden;
         }
 
-        .page {
-            min-height: 100vh;
+        .page-shell {
+            width: 100%;
+            max-width: 1520px;
+            min-height: 90vh;
             display: grid;
             grid-template-columns: 1.02fr 0.98fr;
+            border-radius: 30px;
+            overflow: hidden;
+            background: #ffffff;
+            box-shadow: 0 25px 65px rgba(15, 23, 42, 0.15);
         }
 
-        /* LEFT SIDE - KEEP GREEN STYLE */
+        /* LEFT PANEL - KEEP GREEN */
         .left-panel {
             position: relative;
-            overflow: hidden;
-            padding: 42px 58px;
-            display: flex;
-            align-items: center;
-            background: linear-gradient(160deg, #10966c 0%, #16b894 35%, #24a8e8 100%);
+            padding: 42px 46px 34px;
             color: white;
+            background:
+                radial-gradient(circle at 86% 8%, rgba(255,255,255,0.12), transparent 22%),
+                linear-gradient(180deg, var(--green-1) 0%, var(--green-2) 45%, var(--green-3) 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            overflow: hidden;
         }
 
         .left-panel::before {
             content: "";
             position: absolute;
-            width: 360px;
-            height: 360px;
-            top: -90px;
-            right: -110px;
+            width: 270px;
+            height: 270px;
             border-radius: 50%;
+            top: -40px;
+            right: -25px;
             background: rgba(255,255,255,0.10);
         }
 
         .left-panel::after {
             content: "";
             position: absolute;
-            width: 230px;
-            height: 230px;
-            bottom: -90px;
-            left: -70px;
+            width: 180px;
+            height: 180px;
             border-radius: 50%;
-            background: rgba(255,255,255,0.09);
+            bottom: -40px;
+            left: -30px;
+            background: rgba(255,255,255,0.08);
         }
 
         .left-content {
             position: relative;
             z-index: 2;
-            max-width: 690px;
-            animation: fadeInLeft 0.9s ease;
         }
 
-        .tag {
+        .left-badge {
             display: inline-flex;
             align-items: center;
-            gap: 12px;
-            padding: 14px 22px;
+            gap: 14px;
+            padding: 14px 24px;
             border-radius: 999px;
-            background: rgba(255,255,255,0.13);
-            border: 1px solid rgba(255,255,255,0.20);
-            box-shadow: 0 10px 24px rgba(0,0,0,0.12);
-            font-weight: 700;
-            font-size: 18px;
-            margin-bottom: 38px;
-        }
-
-        .tag .dot {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            background: #d9ff9e;
-            box-shadow: 0 0 12px rgba(217,255,158,0.9);
-        }
-
-        .left-content h1 {
-            margin: 0 0 22px;
-            font-size: clamp(38px, 4.8vw, 64px);
-            line-height: 1.1;
-            font-weight: 900;
-            letter-spacing: -1.5px;
-        }
-
-        .left-content p.main-desc {
-            margin: 0 0 36px;
-            font-size: 18px;
-            line-height: 1.8;
-            color: rgba(255,255,255,0.92);
-            max-width: 620px;
-        }
-
-        .info-list {
-            display: grid;
-            gap: 18px;
-        }
-
-        .info-card {
-            display: flex;
-            align-items: flex-start;
-            gap: 18px;
-            padding: 18px 20px;
-            border-radius: 22px;
+            border: 1px solid rgba(255,255,255,0.22);
             background: rgba(255,255,255,0.10);
-            border: 1px solid rgba(255,255,255,0.14);
-            box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
-            backdrop-filter: blur(5px);
+            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.03);
+            backdrop-filter: blur(10px);
+            margin-bottom: 34px;
+            width: fit-content;
         }
 
-        .info-number {
-            width: 46px;
-            height: 46px;
-            border-radius: 14px;
-            background: rgba(255,255,255,0.16);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 900;
-            font-size: 18px;
-            flex-shrink: 0;
+        .left-badge .dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #e9ff8f;
+            box-shadow: 0 0 12px #e9ff8f;
         }
 
-        .info-card h3 {
-            margin: 2px 0 7px;
+        .left-badge span {
             font-size: 18px;
             font-weight: 800;
         }
 
-        .info-card p {
-            margin: 0;
-            font-size: 15px;
-            line-height: 1.6;
-            color: rgba(255,255,255,0.90);
+        .left-panel h1 {
+            font-size: clamp(42px, 4.8vw, 74px);
+            font-weight: 900;
+            line-height: 1.06;
+            letter-spacing: -1.6px;
+            margin-bottom: 24px;
+            max-width: 720px;
         }
 
-        /* RIGHT SIDE - ANIMATED BACKGROUND */
-        .right-panel {
-            position: relative;
-            overflow: hidden;
+        .left-panel p.intro {
+            max-width: 720px;
+            font-size: 18px;
+            line-height: 1.7;
+            color: rgba(255,255,255,0.95);
+            margin-bottom: 34px;
+        }
+
+        .feature-list {
+            display: grid;
+            gap: 18px;
+            max-width: 760px;
+        }
+
+        .feature-card {
+            display: grid;
+            grid-template-columns: 70px 1fr;
+            gap: 18px;
+            align-items: center;
+            padding: 18px 22px;
+            border-radius: 24px;
+            background: rgba(255,255,255,0.10);
+            border: 1px solid rgba(255,255,255,0.16);
+            backdrop-filter: blur(8px);
+        }
+
+        .feature-number {
+            width: 56px;
+            height: 56px;
+            border-radius: 18px;
+            background: rgba(255,255,255,0.16);
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 36px;
-            background: linear-gradient(135deg, #f8fafc 0%, #eef6ff 45%, #f8fffe 100%);
+            font-size: 18px;
+            font-weight: 900;
+            color: white;
         }
 
-        .animated-bg {
-            position: absolute;
-            inset: 0;
+        .feature-text h3 {
+            font-size: 18px;
+            font-weight: 800;
+            margin-bottom: 6px;
+        }
+
+        .feature-text p {
+            font-size: 15px;
+            line-height: 1.5;
+            color: rgba(255,255,255,0.88);
+        }
+
+        .system-label {
+            position: relative;
+            z-index: 2;
+            margin-top: 28px;
+            font-size: 15px;
+            color: rgba(255,255,255,0.92);
+        }
+
+        .system-label strong {
+            font-weight: 800;
+        }
+
+        /* RIGHT PANEL - ANIMATED */
+        .right-panel {
+            position: relative;
+            padding: 34px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             overflow: hidden;
+            background: linear-gradient(135deg, #f7fcff, #edf6ff, #eef7ff);
         }
 
-        .animated-bg::before {
+        .right-panel::before {
             content: "";
             position: absolute;
-            inset: -25%;
+            inset: -20%;
             background:
-                conic-gradient(
-                    from 90deg,
-                    rgba(34, 211, 238, 0.00),
-                    rgba(34, 211, 238, 0.20),
-                    rgba(16, 185, 129, 0.18),
-                    rgba(37, 99, 235, 0.15),
-                    rgba(34, 211, 238, 0.00)
-                );
-            filter: blur(60px);
-            animation: rotateGlow 16s linear infinite;
-            opacity: 0.9;
+                radial-gradient(circle at 20% 30%, rgba(112, 228, 255, 0.35), transparent 18%),
+                radial-gradient(circle at 80% 25%, rgba(83, 138, 255, 0.26), transparent 20%),
+                radial-gradient(circle at 75% 78%, rgba(159, 200, 255, 0.28), transparent 18%);
+            animation: floatBlobs 12s ease-in-out infinite alternate;
         }
 
-        .wave {
-            position: absolute;
-            width: 150%;
-            height: 170px;
-            left: -22%;
-            border-radius: 50%;
-            background: linear-gradient(
-                90deg,
-                transparent,
-                rgba(34, 211, 238, 0.12),
-                rgba(16, 185, 129, 0.45),
-                rgba(59, 130, 246, 0.30),
-                transparent
-            );
-            filter: blur(2px);
-            box-shadow: 0 0 28px rgba(34, 211, 238, 0.18);
-        }
-
-        .wave.one {
-            top: 12%;
-            transform: rotate(-12deg);
-            animation: floatWave1 7s ease-in-out infinite alternate;
-        }
-
-        .wave.two {
-            top: 46%;
-            transform: rotate(10deg);
-            opacity: 0.85;
-            animation: floatWave2 9s ease-in-out infinite alternate;
-        }
-
-        .wave.three {
-            bottom: 2%;
-            transform: rotate(-8deg);
-            opacity: 0.72;
-            animation: floatWave3 10s ease-in-out infinite alternate;
-        }
-
-        .grid-overlay {
+        .right-panel::after {
+            content: "";
             position: absolute;
             inset: 0;
-            background-image:
-                linear-gradient(rgba(59,130,246,0.06) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(16,185,129,0.05) 1px, transparent 1px);
-            background-size: 34px 34px;
-            opacity: 0.5;
-            animation: moveGrid 18s linear infinite;
+            background:
+                repeating-linear-gradient(
+                    90deg,
+                    rgba(255,255,255,0.24) 0px,
+                    rgba(255,255,255,0.24) 1px,
+                    transparent 1px,
+                    transparent 120px
+                );
+            opacity: 0.35;
+            pointer-events: none;
         }
 
-        .blob {
+        .moving-wave {
             position: absolute;
-            border-radius: 50%;
-            filter: blur(6px);
-            opacity: 0.55;
+            width: 160%;
+            height: 160%;
+            top: -30%;
+            left: -30%;
+            background:
+                linear-gradient(115deg,
+                    transparent 0%,
+                    rgba(255,255,255,0.18) 18%,
+                    transparent 30%,
+                    transparent 48%,
+                    rgba(157, 206, 255, 0.18) 58%,
+                    transparent 72%);
+            animation: waveMove 10s linear infinite;
+            pointer-events: none;
         }
 
-        .blob.one {
-            width: 220px;
-            height: 220px;
-            top: 8%;
-            left: 12%;
-            background: rgba(34, 211, 238, 0.18);
-            animation: floatBlob 8s ease-in-out infinite;
+        @keyframes floatBlobs {
+            0% {
+                transform: translate(0, 0) scale(1);
+            }
+            100% {
+                transform: translate(18px, -12px) scale(1.05);
+            }
         }
 
-        .blob.two {
-            width: 180px;
-            height: 180px;
-            bottom: 12%;
-            right: 10%;
-            background: rgba(16, 185, 129, 0.18);
-            animation: floatBlob 10s ease-in-out infinite reverse;
+        @keyframes waveMove {
+            0% {
+                transform: translateX(-8%) translateY(0) rotate(0deg);
+            }
+            50% {
+                transform: translateX(6%) translateY(1.5%) rotate(1deg);
+            }
+            100% {
+                transform: translateX(-8%) translateY(0) rotate(0deg);
+            }
         }
-
-        .blob.three {
-            width: 140px;
-            height: 140px;
-            top: 60%;
-            left: 6%;
-            background: rgba(59, 130, 246, 0.14);
-            animation: floatBlob 9s ease-in-out infinite;
-        }
-
-        .particle {
-            position: absolute;
-            border-radius: 50%;
-            background: rgba(59,130,246,0.85);
-            box-shadow: 0 0 14px rgba(34,211,238,0.45);
-            animation: particleFloat 9s ease-in-out infinite;
-        }
-
-        .p1 { width: 6px; height: 6px; top: 16%; left: 18%; animation-delay: 0s; }
-        .p2 { width: 8px; height: 8px; top: 26%; right: 20%; animation-delay: 1s; }
-        .p3 { width: 5px; height: 5px; top: 66%; right: 15%; animation-delay: 2.5s; }
-        .p4 { width: 7px; height: 7px; bottom: 18%; left: 22%; animation-delay: 1.8s; }
-        .p5 { width: 4px; height: 4px; bottom: 28%; right: 40%; animation-delay: 3.2s; }
 
         .form-card {
             position: relative;
             z-index: 2;
             width: 100%;
-            max-width: 640px;
-            padding: 44px 42px 36px;
-            border-radius: 32px;
-            background: rgba(255,255,255,0.88);
-            border: 1px solid rgba(255,255,255,0.75);
-            box-shadow:
-                0 20px 60px rgba(15,23,42,0.14),
-                0 8px 20px rgba(59,130,246,0.06),
-                inset 0 1px 0 rgba(255,255,255,0.8);
-            backdrop-filter: blur(18px);
-            animation: fadeInUp 0.8s ease;
+            max-width: 760px;
+            padding: 44px 48px 34px;
+            background: rgba(255,255,255,0.92);
+            border: 1px solid rgba(255,255,255,0.65);
+            border-radius: 34px;
+            box-shadow: var(--card-shadow);
+            backdrop-filter: blur(10px);
         }
 
         .form-card h2 {
-            margin: 0;
-            font-size: 48px;
-            line-height: 1.08;
-            color: #0f172a;
+            font-size: clamp(40px, 4vw, 62px);
             font-weight: 900;
-            letter-spacing: -1.2px;
+            color: #0f1835;
+            line-height: 1.05;
+            margin-bottom: 18px;
         }
 
-        .subtitle {
-            margin: 20px 0 34px;
-            font-size: 17px;
-            color: #64748b;
-            line-height: 1.6;
+        .form-card .subtitle {
+            font-size: 18px;
+            color: #73829a;
+            margin-bottom: 34px;
         }
 
         .alert {
@@ -329,239 +296,240 @@
             padding: 14px 16px;
             border-radius: 14px;
             font-size: 14px;
-            line-height: 1.5;
-            border: 1px solid;
+            font-weight: 600;
         }
 
         .alert.error {
-            background: #fee2e2;
-            color: #991b1b;
-            border-color: #fca5a5;
+            background: #fff1f2;
+            border: 1px solid #fecdd3;
+            color: #b91c1c;
         }
 
-        .alert.success {
-            background: #dcfce7;
-            color: #166534;
-            border-color: #86efac;
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
         }
 
-        .input-group {
-            margin-bottom: 22px;
-        }
-
-        .input-group label {
+        label {
             display: block;
-            margin-bottom: 10px;
-            color: #1e293b;
-            font-weight: 800;
             font-size: 15px;
+            font-weight: 800;
+            color: #1e293b;
+            margin-bottom: 10px;
         }
 
-        .input-group input {
+        .form-group input {
             width: 100%;
-            height: 66px;
-            border-radius: 20px;
-            border: 1.5px solid #cbd5e1;
-            background: rgba(255,255,255,0.78);
-            padding: 0 22px;
-            font-size: 16px;
+            height: 76px;
+            padding: 0 24px;
+            font-size: 17px;
+            border-radius: 24px;
+            border: 1.8px solid #d7e2ee;
+            background: rgba(255,255,255,0.85);
             color: #0f172a;
             outline: none;
-            transition: 0.25s ease;
+            transition: all 0.25s ease;
         }
 
-        .input-group input::placeholder {
-            color: #7c7c7c;
+        .form-group input::placeholder {
+            color: #8c8c8c;
         }
 
-        .input-group input:focus {
-            border-color: #22c55e;
-            box-shadow: 0 0 0 4px rgba(34,197,94,0.10), 0 0 20px rgba(34,211,238,0.12);
-            background: rgba(255,255,255,0.95);
+        .form-group input:focus {
+            border-color: #6db4ff;
+            box-shadow: 0 0 0 5px rgba(93, 168, 255, 0.12);
+            background: #ffffff;
         }
 
-        .show-password {
+        .show-password-row {
             display: flex;
             align-items: center;
             gap: 12px;
-            margin: -4px 0 18px;
-            color: #475569;
+            margin-top: -4px;
+            color: #4b5563;
             font-size: 15px;
         }
 
-        .show-password input {
-            width: 20px;
-            height: 20px;
+        .show-password-row input[type="checkbox"] {
+            width: 24px;
+            height: 24px;
             accent-color: #16a34a;
+            cursor: pointer;
         }
 
         .password-box {
-            margin-top: 6px;
-            margin-bottom: 26px;
-            padding: 22px 24px;
-            border-radius: 22px;
-            background: rgba(248,250,252,0.92);
-            border: 1px solid #dbeafe;
-            box-shadow: inset 0 1px 0 rgba(255,255,255,0.85);
+            margin-top: 2px;
+            border-radius: 24px;
+            border: 1px solid #dbe7f3;
+            background: rgba(249, 251, 255, 0.92);
+            padding: 28px 28px 18px;
         }
 
         .password-box h4 {
-            margin: 0 0 14px;
+            font-size: 18px;
             color: #111827;
-            font-size: 17px;
+            margin-bottom: 18px;
             font-weight: 900;
         }
 
-        .rule {
+        .requirements {
+            list-style: none;
+            display: grid;
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+
+        .requirements li {
+            font-size: 15px;
             display: flex;
             align-items: center;
             gap: 12px;
-            margin: 10px 0;
             color: var(--danger);
-            font-size: 14px;
-            transition: 0.2s ease;
+            transition: all 0.2s ease;
         }
 
-        .rule.valid {
+        .requirements li.valid {
             color: var(--success);
         }
 
-        .rule .icon {
-            width: 22px;
-            text-align: center;
+        .requirements li .icon {
+            font-size: 16px;
             font-weight: 900;
-            font-size: 15px;
+            width: 20px;
+            display: inline-block;
+            text-align: center;
         }
 
         .strength-status {
-            margin-top: 18px;
+            width: 100%;
             text-align: center;
-            padding: 14px 16px;
-            border-radius: 14px;
+            padding: 16px 18px;
+            border-radius: 16px;
+            font-size: 17px;
             font-weight: 900;
-            font-size: 15px;
             background: #fee2e2;
             color: #b91c1c;
-            transition: 0.25s ease;
+            transition: all 0.25s ease;
         }
 
-        .strength-status.valid {
+        .strength-status.success {
             background: #dcfce7;
             color: #166534;
         }
 
         .register-btn {
+            margin-top: 10px;
             width: 100%;
-            height: 62px;
+            height: 72px;
             border: none;
-            border-radius: 18px;
-            background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
-            color: white;
-            font-size: 20px;
+            border-radius: 22px;
+            font-size: 18px;
             font-weight: 900;
-            cursor: pointer;
-            transition: 0.25s ease;
-            box-shadow: 0 14px 30px rgba(34,197,94,0.20);
-        }
-
-        .register-btn:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 18px 34px rgba(34,197,94,0.28);
-        }
-
-        .register-btn:disabled {
-            background: #94a3b8;
+            color: white;
+            background: linear-gradient(90deg, #94a3b8, #94a3b8);
             cursor: not-allowed;
-            box-shadow: none;
+            transition: all 0.25s ease;
+        }
+
+        .register-btn.enabled {
+            background: linear-gradient(90deg, #16a34a, #22c55e);
+            box-shadow: 0 16px 34px rgba(34, 197, 94, 0.25);
+            cursor: pointer;
+        }
+
+        .register-btn.enabled:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 20px 40px rgba(34, 197, 94, 0.30);
         }
 
         .bottom-link {
             text-align: center;
-            margin-top: 20px;
+            margin-top: 12px;
         }
 
         .bottom-link a {
-            text-decoration: none;
             color: #2563eb;
-            font-weight: 800;
+            text-decoration: none;
             font-size: 16px;
+            font-weight: 800;
         }
 
         .bottom-link a:hover {
             text-decoration: underline;
         }
 
-        @keyframes rotateGlow {
-            from { transform: rotate(0deg) scale(1); }
-            to { transform: rotate(360deg) scale(1.08); }
-        }
-
-        @keyframes floatWave1 {
-            from { transform: translateX(-5%) translateY(0) rotate(-12deg); }
-            to { transform: translateX(7%) translateY(22px) rotate(-8deg); }
-        }
-
-        @keyframes floatWave2 {
-            from { transform: translateX(7%) translateY(0) rotate(10deg); }
-            to { transform: translateX(-6%) translateY(-20px) rotate(7deg); }
-        }
-
-        @keyframes floatWave3 {
-            from { transform: translateX(-4%) translateY(0) rotate(-8deg); }
-            to { transform: translateX(6%) translateY(-18px) rotate(-5deg); }
-        }
-
-        @keyframes moveGrid {
-            from { transform: translate(0, 0); }
-            to { transform: translate(34px, 34px); }
-        }
-
-        @keyframes floatBlob {
-            0%, 100% { transform: translateY(0) translateX(0) scale(1); }
-            50% { transform: translateY(-18px) translateX(14px) scale(1.05); }
-        }
-
-        @keyframes particleFloat {
-            0%, 100% { transform: translateY(0) translateX(0); opacity: 0.45; }
-            50% { transform: translateY(-28px) translateX(18px); opacity: 1; }
-        }
-
-        @keyframes fadeInLeft {
-            from { opacity: 0; transform: translateX(-28px); }
-            to { opacity: 1; transform: translateX(0); }
-        }
-
-        @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(26px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        @media (max-width: 1100px) {
-            .page {
+        @media (max-width: 1280px) {
+            .page-shell {
                 grid-template-columns: 1fr;
+                min-height: auto;
+            }
+
+            .left-panel {
+                padding: 32px 28px 24px;
+            }
+
+            .left-panel h1 {
+                font-size: 52px;
+            }
+
+            .right-panel {
+                padding: 24px;
+            }
+
+            .form-card {
+                max-width: 900px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 12px;
+            }
+
+            .page-shell {
+                border-radius: 20px;
             }
 
             .left-panel,
             .right-panel {
-                padding: 30px 22px;
+                padding: 22px;
             }
 
-            .form-card {
-                max-width: 760px;
-            }
-        }
-
-        @media (max-width: 640px) {
-            .left-content h1 {
-                font-size: 34px;
+            .left-badge span {
+                font-size: 15px;
             }
 
-            .left-content p.main-desc {
+            .left-panel h1 {
+                font-size: 40px;
+            }
+
+            .left-panel p.intro {
                 font-size: 16px;
             }
 
+            .feature-card {
+                grid-template-columns: 56px 1fr;
+                padding: 16px;
+            }
+
+            .feature-number {
+                width: 46px;
+                height: 46px;
+                font-size: 16px;
+                border-radius: 14px;
+            }
+
+            .feature-text h3 {
+                font-size: 16px;
+            }
+
+            .feature-text p {
+                font-size: 14px;
+            }
+
             .form-card {
-                padding: 28px 22px 26px;
+                padding: 28px 22px 24px;
                 border-radius: 24px;
             }
 
@@ -569,81 +537,81 @@
                 font-size: 34px;
             }
 
-            .subtitle {
-                font-size: 15px;
+            .form-card .subtitle {
+                font-size: 16px;
             }
 
-            .input-group input {
-                height: 58px;
-                border-radius: 16px;
+            .form-group input {
+                height: 62px;
+                font-size: 16px;
+                border-radius: 18px;
+            }
+
+            .register-btn {
+                height: 62px;
+            }
+
+            .password-box {
+                padding: 22px 20px 16px;
+                border-radius: 18px;
             }
         }
     </style>
 </head>
 <body>
-    <main class="page">
+    <div class="page-shell">
 
-        <!-- LEFT PANEL - KEEP GREEN -->
+        <!-- LEFT PANEL -->
         <section class="left-panel">
             <div class="left-content">
-                <div class="tag">
+                <div class="left-badge">
                     <span class="dot"></span>
-                    New User Registration
+                    <span>New User Registration</span>
                 </div>
 
                 <h1>Create Your Secure Account</h1>
 
-                <p class="main-desc">
-                    Join the Automated Web Application Security Assessment System and start performing
-                    professional web vulnerability assessments with a secure and user-friendly platform.
+                <p class="intro">
+                    Join the Automated Web Application Security Assessment System and start
+                    performing professional web vulnerability assessments with a secure and
+                    user-friendly platform.
                 </p>
 
-                <div class="info-list">
-                    <div class="info-card">
-                        <div class="info-number">01</div>
-                        <div>
-                            <h3>Scan & Detect</h3>
+                <div class="feature-list">
+                    <div class="feature-card">
+                        <div class="feature-number">01</div>
+                        <div class="feature-text">
+                            <h3>Scan &amp; Detect</h3>
                             <p>Launch automated scans to identify security issues and improve web protection.</p>
                         </div>
                     </div>
 
-                    <div class="info-card">
-                        <div class="info-number">02</div>
-                        <div>
+                    <div class="feature-card">
+                        <div class="feature-number">02</div>
+                        <div class="feature-text">
                             <h3>Track Findings</h3>
                             <p>Review result history, severity breakdown, and risk-based vulnerability details.</p>
                         </div>
                     </div>
 
-                    <div class="info-card">
-                        <div class="info-number">03</div>
-                        <div>
+                    <div class="feature-card">
+                        <div class="feature-number">03</div>
+                        <div class="feature-text">
                             <h3>Stay Secure</h3>
                             <p>Strong password policy and email verification help protect your account access.</p>
                         </div>
                     </div>
                 </div>
             </div>
+
+            <div class="system-label">
+                <strong>System:</strong> Automated Web Application Security Assessment System
+            </div>
         </section>
 
-        <!-- RIGHT PANEL - ONLY THIS PART IS ANIMATED -->
+        <!-- RIGHT PANEL -->
         <section class="right-panel">
-            <div class="animated-bg">
-                <div class="grid-overlay"></div>
-                <div class="wave one"></div>
-                <div class="wave two"></div>
-                <div class="wave three"></div>
-
-                <div class="blob one"></div>
-                <div class="blob two"></div>
-                <div class="blob three"></div>
-
-                <span class="particle p1"></span>
-                <span class="particle p2"></span>
-                <span class="particle p3"></span>
-                <span class="particle p4"></span>
-                <span class="particle p5"></span>
-            </div>
+            <div class="moving-wave"></div>
 
             <div class="form-card">
                 <h2>Create Account</h2>
@@ -653,95 +621,55 @@
                     <div class="alert error">{{ error }}</div>
                 {% endif %}
 
-                {% if message %}
-                    <div class="alert success">{{ message }}</div>
-                {% endif %}
-
-                <form method="POST" action="/register">
-                    <div class="input-group">
+                <form method="POST" action="/register" id="registerForm">
+                    <div class="form-group">
                         <label for="username">Username</label>
-                        <input
-                            type="text"
-                            id="username"
-                            name="username"
-                            placeholder="Choose a username"
-                            value="{{ request.form.get('username', '') }}"
-                            required
-                        >
+                        <input type="text" id="username" name="username" placeholder="Choose a username" required>
                     </div>
 
-                    <div class="input-group">
+                    <div class="form-group">
                         <label for="email">Email</label>
-                        <input
-                            type="email"
-                            id="email"
-                            name="email"
-                            placeholder="Enter your email"
-                            value="{{ request.form.get('email', '') }}"
-                            required
-                        >
+                        <input type="email" id="email" name="email" placeholder="Enter your email" required>
                     </div>
 
-                    <div class="input-group">
+                    <div class="form-group">
                         <label for="password">Password</label>
-                        <input
-                            type="password"
-                            id="password"
-                            name="password"
-                            placeholder="Create a strong password"
-                            required
-                        >
+                        <input type="password" id="password" name="password" placeholder="Create a strong password" required>
                     </div>
 
-                    <label class="show-password">
+                    <div class="show-password-row">
                         <input type="checkbox" id="showPassword">
-                        <span>Show password</span>
-                    </label>
+                        <label for="showPassword" style="margin:0; font-weight:500; cursor:pointer;">Show password</label>
+                    </div>
 
                     <div class="password-box">
                         <h4>Password must contain:</h4>
 
-                        <div class="rule" id="rule-length">
-                            <span class="icon">✖</span>
-                            <span>At least 8 characters</span>
-                        </div>
+                        <ul class="requirements">
+                            <li id="rule-length"><span class="icon">✖</span> At least 8 characters</li>
+                            <li id="rule-uppercase"><span class="icon">✖</span> At least 1 uppercase letter (A-Z)</li>
+                            <li id="rule-lowercase"><span class="icon">✖</span> At least 1 lowercase letter (a-z)</li>
+                            <li id="rule-number"><span class="icon">✖</span> At least 1 number (0-9)</li>
+                            <li id="rule-symbol"><span class="icon">✖</span> At least 1 symbol (!@#$%^&*)</li>
+                        </ul>
 
-                        <div class="rule" id="rule-upper">
-                            <span class="icon">✖</span>
-                            <span>At least 1 uppercase letter (A-Z)</span>
-                        </div>
-
-                        <div class="rule" id="rule-lower">
-                            <span class="icon">✖</span>
-                            <span>At least 1 lowercase letter (a-z)</span>
-                        </div>
-
-                        <div class="rule" id="rule-number">
-                            <span class="icon">✖</span>
-                            <span>At least 1 number (0-9)</span>
-                        </div>
-
-                        <div class="rule" id="rule-symbol">
-                            <span class="icon">✖</span>
-                            <span>At least 1 symbol (!@#$%^&*)</span>
-                        </div>
-
-                        <div class="strength-status" id="strengthStatus">
+                        <div id="strengthStatus" class="strength-status">
                             Password is not strong yet
                         </div>
                     </div>
 
-                    <button type="submit" class="register-btn" id="registerBtn" disabled>
+                    <button type="submit" id="registerBtn" class="register-btn" disabled>
                         Register
                     </button>
-                </form>
 
-                <div class="bottom-link">
-                    <a href="/login">Back to login</a>
-                </div>
+                    <div class="bottom-link">
+                        <a href="/login">Back to login</a>
+                    </div>
+                </form>
             </div>
         </section>
-    </main>
+
+    </div>
 
     <script>
         const passwordInput = document.getElementById("password");
@@ -749,58 +677,50 @@
         const registerBtn = document.getElementById("registerBtn");
         const strengthStatus = document.getElementById("strengthStatus");
 
-        const rules = {
-            length: {
-                element: document.getElementById("rule-length"),
-                test: (value) => value.length >= 8
-            },
-            upper: {
-                element: document.getElementById("rule-upper"),
-                test: (value) => /[A-Z]/.test(value)
-            },
-            lower: {
-                element: document.getElementById("rule-lower"),
-                test: (value) => /[a-z]/.test(value)
-            },
-            number: {
-                element: document.getElementById("rule-number"),
-                test: (value) => /\d/.test(value)
-            },
-            symbol: {
-                element: document.getElementById("rule-symbol"),
-                test: (value) => /[!@#$%^&*(),.?":{}|<>_\-+=/\\[\];'`~]/.test(value)
-            }
-        };
+        const ruleLength = document.getElementById("rule-length");
+        const ruleUppercase = document.getElementById("rule-uppercase");
+        const ruleLowercase = document.getElementById("rule-lowercase");
+        const ruleNumber = document.getElementById("rule-number");
+        const ruleSymbol = document.getElementById("rule-symbol");
 
-        function updateRule(ruleObj, valid) {
-            const icon = ruleObj.element.querySelector(".icon");
-            if (valid) {
-                ruleObj.element.classList.add("valid");
+        function setRuleState(element, isValid) {
+            const icon = element.querySelector(".icon");
+            if (isValid) {
+                element.classList.add("valid");
                 icon.textContent = "✔";
             } else {
-                ruleObj.element.classList.remove("valid");
+                element.classList.remove("valid");
                 icon.textContent = "✖";
             }
         }
 
         function validatePassword() {
-            const value = passwordInput.value;
-            let allValid = true;
+            const password = passwordInput.value;
 
-            Object.values(rules).forEach(rule => {
-                const valid = rule.test(value);
-                updateRule(rule, valid);
-                if (!valid) allValid = false;
-            });
+            const hasLength = password.length >= 8;
+            const hasUppercase = /[A-Z]/.test(password);
+            const hasLowercase = /[a-z]/.test(password);
+            const hasNumber = /\d/.test(password);
+            const hasSymbol = /[!@#$%^&*(),.?":{}|<>_\-+=/\\[\];'`~]/.test(password);
 
-            if (allValid && value.length > 0) {
+            setRuleState(ruleLength, hasLength);
+            setRuleState(ruleUppercase, hasUppercase);
+            setRuleState(ruleLowercase, hasLowercase);
+            setRuleState(ruleNumber, hasNumber);
+            setRuleState(ruleSymbol, hasSymbol);
+
+            const isStrong = hasLength && hasUppercase && hasLowercase && hasNumber && hasSymbol;
+
+            if (isStrong) {
                 strengthStatus.textContent = "Strong password ✓";
-                strengthStatus.classList.add("valid");
+                strengthStatus.classList.add("success");
                 registerBtn.disabled = false;
+                registerBtn.classList.add("enabled");
             } else {
                 strengthStatus.textContent = "Password is not strong yet";
-                strengthStatus.classList.remove("valid");
+                strengthStatus.classList.remove("success");
                 registerBtn.disabled = true;
+                registerBtn.classList.remove("enabled");
             }
         }
 
@@ -809,6 +729,8 @@
         showPassword.addEventListener("change", function () {
             passwordInput.type = this.checked ? "text" : "password";
         });
+
+        validatePassword();
     </script>
 </body>
 </html>
