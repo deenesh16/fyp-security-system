@@ -574,6 +574,13 @@ def reset_password(token):
                 error="Password must be at least 8 characters and include uppercase letter, lowercase letter, number, and symbol."
             )
 
+        if check_password_hash(user["password_hash"], password):
+            return render_template(
+                "reset_password.html",
+                token=token,
+                error="New password cannot be the same as your old password."
+            )
+
         conn = get_db_connection()
         cursor = get_cursor(conn)
         cursor.execute("""
