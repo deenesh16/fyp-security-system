@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -225,14 +226,14 @@
 
         <div class="info-card">
             <div class="info-label">Scan Mode</div>
-            <div class="info-value">
+            <div class="info-value" id="scanMode">
                 {{ scan_mode }}
             </div>
         </div>
 
         <div class="info-card">
             <div class="info-label">Target Website</div>
-            <div class="info-value">
+            <div class="info-value" id="targetUrl">
                 {{ target_url }}
             </div>
         </div>
@@ -294,7 +295,7 @@
     </div>
 
     <div class="note">
-        Live scan progress and remaining time are updated automatically.
+        Live scan progress, elapsed time, and remaining time are updated automatically.
         Depending on scan mode, target website, and ZAP service load,
         timing may vary slightly.
     </div>
@@ -333,25 +334,34 @@ function showError(message) {
 
 function updateUI(data) {
 
+    const progress =
+        data.progress !== undefined && data.progress !== null
+            ? data.progress
+            : 0;
+
+    const safeProgress = Math.max(0, Math.min(100, Number(progress)));
+
     document.getElementById("progressBar").style.width =
-        data.progress + "%";
+        safeProgress + "%";
 
     document.getElementById("progressText").innerText =
-        data.progress + "%";
+        safeProgress + "%";
 
     document.getElementById("statusText").innerText =
-        data.status;
+        data.status || "Scanning...";
 
-    if (data.elapsed_time) {
+    document.getElementById("elapsedTime").innerText =
+        data.elapsed_time || "0 sec";
 
-        document.getElementById("elapsedTime").innerText =
-            data.elapsed_time;
+    document.getElementById("remainingTime").innerText =
+        data.remaining_time || "Calculating...";
+
+    if (data.scan_mode) {
+        document.getElementById("scanMode").innerText = data.scan_mode;
     }
 
-    if (data.remaining_time) {
-
-        document.getElementById("remainingTime").innerText =
-            data.remaining_time;
+    if (data.target) {
+        document.getElementById("targetUrl").innerText = data.target;
     }
 }
 
@@ -402,6 +412,10 @@ function checkScanStatus() {
 
         if (!data) return;
 
+        if (data.error) {
+            showError(data.error);
+        }
+
         updateUI(data);
 
         if (data.completed === true) {
@@ -447,7 +461,7 @@ window.onload = function () {
 
     pollInterval = setInterval(
         checkScanStatus,
-        3000
+        1000
     );
 };
 
@@ -472,3 +486,5 @@ window.addEventListener(
 
 </body>
 </html>
+
+
