@@ -402,15 +402,24 @@ def is_strong_password(password):
 
 
 # ---------------- EMAIL ----------------
-def send_email_message(to_email, subject, body):
+def send_email_message(to_email, subject, text_body, html_body=None):
     if not MAIL_SENDER or not MAIL_APP_PASSWORD:
         raise ValueError("MAIL_USERNAME or MAIL_PASSWORD is not set in environment variables.")
 
     msg = EmailMessage()
     msg["Subject"] = subject
-    msg["From"] = MAIL_SENDER
+    msg["From"] = f"Web Security Scanner <{MAIL_SENDER}>"
     msg["To"] = to_email
-    msg.set_content(body)
+    msg["Reply-To"] = MAIL_SENDER
+    msg["X-Priority"] = "3"
+    msg["X-Mailer"] = "Automated Web Application Security Assessment System"
+
+    # Plain-text fallback for email clients that do not render HTML.
+    msg.set_content(text_body)
+
+    # HTML version with clickable verification/reset button.
+    if html_body:
+        msg.add_alternative(html_body, subtype="html")
 
     timeout_seconds = 10
     app_password = MAIL_APP_PASSWORD.replace(" ", "")
@@ -516,20 +525,83 @@ def register():
 
         verify_link = f"{BASE_URL}/verify/{verify_token}"
 
-        subject = "Verify Your Account"
-        body = f"""
+        subject = "Verify your Web Security Scanner account"
+
+        escaped_username = html.escape(username)
+
+        text_body = f"""
 Hello {username},
 
 Thank you for registering with the Automated Web Application Security Assessment System.
 
-Please verify your account by clicking the link below:
+To verify your account, open this link:
 {verify_link}
 
-If you did not create this account, please ignore this email.
+This verification link is used only to activate your account.
+
+If you did not create this account, you can safely ignore this email.
+
+Thank you,
+Web Security Scanner Team
+"""
+
+        html_body = f"""
+<!DOCTYPE html>
+<html>
+<body style="margin:0; padding:0; background:#f4f7fb; font-family:Arial, sans-serif;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f7fb; padding:30px 0;">
+        <tr>
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff; border-radius:12px; padding:30px; border:1px solid #e5e7eb;">
+                    <tr>
+                        <td>
+                            <h2 style="color:#0f172a; margin-top:0;">Verify Your Account</h2>
+
+                            <p style="color:#334155; font-size:15px; line-height:1.6;">
+                                Hello <strong>{escaped_username}</strong>,
+                            </p>
+
+                            <p style="color:#334155; font-size:15px; line-height:1.6;">
+                                Thank you for registering with the Automated Web Application Security Assessment System.
+                                Please click the button below to verify your account.
+                            </p>
+
+                            <p style="text-align:center; margin:30px 0;">
+                                <a href="{verify_link}"
+                                   style="background:#2563eb; color:#ffffff; padding:14px 24px; border-radius:8px; text-decoration:none; font-weight:bold; display:inline-block;">
+                                    Verify My Account
+                                </a>
+                            </p>
+
+                            <p style="color:#64748b; font-size:13px; line-height:1.6;">
+                                If the button does not work, copy and paste this link into your browser:
+                            </p>
+
+                            <p style="font-size:13px; line-height:1.6; word-break:break-all;">
+                                <a href="{verify_link}" style="color:#2563eb;">{verify_link}</a>
+                            </p>
+
+                            <p style="color:#64748b; font-size:13px; line-height:1.6;">
+                                If you did not create this account, you can safely ignore this email.
+                            </p>
+
+                            <hr style="border:none; border-top:1px solid #e5e7eb; margin:24px 0;">
+
+                            <p style="color:#94a3b8; font-size:12px;">
+                                Web Security Scanner Team
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
 """
 
         try:
-            send_email_message(email, subject, body)
+            send_email_message(email, subject, text_body, html_body)
             return render_template("verify_notice.html", title="Verification Email Sent", link=None)
         except Exception as e:
             return render_template(
@@ -606,20 +678,81 @@ def forgot_password():
 
         reset_link = f"{BASE_URL}/reset_password/{reset_token}"
 
-        subject = "Reset Your Password"
-        body = f"""
+        subject = "Reset your Web Security Scanner password"
+
+        escaped_username = html.escape(user["username"])
+
+        text_body = f"""
 Hello {user['username']},
 
 You requested to reset your password.
 
-Please use the link below:
+Open this link to reset your password:
 {reset_link}
 
-If you did not request this, please ignore this email.
+If you did not request this, you can safely ignore this email.
+
+Thank you,
+Web Security Scanner Team
+"""
+
+        html_body = f"""
+<!DOCTYPE html>
+<html>
+<body style="margin:0; padding:0; background:#f4f7fb; font-family:Arial, sans-serif;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f7fb; padding:30px 0;">
+        <tr>
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff; border-radius:12px; padding:30px; border:1px solid #e5e7eb;">
+                    <tr>
+                        <td>
+                            <h2 style="color:#0f172a; margin-top:0;">Reset Your Password</h2>
+
+                            <p style="color:#334155; font-size:15px; line-height:1.6;">
+                                Hello <strong>{escaped_username}</strong>,
+                            </p>
+
+                            <p style="color:#334155; font-size:15px; line-height:1.6;">
+                                We received a request to reset your password.
+                                Click the button below to continue.
+                            </p>
+
+                            <p style="text-align:center; margin:30px 0;">
+                                <a href="{reset_link}"
+                                   style="background:#2563eb; color:#ffffff; padding:14px 24px; border-radius:8px; text-decoration:none; font-weight:bold; display:inline-block;">
+                                    Reset Password
+                                </a>
+                            </p>
+
+                            <p style="color:#64748b; font-size:13px; line-height:1.6;">
+                                If the button does not work, copy and paste this link into your browser:
+                            </p>
+
+                            <p style="font-size:13px; line-height:1.6; word-break:break-all;">
+                                <a href="{reset_link}" style="color:#2563eb;">{reset_link}</a>
+                            </p>
+
+                            <p style="color:#64748b; font-size:13px; line-height:1.6;">
+                                If you did not request this, you can safely ignore this email.
+                            </p>
+
+                            <hr style="border:none; border-top:1px solid #e5e7eb; margin:24px 0;">
+
+                            <p style="color:#94a3b8; font-size:12px;">
+                                Web Security Scanner Team
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
 """
 
         try:
-            send_email_message(email, subject, body)
+            send_email_message(email, subject, text_body, html_body)
             return render_template("verify_notice.html", title="Password Reset Email Sent", link=None)
         except Exception as e:
             return render_template(
@@ -875,44 +1008,34 @@ def run_scan(scan_id, target, scan_mode, user_id):
     save_scan_history(scan_id)
 
 
-def format_duration(seconds):
-    seconds = max(0, int(seconds))
-
-    hours = seconds // 3600
-    minutes = (seconds % 3600) // 60
-    secs = seconds % 60
-
-    if hours > 0:
-        return f"{hours} hr {minutes} min {secs} sec"
-    elif minutes > 0:
-        return f"{minutes} min {secs} sec"
-    else:
-        return f"{secs} sec"
-
-
 def calculate_remaining_time(task):
-    if not task:
-        return 0, "Calculating..."
+    if not task or task.get("completed"):
+        return 0, "Completed"
 
     progress = int(task.get("progress", 0) or 0)
     estimated_seconds = int(task.get("estimated_seconds", 40) or 40)
     started_at_epoch = float(task.get("started_at_epoch", time.time()) or time.time())
+    elapsed = max(0, int(time.time() - started_at_epoch))
 
-    elapsed_seconds = max(0, int(time.time() - started_at_epoch))
-
-    if task.get("completed") or progress >= 100:
-        return 0, "Completed"
-
-    if progress > 0:
-        total_estimated_by_progress = elapsed_seconds / (progress / 100)
-        remaining_seconds = int(max(0, total_estimated_by_progress - elapsed_seconds))
+    if progress >= 100:
+        remaining_seconds = 0
+    elif progress > 0:
+        total_estimated_by_progress = elapsed / (progress / 100)
+        remaining_seconds = int(max(0, total_estimated_by_progress - elapsed))
     else:
-        remaining_seconds = int(max(0, estimated_seconds - elapsed_seconds))
+        remaining_seconds = int(max(0, estimated_seconds - elapsed))
+
+    minutes = remaining_seconds // 60
+    seconds = remaining_seconds % 60
 
     if remaining_seconds <= 0:
-        return 0, "Finishing soon..."
+        remaining_text = "Finishing soon..."
+    elif minutes > 0:
+        remaining_text = f"About {minutes} min {seconds} sec remaining"
+    else:
+        remaining_text = f"About {seconds} sec remaining"
 
-    return remaining_seconds, format_duration(remaining_seconds)
+    return remaining_seconds, remaining_text
 
 
 # ---------------- PDF REPORT HELPERS ----------------
@@ -1433,36 +1556,7 @@ def start_scan():
 @app.route("/progress/<scan_id>")
 @login_required
 def progress_page(scan_id):
-    user = current_user()
-
-    if not user:
-        session.clear()
-        return redirect(url_for("login"))
-
-    task = scan_tasks.get(scan_id)
-
-    # Active scan still exists in memory
-    if task:
-        if user["role"] != "admin" and task["user_id"] != user["id"]:
-            return "Access denied", 403
-
-        return render_template(
-            "progress.html",
-            scan_id=scan_id,
-            scan_mode=task.get("scan_mode", "Quick Scan"),
-            target_url=task.get("target", "Unknown target"),
-        )
-
-    # If scan already completed and exists in database, go straight to result
-    row = get_history_by_scan_id(scan_id)
-
-    if row:
-        if user["role"] != "admin" and row["user_id"] != user["id"]:
-            return "Access denied", 403
-
-        return redirect(url_for("result_page", scan_id=scan_id))
-
-    return "Invalid scan ID", 404
+    return render_template("progress.html", scan_id=scan_id)
 
 
 @app.route("/scan_status/<scan_id>")
@@ -1480,10 +1574,6 @@ def scan_status(scan_id):
         if user["role"] != "admin" and task["user_id"] != user["id"]:
             return jsonify({"error": "Access denied"}), 403
 
-        started_at_epoch = float(task.get("started_at_epoch", time.time()) or time.time())
-        elapsed_seconds = max(0, int(time.time() - started_at_epoch))
-        elapsed_text = format_duration(elapsed_seconds)
-
         remaining_seconds, remaining_text = calculate_remaining_time(task)
 
         if task.get("completed") is True:
@@ -1494,8 +1584,6 @@ def scan_status(scan_id):
                 "progress": 100,
                 "completed": True,
                 "result_id": scan_id,
-                "elapsed_seconds": elapsed_seconds,
-                "elapsed_time": elapsed_text,
                 "remaining_seconds": 0,
                 "remaining_time": "Completed",
                 "error": task.get("error"),
@@ -1507,8 +1595,6 @@ def scan_status(scan_id):
             "status": task.get("status", "Scanning..."),
             "progress": task.get("progress", 0),
             "completed": False,
-            "elapsed_seconds": elapsed_seconds,
-            "elapsed_time": elapsed_text,
             "remaining_seconds": remaining_seconds,
             "remaining_time": remaining_text,
             "error": task.get("error"),
@@ -1528,8 +1614,6 @@ def scan_status(scan_id):
             "progress": 100,
             "completed": True,
             "result_id": row["scan_id"],
-            "elapsed_seconds": 0,
-            "elapsed_time": "Completed",
             "remaining_seconds": 0,
             "remaining_time": "Completed",
             "error": None if not str(row["status"]).startswith("Error:") else row["status"],
