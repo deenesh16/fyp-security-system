@@ -1008,34 +1008,42 @@ def run_scan(scan_id, target, scan_mode, user_id):
     save_scan_history(scan_id)
 
 
+def format_duration(seconds):
+    seconds = max(0, int(seconds or 0))
+
+    hours = seconds // 3600
+    minutes = (seconds % 3600) // 60
+    secs = seconds % 60
+
+    if hours > 0:
+        return f"{hours} hr {minutes} min {secs} sec"
+    if minutes > 0:
+        return f"{minutes} min {secs} sec"
+    return f"{secs} sec"
+
+
 def calculate_remaining_time(task):
-    if not task or task.get("completed"):
-        return 0, "Completed"
+    if not task:
+        return 0, "Calculating..."
 
     progress = int(task.get("progress", 0) or 0)
     estimated_seconds = int(task.get("estimated_seconds", 40) or 40)
     started_at_epoch = float(task.get("started_at_epoch", time.time()) or time.time())
-    elapsed = max(0, int(time.time() - started_at_epoch))
+    elapsed_seconds = max(0, int(time.time() - started_at_epoch))
 
-    if progress >= 100:
-        remaining_seconds = 0
-    elif progress > 0:
-        total_estimated_by_progress = elapsed / (progress / 100)
-        remaining_seconds = int(max(0, total_estimated_by_progress - elapsed))
+    if task.get("completed") or progress >= 100:
+        return 0, "Completed"
+
+    if progress > 0:
+        total_estimated_by_progress = elapsed_seconds / (progress / 100)
+        remaining_seconds = int(max(0, total_estimated_by_progress - elapsed_seconds))
     else:
-        remaining_seconds = int(max(0, estimated_seconds - elapsed))
-
-    minutes = remaining_seconds // 60
-    seconds = remaining_seconds % 60
+        remaining_seconds = int(max(0, estimated_seconds - elapsed_seconds))
 
     if remaining_seconds <= 0:
-        remaining_text = "Finishing soon..."
-    elif minutes > 0:
-        remaining_text = f"About {minutes} min {seconds} sec remaining"
-    else:
-        remaining_text = f"About {seconds} sec remaining"
+        return 0, "Finishing soon..."
 
-    return remaining_seconds, remaining_text
+    return remaining_seconds, format_duration(remaining_seconds)
 
 
 # ---------------- PDF REPORT HELPERS ----------------
@@ -1574,6 +1582,9 @@ def scan_status(scan_id):
         if user["role"] != "admin" and task["user_id"] != user["id"]:
             return jsonify({"error": "Access denied"}), 403
 
+        started_at_epoch = float(task.get("started_at_epoch", time.time()) or time.time())
+        elapsed_seconds = max(0, int(time.time() - started_at_epoch))
+        elapsed_text = format_duration(elapsed_seconds)
         remaining_seconds, remaining_text = calculate_remaining_time(task)
 
         if task.get("completed") is True:
@@ -1584,6 +1595,8 @@ def scan_status(scan_id):
                 "progress": 100,
                 "completed": True,
                 "result_id": scan_id,
+                "elapsed_seconds": elapsed_seconds,
+                "elapsed_time": elapsed_text,
                 "remaining_seconds": 0,
                 "remaining_time": "Completed",
                 "error": task.get("error"),
@@ -1595,6 +1608,8 @@ def scan_status(scan_id):
             "status": task.get("status", "Scanning..."),
             "progress": task.get("progress", 0),
             "completed": False,
+            "elapsed_seconds": elapsed_seconds,
+            "elapsed_time": elapsed_text,
             "remaining_seconds": remaining_seconds,
             "remaining_time": remaining_text,
             "error": task.get("error"),
@@ -1614,6 +1629,8 @@ def scan_status(scan_id):
             "progress": 100,
             "completed": True,
             "result_id": row["scan_id"],
+            "elapsed_seconds": 0,
+            "elapsed_time": "Completed",
             "remaining_seconds": 0,
             "remaining_time": "Completed",
             "error": None if not str(row["status"]).startswith("Error:") else row["status"],

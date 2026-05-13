@@ -314,6 +314,9 @@
 
 let pollInterval = null;
 let redirected = false;
+let localStartTime = Date.now();
+let lastServerElapsedSeconds = 0;
+let hasServerElapsed = false;
 
 function stopPolling() {
 
@@ -330,6 +333,46 @@ function showError(message) {
 
     errorBox.style.display = "block";
     errorBox.innerText = message;
+}
+
+function formatDuration(seconds) {
+
+    seconds = Math.max(0, parseInt(seconds || 0));
+
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+
+    if (hours > 0) {
+        return hours + " hr " + minutes + " min " + secs + " sec";
+    }
+
+    if (minutes > 0) {
+        return minutes + " min " + secs + " sec";
+    }
+
+    return secs + " sec";
+}
+
+function updateLocalElapsedTime() {
+
+    if (redirected) {
+        return;
+    }
+
+    const elapsedTimeElement = document.getElementById("elapsedTime");
+
+    if (!elapsedTimeElement) {
+        return;
+    }
+
+    if (hasServerElapsed) {
+        const localExtraSeconds = Math.floor((Date.now() - localStartTime) / 1000);
+        elapsedTimeElement.innerText = formatDuration(lastServerElapsedSeconds + localExtraSeconds);
+    } else {
+        const localElapsedSeconds = Math.floor((Date.now() - localStartTime) / 1000);
+        elapsedTimeElement.innerText = formatDuration(localElapsedSeconds);
+    }
 }
 
 function updateUI(data) {
@@ -350,8 +393,17 @@ function updateUI(data) {
     document.getElementById("statusText").innerText =
         data.status || "Scanning...";
 
-    document.getElementById("elapsedTime").innerText =
-        data.elapsed_time || "0 sec";
+    if (data.elapsed_seconds !== undefined && data.elapsed_seconds !== null) {
+        hasServerElapsed = true;
+        lastServerElapsedSeconds = Number(data.elapsed_seconds) || 0;
+        localStartTime = Date.now();
+        document.getElementById("elapsedTime").innerText =
+            data.elapsed_time || formatDuration(lastServerElapsedSeconds);
+    } else if (data.elapsed_time) {
+        document.getElementById("elapsedTime").innerText = data.elapsed_time;
+    } else {
+        updateLocalElapsedTime();
+    }
 
     document.getElementById("remainingTime").innerText =
         data.remaining_time || "Calculating...";
@@ -437,18 +489,11 @@ function checkScanStatus() {
 
         console.error("Polling Error:", error);
 
-        stopPolling();
-
         if (
             !error.message.includes("Invalid scan ID")
         ) {
 
-            document.getElementById("statusText").innerText =
-                "Connection lost.";
-
-            showError(
-                "Unable to retrieve scan progress. Please refresh the page."
-            );
+            updateLocalElapsedTime();
         }
     });
 }
@@ -457,12 +502,14 @@ window.onload = function () {
 
     stopPolling();
 
+    localStartTime = Date.now();
+
     checkScanStatus();
 
-    pollInterval = setInterval(
-        checkScanStatus,
-        1000
-    );
+    pollInterval = setInterval(function () {
+        updateLocalElapsedTime();
+        checkScanStatus();
+    }, 1000);
 };
 
 window.onbeforeunload = function () {
@@ -486,5 +533,3 @@ window.addEventListener(
 
 </body>
 </html>
-
-
