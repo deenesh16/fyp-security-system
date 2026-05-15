@@ -83,6 +83,10 @@ def get_malaysia_time():
     return datetime.now(ZoneInfo("Asia/Kuala_Lumpur")).strftime("%Y-%m-%d %H:%M:%S")
 
 
+def get_malaysia_date_display():
+    return datetime.now(ZoneInfo("Asia/Kuala_Lumpur")).strftime("%Y-%m-%d")
+
+
 SCAN_MODES = {
     "quick": {
         "spider_timeout": 10,
@@ -1753,6 +1757,7 @@ def index():
 
     return render_template(
         "index.html",
+        today_date=get_malaysia_date_display(),
         user=user,
         total_scans=stats["total_scans"],
         total_findings=stats["total_findings"],
@@ -1996,6 +2001,7 @@ def admin_panel():
 
     return render_template(
         "admin.html",
+        today_date=get_malaysia_date_display(),
         users=users,
         history=history_rows,
         total_users=len(users),
@@ -2322,4 +2328,3 @@ seed_admin()
 
 if __name__ == "__main__":
     app.run(debug=True)
-
