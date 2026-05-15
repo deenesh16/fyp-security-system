@@ -887,6 +887,32 @@ body {
     }
 }
 
+    
+
+.user-type-select {
+    width: 100%;
+    height: 40px;
+    border: 1px solid rgba(148, 163, 184, 0.33);
+    border-radius: 10px;
+    padding: 0 12px;
+    background: rgba(255,255,255,0.10);
+    color: #f8fafc;
+    outline: none;
+    font-size: 12.5px;
+}
+
+.user-type-select option {
+    color: #0f172a;
+    background: #ffffff;
+}
+
+.limit-note {
+    margin-top: 6px;
+    font-size: 11.5px;
+    color: rgba(226,232,240,0.76);
+    line-height: 1.4;
+}
+
     </style>
 </head>
 
@@ -1007,6 +1033,18 @@ body {
                                     required
                                 >
                             </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="user_type">Role / Category</label>
+                            <select id="user_type" name="user_type" class="user-type-select" required>
+                                <option value="student" {% if request.form.get('user_type', 'student') == 'student' %}selected{% endif %}>Student</option>
+                                <option value="developer" {% if request.form.get('user_type') == 'developer' %}selected{% endif %}>Developer</option>
+                                <option value="security_researcher" {% if request.form.get('user_type') == 'security_researcher' %}selected{% endif %}>Security Researcher</option>
+                                <option value="lecturer" {% if request.form.get('user_type') == 'lecturer' %}selected{% endif %}>Lecturer</option>
+                                <option value="other" {% if request.form.get('user_type') == 'other' %}selected{% endif %}>Other</option>
+                            </select>
+                            <div class="limit-note">Daily scan limit will be assigned based on this role.</div>
                         </div>
 
                         <div class="form-group">

@@ -67,6 +67,78 @@
             grid-column: 1 / -1;
         }
 
+        .total-findings-card {
+            grid-column: span 2;
+            display: grid;
+            grid-template-columns: 120px 1fr;
+            gap: 14px;
+            align-items: center;
+            background: linear-gradient(135deg, #0f172a, #2563eb);
+            border: none;
+            color: white;
+            padding: 18px;
+            border-radius: 16px;
+            box-shadow: 0 8px 20px rgba(37, 99, 235, 0.22);
+        }
+
+        .total-findings-label {
+            font-size: 13px;
+            color: #bfdbfe;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .total-findings-number {
+            font-size: 38px;
+            line-height: 1;
+            font-weight: 900;
+            letter-spacing: -0.5px;
+        }
+
+        .severity-mini-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(70px, 1fr));
+            gap: 8px;
+        }
+
+        .severity-mini-card {
+            background: rgba(255,255,255,0.12);
+            border: 1px solid rgba(255,255,255,0.18);
+            border-radius: 11px;
+            padding: 8px;
+            text-align: center;
+        }
+
+        .severity-mini-label {
+            font-size: 11px;
+            color: #dbeafe;
+            margin-bottom: 4px;
+            font-weight: bold;
+        }
+
+        .severity-mini-value {
+            font-size: 19px;
+            font-weight: 900;
+            color: white;
+        }
+
+        .severity-high { border-top: 3px solid #ef4444; }
+        .severity-medium { border-top: 3px solid #f97316; }
+        .severity-low { border-top: 3px solid #eab308; }
+        .severity-info { border-top: 3px solid #38bdf8; }
+
+        @media (max-width: 700px) {
+            .total-findings-card {
+                grid-template-columns: 1fr;
+                grid-column: 1 / -1;
+                text-align: center;
+            }
+
+            .severity-mini-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
         .url-box {
             background: #eef2f7;
             border: 1px solid #cbd5e1;
@@ -295,9 +367,33 @@
                 <div class="summary-value">{{ result.scan_mode }}</div>
             </div>
 
-            <div class="summary-card">
-                <div class="summary-label">Total Findings</div>
-                <div class="summary-value">{{ result.vulnerabilities|length }}</div>
+            <div class="total-findings-card">
+                <div>
+                    <div class="total-findings-label">Total Findings</div>
+                    <div class="total-findings-number">{{ result.vulnerabilities|length }}</div>
+                </div>
+
+                <div class="severity-mini-grid">
+                    <div class="severity-mini-card severity-high">
+                        <div class="severity-mini-label">High</div>
+                        <div class="severity-mini-value">{{ result.risk_counts.high if result.risk_counts else 0 }}</div>
+                    </div>
+
+                    <div class="severity-mini-card severity-medium">
+                        <div class="severity-mini-label">Medium</div>
+                        <div class="severity-mini-value">{{ result.risk_counts.medium if result.risk_counts else 0 }}</div>
+                    </div>
+
+                    <div class="severity-mini-card severity-low">
+                        <div class="severity-mini-label">Low</div>
+                        <div class="severity-mini-value">{{ result.risk_counts.low if result.risk_counts else 0 }}</div>
+                    </div>
+
+                    <div class="severity-mini-card severity-info">
+                        <div class="severity-mini-label">Informational</div>
+                        <div class="severity-mini-value">{{ result.risk_counts.info if result.risk_counts else 0 }}</div>
+                    </div>
+                </div>
             </div>
 
             <div class="summary-card full-width">

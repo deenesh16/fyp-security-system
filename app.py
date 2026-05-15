@@ -99,6 +99,25 @@ SCAN_MODES = {
 }
 
 
+# ---------------- USER TYPE / DAILY SCAN LIMIT ----------------
+USER_TYPE_LIMITS = {
+    "student": 5,
+    "developer": 8,
+    "security_researcher": 12,
+    "lecturer": 10,
+    "other": 3,
+}
+
+USER_TYPE_LABELS = {
+    "student": "Student",
+    "developer": "Developer",
+    "security_researcher": "Security Researcher",
+    "lecturer": "Lecturer",
+    "other": "Other",
+}
+
+SYSTEM_CONTACT_EMAIL = os.environ.get("SYSTEM_CONTACT_EMAIL", MAIL_SENDER or ADMIN_EMAIL)
+
 # ---------------- DATABASE ----------------
 def get_db_connection():
     if not DATABASE_URL:
@@ -141,6 +160,42 @@ def init_db():
         )
     """)
 
+    # Adds user category for daily scan limits.
+    cursor.execute("""
+        ALTER TABLE users
+        ADD COLUMN IF NOT EXISTS user_type TEXT NOT NULL DEFAULT 'student'
+    """)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS deleted_scan_logs (
+            id SERIAL PRIMARY KEY,
+            scan_id TEXT,
+            user_id INTEGER,
+            username TEXT,
+            email TEXT,
+            target TEXT,
+            scan_mode TEXT,
+            status TEXT,
+            total_findings INTEGER,
+            scan_created_at TEXT,
+            deleted_by_admin_id INTEGER,
+            deleted_by_admin_email TEXT,
+            deleted_at TEXT,
+            reason TEXT
+        )
+    """)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS notifications (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            title TEXT NOT NULL,
+            message TEXT NOT NULL,
+            is_read INTEGER NOT NULL DEFAULT 0,
+            created_at TEXT
+        )
+    """)
+
     conn.commit()
     conn.close()
 
@@ -154,8 +209,8 @@ def seed_admin():
 
     if not existing:
         cursor.execute("""
-            INSERT INTO users (username, email, password_hash, role, is_verified)
-            VALUES (%s, %s, %s, 'admin', 1)
+            INSERT INTO users (username, email, password_hash, role, is_verified, user_type)
+            VALUES (%s, %s, %s, 'admin', 1, 'lecturer')
         """, (ADMIN_USERNAME, ADMIN_EMAIL, generate_password_hash(ADMIN_PASSWORD)))
         conn.commit()
 
@@ -201,7 +256,7 @@ def get_user_by_reset_token(token):
 def get_all_users():
     conn = get_db_connection()
     cursor = get_cursor(conn)
-    cursor.execute("SELECT id, username, email, role, is_verified FROM users ORDER BY id DESC")
+    cursor.execute("SELECT id, username, email, role, user_type, is_verified FROM users ORDER BY id DESC")
     rows = cursor.fetchall()
     conn.close()
     return rows
@@ -302,6 +357,168 @@ def delete_user_and_scans(user_id):
     conn.close()
 
 
+def get_user_type_label(user_type):
+    return USER_TYPE_LABELS.get(str(user_type or "other"), "Other")
+
+
+def get_user_daily_limit(user):
+    if not user:
+        return 0
+    if user.get("role") == "admin":
+        return None
+    return USER_TYPE_LIMITS.get(str(user.get("user_type") or "other"), USER_TYPE_LIMITS["other"])
+
+
+def get_today_scan_count(user_id):
+    today_prefix = datetime.now(ZoneInfo("Asia/Kuala_Lumpur")).strftime("%Y-%m-%d")
+
+    conn = get_db_connection()
+    cursor = get_cursor(conn)
+    cursor.execute("""
+        SELECT COUNT(*) AS count
+        FROM scan_history
+        WHERE user_id = %s AND created_at LIKE %s
+    """, (user_id, today_prefix + "%"))
+    row = cursor.fetchone()
+    conn.close()
+
+    return int(row["count"] if row and row.get("count") is not None else 0)
+
+
+def get_remaining_daily_scans(user):
+    limit = get_user_daily_limit(user)
+    if limit is None:
+        return None
+    used = get_today_scan_count(user["id"])
+    return max(0, limit - used)
+
+
+def create_notification(user_id, title, message):
+    conn = get_db_connection()
+    cursor = get_cursor(conn)
+    cursor.execute("""
+        INSERT INTO notifications (user_id, title, message, is_read, created_at)
+        VALUES (%s, %s, %s, 0, %s)
+    """, (user_id, title, message, get_malaysia_time()))
+    conn.commit()
+    conn.close()
+
+
+def get_user_notifications(user_id, limit=5):
+    conn = get_db_connection()
+    cursor = get_cursor(conn)
+    cursor.execute("""
+        SELECT * FROM notifications
+        WHERE user_id = %s
+        ORDER BY id DESC
+        LIMIT %s
+    """, (user_id, limit))
+    rows = cursor.fetchall()
+    conn.close()
+    return rows
+
+
+def add_deleted_scan_log(scan_row, admin_user, reason="Deleted by administrator"):
+    if not scan_row:
+        return
+
+    conn = get_db_connection()
+    cursor = get_cursor(conn)
+    cursor.execute("""
+        INSERT INTO deleted_scan_logs
+        (scan_id, user_id, username, email, target, scan_mode, status, total_findings,
+         scan_created_at, deleted_by_admin_id, deleted_by_admin_email, deleted_at, reason)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+    """, (
+        scan_row.get("scan_id"),
+        scan_row.get("user_id"),
+        scan_row.get("username"),
+        scan_row.get("email"),
+        scan_row.get("target"),
+        scan_row.get("scan_mode"),
+        scan_row.get("status"),
+        scan_row.get("total_findings"),
+        scan_row.get("created_at"),
+        admin_user.get("id") if admin_user else None,
+        admin_user.get("email") if admin_user else None,
+        get_malaysia_time(),
+        reason,
+    ))
+    conn.commit()
+    conn.close()
+
+
+def get_deleted_scan_logs():
+    conn = get_db_connection()
+    cursor = get_cursor(conn)
+    cursor.execute("SELECT * FROM deleted_scan_logs ORDER BY id DESC")
+    rows = cursor.fetchall()
+    conn.close()
+    return rows
+
+
+def send_scan_deleted_email(scan_row):
+    if not scan_row or not scan_row.get("email"):
+        return
+
+    subject = "Scan Record Deleted by Administrator"
+    contact_email = SYSTEM_CONTACT_EMAIL or ADMIN_EMAIL
+
+    text_body = f"""
+Hello {scan_row.get('username', 'User')},
+
+Your scan record has been deleted by the administrator.
+
+Scan ID: {scan_row.get('scan_id')}
+Target Website: {scan_row.get('target')}
+Scan Mode: {scan_row.get('scan_mode')}
+Scan Date & Time: {scan_row.get('created_at')}
+Total Findings: {scan_row.get('total_findings')}
+
+If you need more information, please contact: {contact_email}
+
+Thank you,
+Web Security Scanner Team
+"""
+
+    html_body = f"""
+<!DOCTYPE html>
+<html>
+<body style="margin:0; padding:0; background:#f4f7fb; font-family:Arial, sans-serif;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f7fb; padding:30px 0;">
+        <tr>
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff; border-radius:12px; padding:30px; border:1px solid #e5e7eb;">
+                    <tr>
+                        <td>
+                            <h2 style="color:#0f172a; margin-top:0;">Scan Record Deleted</h2>
+                            <p style="color:#334155; font-size:15px; line-height:1.6;">Hello <b>{html.escape(str(scan_row.get('username', 'User')))}</b>,</p>
+                            <p style="color:#334155; font-size:15px; line-height:1.6;">Your scan record has been deleted by the administrator.</p>
+                            <table width="100%" cellpadding="8" cellspacing="0" style="border-collapse:collapse; color:#334155; font-size:14px;">
+                                <tr><td><b>Scan ID</b></td><td>{html.escape(str(scan_row.get('scan_id', 'N/A')))}</td></tr>
+                                <tr><td><b>Target Website</b></td><td>{html.escape(str(scan_row.get('target', 'N/A')))}</td></tr>
+                                <tr><td><b>Scan Mode</b></td><td>{html.escape(str(scan_row.get('scan_mode', 'N/A')))}</td></tr>
+                                <tr><td><b>Scan Date & Time</b></td><td>{html.escape(str(scan_row.get('created_at', 'N/A')))}</td></tr>
+                                <tr><td><b>Total Findings</b></td><td>{html.escape(str(scan_row.get('total_findings', 'N/A')))}</td></tr>
+                            </table>
+                            <p style="color:#334155; font-size:15px; line-height:1.6;">For more information, please contact: <b>{html.escape(str(contact_email))}</b></p>
+                            <p style="color:#64748b; font-size:13px;">Web Security Scanner Team</p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+"""
+
+    try:
+        send_email_message(scan_row.get("email"), subject, text_body, html_body)
+    except Exception as e:
+        app.logger.warning(f"Could not send deleted scan email notification: {e}")
+
+
 # ---------------- DASHBOARD HELPERS ----------------
 def calculate_risk_totals(history_rows):
     high = medium = low = info = 0
@@ -388,6 +605,23 @@ def sort_vulnerabilities(vulnerabilities):
             str(v.get("type", "")).lower(),
         ),
     )
+
+
+def get_vulnerability_risk_counts(vulnerabilities):
+    counts = {"high": 0, "medium": 0, "low": 0, "info": 0}
+
+    for vuln in vulnerabilities or []:
+        risk = str(vuln.get("risk", "")).strip().lower()
+        if risk == "high":
+            counts["high"] += 1
+        elif risk == "medium":
+            counts["medium"] += 1
+        elif risk == "low":
+            counts["low"] += 1
+        else:
+            counts["info"] += 1
+
+    return counts
 
 
 def is_strong_password(password):
@@ -492,6 +726,10 @@ def register():
         username = request.form.get("username", "").strip()
         email = request.form.get("email", "").strip().lower()
         password = request.form.get("password", "").strip()
+        user_type = request.form.get("user_type", "student").strip()
+
+        if user_type not in USER_TYPE_LIMITS:
+            user_type = "other"
 
         if not username or not email or not password:
             return render_template("register.html", error="All fields are required.")
@@ -512,9 +750,9 @@ def register():
 
         try:
             cursor.execute("""
-                INSERT INTO users (username, email, password_hash, role, is_verified, verify_token)
-                VALUES (%s, %s, %s, 'user', 0, %s)
-            """, (username, email, generate_password_hash(password), verify_token))
+                INSERT INTO users (username, email, password_hash, role, user_type, is_verified, verify_token)
+                VALUES (%s, %s, %s, 'user', %s, 0, %s)
+            """, (username, email, generate_password_hash(password), user_type, verify_token))
             conn.commit()
         except psycopg2.IntegrityError:
             conn.rollback()
@@ -1010,7 +1248,6 @@ def run_scan(scan_id, target, scan_mode, user_id):
 
 def format_duration(seconds):
     seconds = max(0, int(seconds or 0))
-
     hours = seconds // 3600
     minutes = (seconds % 3600) // 60
     secs = seconds % 60
@@ -1023,27 +1260,33 @@ def format_duration(seconds):
 
 
 def calculate_remaining_time(task):
-    if not task:
-        return 0, "Calculating..."
+    if not task or task.get("completed"):
+        return 0, "Completed"
 
     progress = int(task.get("progress", 0) or 0)
     estimated_seconds = int(task.get("estimated_seconds", 40) or 40)
     started_at_epoch = float(task.get("started_at_epoch", time.time()) or time.time())
-    elapsed_seconds = max(0, int(time.time() - started_at_epoch))
+    elapsed = max(0, int(time.time() - started_at_epoch))
 
-    if task.get("completed") or progress >= 100:
-        return 0, "Completed"
-
-    if progress > 0:
-        total_estimated_by_progress = elapsed_seconds / (progress / 100)
-        remaining_seconds = int(max(0, total_estimated_by_progress - elapsed_seconds))
+    if progress >= 100:
+        remaining_seconds = 0
+    elif progress > 0:
+        total_estimated_by_progress = elapsed / (progress / 100)
+        remaining_seconds = int(max(0, total_estimated_by_progress - elapsed))
     else:
-        remaining_seconds = int(max(0, estimated_seconds - elapsed_seconds))
+        remaining_seconds = int(max(0, estimated_seconds - elapsed))
+
+    minutes = remaining_seconds // 60
+    seconds = remaining_seconds % 60
 
     if remaining_seconds <= 0:
-        return 0, "Finishing soon..."
+        remaining_text = "Finishing soon..."
+    elif minutes > 0:
+        remaining_text = f"About {minutes} min {seconds} sec remaining"
+    else:
+        remaining_text = f"About {seconds} sec remaining"
 
-    return remaining_seconds, format_duration(remaining_seconds)
+    return remaining_seconds, remaining_text
 
 
 # ---------------- PDF REPORT HELPERS ----------------
@@ -1503,6 +1746,11 @@ def index():
 
     stats = get_user_dashboard_stats(user["id"])
 
+    daily_limit = get_user_daily_limit(user)
+    scans_today = get_today_scan_count(user["id"])
+    remaining_scans = None if daily_limit is None else max(0, daily_limit - scans_today)
+    notifications = get_user_notifications(user["id"])
+
     return render_template(
         "index.html",
         user=user,
@@ -1512,6 +1760,12 @@ def index():
         total_medium=stats["medium"],
         total_low=stats["low"],
         total_info=stats["info"],
+        user_type_label=get_user_type_label(user.get("user_type")),
+        daily_limit=daily_limit,
+        scans_today=scans_today,
+        remaining_scans=remaining_scans,
+        notifications=notifications,
+        scan_error=None,
     )
 
 
@@ -1533,6 +1787,32 @@ def start_scan():
         target = "http://" + target
 
     mode_config = SCAN_MODES.get(scan_mode, SCAN_MODES["quick"])
+
+    daily_limit = get_user_daily_limit(user)
+    scans_today = get_today_scan_count(user["id"])
+
+    if daily_limit is not None and scans_today >= daily_limit:
+        stats = get_user_dashboard_stats(user["id"])
+        notifications = get_user_notifications(user["id"])
+        return render_template(
+            "index.html",
+            user=user,
+            total_scans=stats["total_scans"],
+            total_findings=stats["total_findings"],
+            total_high=stats["high"],
+            total_medium=stats["medium"],
+            total_low=stats["low"],
+            total_info=stats["info"],
+            user_type_label=get_user_type_label(user.get("user_type")),
+            daily_limit=daily_limit,
+            scans_today=scans_today,
+            remaining_scans=0,
+            notifications=notifications,
+            scan_error=(
+                f"Daily scan limit reached. Your user type is {get_user_type_label(user.get('user_type'))} "
+                f"and your limit is {daily_limit} scans per day. Please try again tomorrow."
+            ),
+        )
 
     scan_id = str(uuid.uuid4())
 
@@ -1655,6 +1935,7 @@ def result(scan_id):
             "scan_mode": task["scan_mode"],
             "status": task["status"] if not task["error"] else f"Error: {task['error']}",
             "vulnerabilities": sort_vulnerabilities(task["vulnerabilities"]),
+            "risk_counts": get_vulnerability_risk_counts(task["vulnerabilities"]),
             "username": task["username"],
             "created_at": task["created_at"],
         }
@@ -1675,6 +1956,7 @@ def result(scan_id):
             "scan_mode": row["scan_mode"],
             "status": row["status"],
             "vulnerabilities": sort_vulnerabilities(parsed_vulns),
+            "risk_counts": get_vulnerability_risk_counts(parsed_vulns),
             "username": row["username"],
             "created_at": row["created_at"],
         }
@@ -1710,6 +1992,7 @@ def admin_panel():
     users = get_all_users()
     history_rows = get_all_history()
     risk_totals = calculate_risk_totals(history_rows)
+    deleted_logs = get_deleted_scan_logs()
 
     return render_template(
         "admin.html",
@@ -1721,6 +2004,7 @@ def admin_panel():
         total_medium=risk_totals["medium"],
         total_low=risk_totals["low"],
         total_info=risk_totals["info"],
+        deleted_logs=deleted_logs,
     )
 
 
@@ -1744,6 +2028,21 @@ def admin_delete_user(user_id):
 @app.route("/admin/delete_scan/<scan_id>", methods=["POST"])
 @admin_required
 def admin_delete_scan(scan_id):
+    admin_user = current_user()
+    scan_row = get_history_by_scan_id(scan_id)
+
+    if scan_row:
+        add_deleted_scan_log(scan_row, admin_user)
+
+        notification_message = (
+            f"Your scan record has been deleted by admin/system. "
+            f"Scan ID: {scan_row.get('scan_id')}. "
+            f"Scan Date & Time: {scan_row.get('created_at')}. "
+            f"For more information, please contact {SYSTEM_CONTACT_EMAIL or ADMIN_EMAIL}."
+        )
+        create_notification(scan_row["user_id"], "Scan Record Deleted", notification_message)
+        send_scan_deleted_email(scan_row)
+
     delete_scan_by_id(scan_id)
     return redirect(url_for("admin_panel"))
 

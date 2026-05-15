@@ -315,8 +315,30 @@
 let pollInterval = null;
 let redirected = false;
 let localStartTime = Date.now();
-let lastServerElapsedSeconds = 0;
-let hasServerElapsed = false;
+let localElapsedInterval = null;
+
+
+function formatLocalElapsedTime(seconds) {
+    seconds = Math.max(0, Math.floor(Number(seconds) || 0));
+
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+
+    if (hours > 0) {
+        return `${hours} hr ${minutes} min ${secs} sec`;
+    }
+
+    if (minutes > 0) {
+        return `${minutes} min ${secs} sec`;
+    }
+
+    return `${secs} sec`;
+}
+
+function getLocalElapsedText() {
+    return formatLocalElapsedTime((Date.now() - localStartTime) / 1000);
+}
 
 function stopPolling() {
 
@@ -333,46 +355,6 @@ function showError(message) {
 
     errorBox.style.display = "block";
     errorBox.innerText = message;
-}
-
-function formatDuration(seconds) {
-
-    seconds = Math.max(0, parseInt(seconds || 0));
-
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const secs = seconds % 60;
-
-    if (hours > 0) {
-        return hours + " hr " + minutes + " min " + secs + " sec";
-    }
-
-    if (minutes > 0) {
-        return minutes + " min " + secs + " sec";
-    }
-
-    return secs + " sec";
-}
-
-function updateLocalElapsedTime() {
-
-    if (redirected) {
-        return;
-    }
-
-    const elapsedTimeElement = document.getElementById("elapsedTime");
-
-    if (!elapsedTimeElement) {
-        return;
-    }
-
-    if (hasServerElapsed) {
-        const localExtraSeconds = Math.floor((Date.now() - localStartTime) / 1000);
-        elapsedTimeElement.innerText = formatDuration(lastServerElapsedSeconds + localExtraSeconds);
-    } else {
-        const localElapsedSeconds = Math.floor((Date.now() - localStartTime) / 1000);
-        elapsedTimeElement.innerText = formatDuration(localElapsedSeconds);
-    }
 }
 
 function updateUI(data) {
@@ -393,17 +375,8 @@ function updateUI(data) {
     document.getElementById("statusText").innerText =
         data.status || "Scanning...";
 
-    if (data.elapsed_seconds !== undefined && data.elapsed_seconds !== null) {
-        hasServerElapsed = true;
-        lastServerElapsedSeconds = Number(data.elapsed_seconds) || 0;
-        localStartTime = Date.now();
-        document.getElementById("elapsedTime").innerText =
-            data.elapsed_time || formatDuration(lastServerElapsedSeconds);
-    } else if (data.elapsed_time) {
-        document.getElementById("elapsedTime").innerText = data.elapsed_time;
-    } else {
-        updateLocalElapsedTime();
-    }
+    document.getElementById("elapsedTime").innerText =
+        data.elapsed_time || getLocalElapsedText();
 
     document.getElementById("remainingTime").innerText =
         data.remaining_time || "Calculating...";
@@ -489,11 +462,18 @@ function checkScanStatus() {
 
         console.error("Polling Error:", error);
 
+        stopPolling();
+
         if (
             !error.message.includes("Invalid scan ID")
         ) {
 
-            updateLocalElapsedTime();
+            document.getElementById("statusText").innerText =
+                "Connection lost.";
+
+            showError(
+                "Unable to retrieve scan progress. Please refresh the page."
+            );
         }
     });
 }
@@ -502,18 +482,30 @@ window.onload = function () {
 
     stopPolling();
 
-    localStartTime = Date.now();
+    if (localElapsedInterval !== null) {
+        clearInterval(localElapsedInterval);
+    }
+
+    localElapsedInterval = setInterval(function () {
+        const elapsedBox = document.getElementById("elapsedTime");
+        if (!redirected && elapsedBox && (!elapsedBox.innerText || elapsedBox.innerText === "0 sec")) {
+            elapsedBox.innerText = getLocalElapsedText();
+        }
+    }, 1000);
 
     checkScanStatus();
 
-    pollInterval = setInterval(function () {
-        updateLocalElapsedTime();
-        checkScanStatus();
-    }, 1000);
+    pollInterval = setInterval(
+        checkScanStatus,
+        1000
+    );
 };
 
 window.onbeforeunload = function () {
     stopPolling();
+    if (localElapsedInterval !== null) {
+        clearInterval(localElapsedInterval);
+    }
 };
 
 window.addEventListener(
@@ -533,3 +525,4 @@ window.addEventListener(
 
 </body>
 </html>
+

@@ -1,9 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Admin Dashboard</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
+    <title>Scan Results</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -15,7 +13,7 @@
 
         .container {
             width: 100%;
-            max-width: 1250px;
+            max-width: 1050px;
             margin: 0 auto;
             background: #ffffff;
             padding: 35px;
@@ -26,154 +24,266 @@
 
         h1 {
             text-align: center;
-            margin-bottom: 10px;
+            margin-bottom: 30px;
             color: #0f172a;
             font-size: 34px;
         }
 
         h2 {
-            margin-top: 35px;
-            margin-bottom: 15px;
+            margin-top: 30px;
+            margin-bottom: 16px;
             color: #0f172a;
         }
 
-        .top-links {
-            text-align: center;
-            margin-bottom: 25px;
-        }
-
-        .top-links a {
-            margin: 0 10px;
-            text-decoration: none;
-            color: #2563eb;
-            font-weight: bold;
-            font-size: 17px;
-        }
-
-        .top-links a:hover {
-            text-decoration: underline;
-        }
-
-        .stats-grid {
+        .summary-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 18px;
-            margin-bottom: 30px;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+            margin-bottom: 28px;
         }
 
-        .stat-card {
-            background: #f8fafc;
-            border: 1px solid #dbe4ee;
-            border-radius: 16px;
-            padding: 22px;
-            box-shadow: 0 3px 10px rgba(0,0,0,0.04);
-        }
-
-        .stat-title {
-            font-size: 14px;
-            color: #64748b;
-            margin-bottom: 8px;
-        }
-
-        .stat-value {
-            font-size: 30px;
-            font-weight: bold;
-            color: #0f172a;
-        }
-
-        .card-users .stat-value { color: #2563eb; }
-        .card-scans .stat-value { color: #7c3aed; }
-
-        .card-high .stat-value { color: #dc2626; }
-        .card-medium .stat-value { color: #f97316; }
-        .card-low .stat-value { color: #eab308; }
-        .card-info .stat-value { color: #2563eb; }
-
-        .chart-box {
-            background: #f8fafc;
-            border: 1px solid #dbe4ee;
-            border-radius: 16px;
-            padding: 25px;
-            margin-bottom: 30px;
-        }
-
-        .chart-box h2 {
-            margin-top: 0;
-            margin-bottom: 20px;
-            color: #0f172a;
-        }
-
-        .pie-chart-container {
-            width: 100%;
-            max-width: 450px;
-            height: 320px;
-            margin: 0 auto;
-        }
-
-        #adminChart {
-            width: 100% !important;
-            height: 100% !important;
-        }
-
-        .section-box {
+        .summary-card {
             background: #f8fafc;
             border: 1px solid #dbe4ee;
             border-radius: 14px;
-            padding: 20px;
-            margin-bottom: 25px;
+            padding: 18px;
         }
 
-        .table-wrapper {
-            width: 100%;
-            overflow-x: auto;
-            border: 1px solid #e2e8f0;
-            border-radius: 12px;
-            background: white;
+        .summary-label {
+            font-size: 13px;
+            color: #64748b;
+            margin-bottom: 6px;
         }
 
-        table {
-            width: 100%;
-            min-width: 1000px;
-            border-collapse: collapse;
-            background: white;
-            table-layout: fixed;
-        }
-
-        th, td {
-            border: 1px solid #e2e8f0;
-            padding: 12px;
-            text-align: left;
-            vertical-align: top;
+        .summary-value {
+            font-size: 17px;
+            font-weight: bold;
+            color: #0f172a;
             overflow-wrap: break-word;
             word-break: break-word;
         }
 
-        th {
-            background: #f1f5f9;
+        .full-width {
+            grid-column: 1 / -1;
         }
 
-        .result-link {
-            color: #2563eb;
+        .total-findings-card {
+            grid-column: span 2;
+            display: grid;
+            grid-template-columns: 120px 1fr;
+            gap: 14px;
+            align-items: center;
+            background: linear-gradient(135deg, #0f172a, #2563eb);
+            border: none;
+            color: white;
+            padding: 18px;
+            border-radius: 16px;
+            box-shadow: 0 8px 20px rgba(37, 99, 235, 0.22);
+        }
+
+        .total-findings-label {
+            font-size: 13px;
+            color: #bfdbfe;
             font-weight: bold;
-            text-decoration: none;
+            margin-bottom: 5px;
         }
 
-        .result-link:hover {
+        .total-findings-number {
+            font-size: 38px;
+            line-height: 1;
+            font-weight: 900;
+            letter-spacing: -0.5px;
+        }
+
+        .severity-mini-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(70px, 1fr));
+            gap: 8px;
+        }
+
+        .severity-mini-card {
+            background: rgba(255,255,255,0.12);
+            border: 1px solid rgba(255,255,255,0.18);
+            border-radius: 11px;
+            padding: 8px;
+            text-align: center;
+        }
+
+        .severity-mini-label {
+            font-size: 11px;
+            color: #dbeafe;
+            margin-bottom: 4px;
+            font-weight: bold;
+        }
+
+        .severity-mini-value {
+            font-size: 19px;
+            font-weight: 900;
+            color: white;
+        }
+
+        .severity-high { border-top: 3px solid #ef4444; }
+        .severity-medium { border-top: 3px solid #f97316; }
+        .severity-low { border-top: 3px solid #eab308; }
+        .severity-info { border-top: 3px solid #38bdf8; }
+
+        @media (max-width: 700px) {
+            .total-findings-card {
+                grid-template-columns: 1fr;
+                grid-column: 1 / -1;
+                text-align: center;
+            }
+
+            .severity-mini-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .url-box {
+            background: #eef2f7;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            padding: 10px 12px;
+            line-height: 1.5;
+            overflow-wrap: break-word;
+            word-break: break-word;
+        }
+
+        .short-url {
+            color: #0f172a;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .short-url:hover {
             text-decoration: underline;
         }
 
-        .delete-btn {
-            background: #dc2626;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            padding: 8px 12px;
-            font-weight: bold;
-            cursor: pointer;
+        .sort-note {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            color: #1d4ed8;
+            border-radius: 10px;
+            padding: 12px 14px;
+            margin-bottom: 18px;
+            font-size: 14px;
         }
 
-        .delete-btn:hover {
-            background: #b91c1c;
+        .vuln-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-left: 8px solid #94a3b8;
+            border-radius: 16px;
+            padding: 22px;
+            margin-bottom: 18px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+        }
+
+        .vuln-card.high-border {
+            border-left-color: #dc2626;
+        }
+
+        .vuln-card.medium-border {
+            border-left-color: #f97316;
+        }
+
+        .vuln-card.low-border {
+            border-left-color: #eab308;
+        }
+
+        .vuln-card.info-border {
+            border-left-color: #2563eb;
+        }
+
+        .vuln-title-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+
+        .vuln-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #0f172a;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 7px 14px;
+            border-radius: 999px;
+            font-size: 13px;
+            font-weight: bold;
+            color: white;
+        }
+
+        .badge-high {
+            background: #dc2626;
+        }
+
+        .badge-medium {
+            background: #f97316;
+        }
+
+        .badge-low {
+            background: #eab308;
+            color: #0f172a;
+        }
+
+        .badge-info {
+            background: #2563eb;
+        }
+
+        .meta-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+            gap: 14px;
+            margin-bottom: 16px;
+        }
+
+        .meta-item {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 12px;
+        }
+
+        .meta-label {
+            font-size: 12px;
+            color: #64748b;
+            font-weight: bold;
+            margin-bottom: 6px;
+        }
+
+        .meta-value {
+            font-size: 15px;
+            font-weight: bold;
+            color: #0f172a;
+            overflow-wrap: break-word;
+            word-break: break-word;
+        }
+
+        .field {
+            margin-bottom: 14px;
+        }
+
+        .field-label {
+            font-weight: bold;
+            display: block;
+            margin-bottom: 6px;
+            color: #334155;
+        }
+
+        .text-box {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 12px;
+            line-height: 1.6;
+            overflow-wrap: break-word;
+            word-break: break-word;
         }
 
         .empty {
@@ -184,22 +294,32 @@
             line-height: 1.6;
         }
 
-        .url-cell {
-            max-width: 280px;
-            overflow-wrap: break-word;
-            word-break: break-word;
+        .btn-group {
+            margin-top: 25px;
         }
 
-        .small-note {
-            color: #64748b;
-            font-size: 14px;
-            margin-bottom: 5px;
+        .btn {
+            display: inline-block;
+            margin-right: 10px;
+            margin-bottom: 10px;
+            background: #2563eb;
+            color: white;
+            padding: 11px 16px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: bold;
         }
 
-        .action-group {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
+        .btn:hover {
+            background: #1d4ed8;
+        }
+
+        .btn-pdf {
+            background: #dc2626;
+        }
+
+        .btn-pdf:hover {
+            background: #b91c1c;
         }
 
         @media (max-width: 768px) {
@@ -207,17 +327,16 @@
                 padding: 22px;
             }
 
-            .pie-chart-container {
-                max-width: 330px;
-                height: 280px;
+            h1 {
+                font-size: 28px;
             }
 
-            table {
-                font-size: 13px;
+            .vuln-title {
+                font-size: 18px;
             }
 
-            th, td {
-                padding: 9px;
+            .meta-grid {
+                grid-template-columns: 1fr;
             }
         }
     </style>
@@ -225,188 +344,171 @@
 
 <body>
     <div class="container">
-        <h1>Admin Dashboard</h1>
+        <h1>Scan Results</h1>
 
-        <div class="top-links">
-            <a href="/">Home</a>
-            <a href="/history">History</a>
-            <a href="/logout">Logout</a>
-        </div>
-
-        <div class="stats-grid">
-            <div class="stat-card card-users">
-                <div class="stat-title">Total Users</div>
-                <div class="stat-value">{{ total_users }}</div>
+        <div class="summary-grid">
+            <div class="summary-card">
+                <div class="summary-label">Status</div>
+                <div class="summary-value">{{ result.status }}</div>
             </div>
 
-            <div class="stat-card card-scans">
-                <div class="stat-title">Total Scans</div>
-                <div class="stat-value">{{ total_scans }}</div>
+            <div class="summary-card">
+                <div class="summary-label">User</div>
+                <div class="summary-value">{{ result.username }}</div>
             </div>
 
-            <div class="stat-card card-high">
-                <div class="stat-title">High Findings</div>
-                <div class="stat-value">{{ total_high }}</div>
+            <div class="summary-card">
+                <div class="summary-label">Scan Date & Time</div>
+                <div class="summary-value">{{ result.created_at }}</div>
             </div>
 
-            <div class="stat-card card-medium">
-                <div class="stat-title">Medium Findings</div>
-                <div class="stat-value">{{ total_medium }}</div>
+            <div class="summary-card">
+                <div class="summary-label">Scan Mode</div>
+                <div class="summary-value">{{ result.scan_mode }}</div>
             </div>
 
-            <div class="stat-card card-low">
-                <div class="stat-title">Low Findings</div>
-                <div class="stat-value">{{ total_low }}</div>
-            </div>
-
-            <div class="stat-card card-info">
-                <div class="stat-title">Informational Findings</div>
-                <div class="stat-value">{{ total_info }}</div>
-            </div>
-        </div>
-
-        <div class="chart-box">
-            <h2>Risk Distribution</h2>
-            <div class="pie-chart-container">
-                <canvas id="adminChart"></canvas>
-            </div>
-        </div>
-
-        <div class="section-box">
-            <h2>Registered Users</h2>
-            <p class="small-note">This section displays all users registered in the system.</p>
-
-            {% if users %}
-                <div class="table-wrapper">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th style="width: 70px;">ID</th>
-                                <th style="width: 160px;">Username</th>
-                                <th style="width: 260px;">Email</th>
-                                <th style="width: 100px;">Role</th>
-                                <th style="width: 100px;">Verified</th>
-                                <th style="width: 130px;">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for u in users %}
-                                <tr>
-                                    <td>{{ u["id"] }}</td>
-                                    <td>{{ u["username"] }}</td>
-                                    <td>{{ u["email"] }}</td>
-                                    <td>{{ u["role"] }}</td>
-                                    <td>{{ "Yes" if u["is_verified"] == 1 else "No" }}</td>
-                                    <td>
-                                        {% if u["email"] != "websecurityscanner@gmail.com" %}
-                                            <form method="post" action="/admin/delete_user/{{ u['id'] }}">
-                                                <button type="submit" class="delete-btn">Delete</button>
-                                            </form>
-                                        {% else %}
-                                            Protected
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+            <div class="total-findings-card">
+                <div>
+                    <div class="total-findings-label">Total Findings</div>
+                    <div class="total-findings-number">{{ result.vulnerabilities|length }}</div>
                 </div>
-            {% else %}
-                <div class="empty">No users found.</div>
-            {% endif %}
+
+                <div class="severity-mini-grid">
+                    <div class="severity-mini-card severity-high">
+                        <div class="severity-mini-label">High</div>
+                        <div class="severity-mini-value">{{ result.risk_counts.high if result.risk_counts else 0 }}</div>
+                    </div>
+
+                    <div class="severity-mini-card severity-medium">
+                        <div class="severity-mini-label">Medium</div>
+                        <div class="severity-mini-value">{{ result.risk_counts.medium if result.risk_counts else 0 }}</div>
+                    </div>
+
+                    <div class="severity-mini-card severity-low">
+                        <div class="severity-mini-label">Low</div>
+                        <div class="severity-mini-value">{{ result.risk_counts.low if result.risk_counts else 0 }}</div>
+                    </div>
+
+                    <div class="severity-mini-card severity-info">
+                        <div class="severity-mini-label">Informational</div>
+                        <div class="severity-mini-value">{{ result.risk_counts.info if result.risk_counts else 0 }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="summary-card full-width">
+                <div class="summary-label">Target URL</div>
+                <div class="url-box">
+                    <a href="{{ result.url }}" target="_blank" class="short-url" title="{{ result.url }}">
+                        {{ result.url }}
+                    </a>
+                </div>
+            </div>
         </div>
 
-        <div class="section-box">
-            <h2>All Scan History</h2>
-            <p class="small-note">This section shows scan activities from all users.</p>
+        <div class="sort-note">
+            Vulnerabilities are sorted automatically by severity: High → Medium → Low → Informational.
+        </div>
 
-            {% if history %}
-                <div class="table-wrapper">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th style="width: 140px;">User</th>
-                                <th style="width: 240px;">Email</th>
-                                <th style="width: 260px;">Target URL</th>
-                                <th style="width: 120px;">Scan Mode</th>
-                                <th style="width: 260px;">Status</th>
-                                <th style="width: 110px;">Findings</th>
-                                <th style="width: 150px;">Date & Time</th>
-                                <th style="width: 140px;">Actions</th>
-                            </tr>
-                        </thead>
+        <h2>Detected Vulnerabilities</h2>
 
-                        <tbody>
-                            {% for item in history %}
-                                <tr>
-                                    <td>{{ item["username"] }}</td>
-                                    <td>{{ item["email"] }}</td>
-                                    <td class="url-cell">{{ item["target"] }}</td>
-                                    <td>{{ item["scan_mode"] }}</td>
-                                    <td>{{ item["status"] }}</td>
-                                    <td>{{ item["total_findings"] }}</td>
-                                    <td>{{ item["created_at"] }}</td>
-                                    <td>
-                                        <div class="action-group">
-                                            <a href="/result/{{ item['scan_id'] }}" class="result-link">Open</a>
+        {% if result.vulnerabilities %}
+            {% for v in result.vulnerabilities %}
+                <div class="vuln-card
+                    {% if v.risk == 'High' %}
+                        high-border
+                    {% elif v.risk == 'Medium' %}
+                        medium-border
+                    {% elif v.risk == 'Low' %}
+                        low-border
+                    {% else %}
+                        info-border
+                    {% endif %}
+                ">
 
-                                            <form method="post" action="/admin/delete_scan/{{ item['scan_id'] }}">
-                                                <button type="submit" class="delete-btn">Delete</button>
-                                            </form>
-                                        </div>
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+                    <div class="vuln-title-row">
+                        <div class="vuln-title">{{ v.type }}</div>
+
+                        {% if v.risk == 'High' %}
+                            <span class="badge badge-high">{{ v.risk }}</span>
+                        {% elif v.risk == 'Medium' %}
+                            <span class="badge badge-medium">{{ v.risk }}</span>
+                        {% elif v.risk == 'Low' %}
+                            <span class="badge badge-low">{{ v.risk }}</span>
+                        {% else %}
+                            <span class="badge badge-info">{{ v.risk }}</span>
+                        {% endif %}
+                    </div>
+
+                    <div class="meta-grid">
+                        <div class="meta-item">
+                            <div class="meta-label">CVE ID</div>
+                            <div class="meta-value">{{ v.cve_id if v.cve_id else "N/A" }}</div>
+                        </div>
+
+                        <div class="meta-item">
+                            <div class="meta-label">CVSS Score</div>
+                            <div class="meta-value">{{ v.cvss_score if v.cvss_score else "N/A" }}</div>
+                        </div>
+
+                        <div class="meta-item">
+                            <div class="meta-label">CWE ID</div>
+                            <div class="meta-value">{{ v.cwe_id if v.cwe_id else "N/A" }}</div>
+                        </div>
+
+                        <div class="meta-item">
+                            <div class="meta-label">WASC ID</div>
+                            <div class="meta-value">{{ v.wasc_id if v.wasc_id else "N/A" }}</div>
+                        </div>
+
+                        <div class="meta-item">
+                            <div class="meta-label">Plugin ID</div>
+                            <div class="meta-value">{{ v.plugin_id if v.plugin_id else "N/A" }}</div>
+                        </div>
+
+                        <div class="meta-item">
+                            <div class="meta-label">Confidence</div>
+                            <div class="meta-value">{{ v.confidence if v.confidence else "N/A" }}</div>
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <span class="field-label">Affected URL</span>
+                        <div class="url-box">
+                            <a href="{{ v.url }}" target="_blank" class="short-url" title="{{ v.url }}">
+                                {{ v.url }}
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <span class="field-label">Description</span>
+                        <div class="text-box">{{ v.description | safe }}</div>
+                    </div>
+
+                    <div class="field">
+                        <span class="field-label">Recommended Mitigation</span>
+                        <div class="text-box">{{ v.solution | safe }}</div>
+                    </div>
+
+                    {% if v.reference %}
+                        <div class="field">
+                            <span class="field-label">Reference</span>
+                            <div class="text-box">{{ v.reference | safe }}</div>
+                        </div>
+                    {% endif %}
                 </div>
-            {% else %}
-                <div class="empty">No scan history available.</div>
-            {% endif %}
+            {% endfor %}
+        {% else %}
+            <div class="empty">
+                No vulnerabilities detected or scan time was insufficient.
+            </div>
+        {% endif %}
+
+        <div class="btn-group">
+            <a href="/" class="btn">Back</a>
+            <a href="/export_report_pdf/{{ result.scan_id }}" class="btn btn-pdf">Export PDF</a>
         </div>
     </div>
-
-    <script>
-        const adminData = JSON.parse('{{ [total_high, total_medium, total_low, total_info] | tojson | safe }}');
-
-        new Chart(document.getElementById('adminChart'), {
-            type: 'pie',
-            data: {
-                labels: ['High', 'Medium', 'Low', 'Informational'],
-                datasets: [{
-                    data: adminData,
-                    backgroundColor: [
-                        '#dc2626',
-                        '#f97316',
-                        '#eab308',
-                        '#2563eb'
-                    ],
-                    borderColor: '#ffffff',
-                    borderWidth: 2
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'top',
-                        labels: {
-                            font: {
-                                size: 14
-                            },
-                            padding: 18
-                        }
-                    }
-                }
-            }
-        });
-
-        window.addEventListener("pageshow", function (event) {
-            if (event.persisted) {
-                window.location.reload();
-            }
-        });
-    </script>
 </body>
 </html>

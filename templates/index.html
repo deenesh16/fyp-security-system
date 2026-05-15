@@ -246,6 +246,98 @@
                 height: 260px;
             }
         }
+    
+
+        .usage-box {
+            background: #ecfdf5;
+            border: 1px solid #bbf7d0;
+            border-left: 5px solid #10b981;
+            border-radius: 12px;
+            padding: 16px;
+            margin: 20px 0;
+            color: #064e3b;
+            line-height: 1.6;
+        }
+
+        .usage-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .usage-card {
+            background: rgba(255,255,255,0.7);
+            border: 1px solid #bbf7d0;
+            border-radius: 10px;
+            padding: 12px;
+        }
+
+        .usage-label {
+            font-size: 13px;
+            color: #047857;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .usage-value {
+            font-size: 19px;
+            font-weight: bold;
+            color: #064e3b;
+        }
+
+        .scan-error {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            border-left: 5px solid #dc2626;
+            color: #991b1b;
+            padding: 14px;
+            border-radius: 10px;
+            margin: 20px 0;
+            line-height: 1.6;
+            font-weight: bold;
+        }
+
+        .notification-box {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-left: 5px solid #2563eb;
+            border-radius: 12px;
+            padding: 16px;
+            margin: 20px 0;
+        }
+
+        .notification-box h3 {
+            margin: 0 0 12px;
+            color: #0f172a;
+        }
+
+        .notification-item {
+            background: white;
+            border: 1px solid #dbeafe;
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 10px;
+        }
+
+        .notification-title {
+            font-weight: bold;
+            color: #1d4ed8;
+            margin-bottom: 5px;
+        }
+
+        .notification-message {
+            color: #334155;
+            line-height: 1.5;
+            font-size: 14px;
+        }
+
+        .notification-date {
+            margin-top: 6px;
+            color: #64748b;
+            font-size: 12px;
+        }
+
     </style>
 </head>
 
@@ -253,7 +345,7 @@
 <div class="container">
 
     <div class="top-bar">
-        <p>Welcome, <strong>{{ user["username"] }}</strong> ({{ user["role"] }})</p>
+        <p>Welcome, <strong>{{ user["username"] }}</strong> - {{ "Admin" if user["role"] == "admin" else user_type_label }}</p>
 
         <a href="/history">My History</a>
 
@@ -277,6 +369,47 @@
         <strong>Warning:</strong> Only scan websites that you own or have permission to test.
         Unauthorized scanning may violate rules, laws, or terms of service.
     </div>
+
+    {% if scan_error %}
+        <div class="scan-error">
+            {{ scan_error }}
+        </div>
+    {% endif %}
+
+    <div class="usage-box">
+        <strong>Daily Scan Usage</strong>
+        <div class="usage-grid">
+            <div class="usage-card">
+                <div class="usage-label">User Category</div>
+                <div class="usage-value">{{ user_type_label }}</div>
+            </div>
+            <div class="usage-card">
+                <div class="usage-label">Scans Used Today</div>
+                <div class="usage-value">{{ scans_today }}</div>
+            </div>
+            <div class="usage-card">
+                <div class="usage-label">Daily Limit</div>
+                <div class="usage-value">{{ "Unlimited" if daily_limit is none else daily_limit }}</div>
+            </div>
+            <div class="usage-card">
+                <div class="usage-label">Remaining Today</div>
+                <div class="usage-value">{{ "Unlimited" if remaining_scans is none else remaining_scans }}</div>
+            </div>
+        </div>
+    </div>
+
+    {% if notifications %}
+        <div class="notification-box">
+            <h3>Notifications</h3>
+            {% for note in notifications %}
+                <div class="notification-item">
+                    <div class="notification-title">{{ note["title"] }}</div>
+                    <div class="notification-message">{{ note["message"] }}</div>
+                    <div class="notification-date">{{ note["created_at"] }}</div>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
 
     <div class="stats-grid">
         <div class="stat-card card-scans">
