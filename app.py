@@ -1758,6 +1758,7 @@ def index():
     return render_template(
         "index.html",
         today_date=get_malaysia_date_display(),
+        dashboard_display_category="Admin" if user["role"] == "admin" else str(user.get("user_type", "User")).replace("_", " ").title(),
         user=user,
         total_scans=stats["total_scans"],
         total_findings=stats["total_findings"],
