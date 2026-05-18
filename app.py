@@ -203,6 +203,7 @@ def init_db():
 
     cursor.execute("ALTER TABLE notifications ADD COLUMN IF NOT EXISTS is_read INTEGER NOT NULL DEFAULT 0")
     cursor.execute("ALTER TABLE notifications ADD COLUMN IF NOT EXISTS created_at TEXT")
+    cursor.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS user_type TEXT DEFAULT 'student'")
     conn.commit()
     conn.close()
 
@@ -757,6 +758,71 @@ def create_notification(user_id, title, message):
     conn.close()
 
 
+
+def send_verification_email_to_user(email, username, verify_token):
+    verify_link = f"{BASE_URL}/verify/{verify_token}"
+
+    subject = "Verify Your Account - Web Security Scanner"
+
+    text_body = f"""
+Hello {username},
+
+Thank you for registering for the Automated Web Application Security Assessment System.
+
+Please verify your account by opening this link:
+{verify_link}
+
+You may click the verification link from your phone, laptop, or any device.
+After verification, you can login from any device using your registered email and password.
+
+If you did not create this account, please ignore this email.
+
+Thank you,
+Web Security Scanner Team
+"""
+
+    html_body = f"""
+<!DOCTYPE html>
+<html>
+<body style="font-family:Arial,sans-serif;background:#f8fafc;padding:24px;color:#0f172a;">
+    <div style="max-width:620px;margin:auto;background:#ffffff;border-radius:16px;padding:28px;border:1px solid #e2e8f0;">
+        <h2 style="color:#0f172a;margin-top:0;">Verify Your Account</h2>
+
+        <p>Hello <strong>{html.escape(username)}</strong>,</p>
+
+        <p>
+            Thank you for registering for the Automated Web Application Security Assessment System.
+            Please click the button below to verify your account.
+        </p>
+
+        <p style="text-align:center;margin:28px 0;">
+            <a href="{verify_link}"
+               style="background:#2563eb;color:#ffffff;text-decoration:none;padding:13px 22px;border-radius:10px;font-weight:bold;display:inline-block;">
+                Verify My Account
+            </a>
+        </p>
+
+        <p style="font-size:14px;color:#475569;line-height:1.6;">
+            You may click this verification link from your phone, laptop, or any device.
+            After verification, you can login from any device using your registered email and password.
+        </p>
+
+        <p style="font-size:13px;color:#64748b;line-height:1.6;">
+            If the button does not work, copy and paste this link into your browser:<br>
+            <span style="word-break:break-all;">{verify_link}</span>
+        </p>
+
+        <p style="font-size:13px;color:#64748b;">
+            If you did not create this account, please ignore this email.
+        </p>
+    </div>
+</body>
+</html>
+"""
+
+    send_email_message(email, subject, text_body, html_body)
+
+
 # ---------------- AUTH HELPERS ----------------
 def current_user():
     user_id = session.get("user_id")
@@ -808,9 +874,17 @@ def register():
         username = request.form.get("username", "").strip()
         email = request.form.get("email", "").strip().lower()
         password = request.form.get("password", "").strip()
-        user_type = request.form.get("user_type", "student").strip()
+        user_type = request.form.get("user_type", "student").strip().lower()
 
-        if user_type not in USER_TYPE_LIMITS:
+        allowed_user_types = {
+            "student",
+            "developer",
+            "security_researcher",
+            "lecturer",
+            "other",
+        }
+
+        if user_type not in allowed_user_types:
             user_type = "other"
 
         if not username or not email or not password:
@@ -819,119 +893,64 @@ def register():
         if not is_strong_password(password):
             return render_template(
                 "register.html",
-                error="Password must be at least 8 characters and include uppercase letter, lowercase letter, number, and symbol.",
+                error="Password must be at least 8 characters and include uppercase letter, lowercase letter, number, and symbol."
             )
 
-        if get_user_by_email(email):
+        existing_user = get_user_by_email(email)
+
+        if existing_user:
             return render_template("register.html", error="Email already registered.")
 
         verify_token = secrets.token_urlsafe(32)
 
-        conn = get_db_connection()
-        cursor = get_cursor(conn)
-
         try:
-            cursor.execute("""
-                INSERT INTO users (username, email, password_hash, role, user_type, is_verified, verify_token)
-                VALUES (%s, %s, %s, 'user', %s, 0, %s)
-            """, (username, email, generate_password_hash(password), user_type, verify_token))
+            conn = get_db_connection()
+            cursor = get_cursor(conn)
+
+            try:
+                cursor.execute("""
+                    INSERT INTO users (username, email, password_hash, role, is_verified, verify_token, user_type)
+                    VALUES (%s, %s, %s, 'user', 0, %s, %s)
+                """, (
+                    username,
+                    email,
+                    generate_password_hash(password),
+                    verify_token,
+                    user_type,
+                ))
+            except Exception:
+                conn.rollback()
+                cursor.execute("""
+                    INSERT INTO users (username, email, password_hash, role, is_verified, verify_token)
+                    VALUES (%s, %s, %s, 'user', 0, %s)
+                """, (
+                    username,
+                    email,
+                    generate_password_hash(password),
+                    verify_token,
+                ))
+
             conn.commit()
-        except psycopg2.IntegrityError:
-            conn.rollback()
             conn.close()
-            return render_template("register.html", error="Username or email already exists.")
 
-        conn.close()
-
-        verify_link = f"{BASE_URL}/verify/{verify_token}"
-
-        subject = "Verify your Web Security Scanner account"
-
-        escaped_username = html.escape(username)
-
-        text_body = f"""
-Hello {username},
-
-Thank you for registering with the Automated Web Application Security Assessment System.
-
-To verify your account, open this link:
-{verify_link}
-
-This verification link is used only to activate your account.
-
-If you did not create this account, you can safely ignore this email.
-
-Thank you,
-Web Security Scanner Team
-"""
-
-        html_body = f"""
-<!DOCTYPE html>
-<html>
-<body style="margin:0; padding:0; background:#f4f7fb; font-family:Arial, sans-serif;">
-    <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f7fb; padding:30px 0;">
-        <tr>
-            <td align="center">
-                <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff; border-radius:12px; padding:30px; border:1px solid #e5e7eb;">
-                    <tr>
-                        <td>
-                            <h2 style="color:#0f172a; margin-top:0;">Verify Your Account</h2>
-
-                            <p style="color:#334155; font-size:15px; line-height:1.6;">
-                                Hello <strong>{escaped_username}</strong>,
-                            </p>
-
-                            <p style="color:#334155; font-size:15px; line-height:1.6;">
-                                Thank you for registering with the Automated Web Application Security Assessment System.
-                                Please click the button below to verify your account.
-                            </p>
-
-                            <p style="text-align:center; margin:30px 0;">
-                                <a href="{verify_link}"
-                                   style="background:#2563eb; color:#ffffff; padding:14px 24px; border-radius:8px; text-decoration:none; font-weight:bold; display:inline-block;">
-                                    Verify My Account
-                                </a>
-                            </p>
-
-                            <p style="color:#64748b; font-size:13px; line-height:1.6;">
-                                If the button does not work, copy and paste this link into your browser:
-                            </p>
-
-                            <p style="font-size:13px; line-height:1.6; word-break:break-all;">
-                                <a href="{verify_link}" style="color:#2563eb;">{verify_link}</a>
-                            </p>
-
-                            <p style="color:#64748b; font-size:13px; line-height:1.6;">
-                                If you did not create this account, you can safely ignore this email.
-                            </p>
-
-                            <hr style="border:none; border-top:1px solid #e5e7eb; margin:24px 0;">
-
-                            <p style="color:#94a3b8; font-size:12px;">
-                                Web Security Scanner Team
-                            </p>
-                        </td>
-                    </tr>
-                </table>
-            </td>
-        </tr>
-    </table>
-</body>
-</html>
-"""
+        except Exception as e:
+            app.logger.error(f"REGISTER DATABASE ERROR: {e}")
+            return render_template("register.html", error="Registration failed. Please try again.")
 
         try:
-            send_email_message(email, subject, text_body, html_body)
-            return render_template("verify_notice.html", title="Verification Email Sent", link=None)
+            send_verification_email_to_user(email, username, verify_token)
         except Exception as e:
+            app.logger.error(f"VERIFICATION EMAIL ERROR: {e}")
             return render_template(
-                "verify_notice.html",
-                title="Email Send Failed - Use This Link",
-                link=verify_link,
-                error=str(e),
+                "register.html",
+                error="Account created, but verification email could not be sent. Please contact the administrator."
             )
 
+        session["pending_verify_email"] = email
+        return redirect(url_for("verify_pending"))
+
     return render_template("register.html")
+
 
 
 @app.route("/verify/<token>")
@@ -948,6 +967,100 @@ def verify_email(token):
     conn.close()
 
     return redirect(url_for("login", verified="1"))
+
+
+
+# ---------------- EMAIL VERIFICATION WAITING PAGE ----------------
+@app.route("/verify_pending")
+def verify_pending():
+    pending_email = session.get("pending_verify_email")
+
+    if not pending_email:
+        return redirect(url_for("login"))
+
+    user = get_user_by_email(pending_email)
+
+    if user and int(user.get("is_verified", 0)) == 1:
+        session.pop("pending_verify_email", None)
+        return redirect(url_for("login", verified="1"))
+
+    return render_template("verify_pending.html", email=pending_email)
+
+
+@app.route("/check_verification_status")
+def check_verification_status():
+    pending_email = session.get("pending_verify_email")
+
+    if not pending_email:
+        return jsonify({
+            "verified": False,
+            "message": "No pending verification session."
+        })
+
+    user = get_user_by_email(pending_email)
+
+    if not user:
+        return jsonify({
+            "verified": False,
+            "message": "Account not found."
+        })
+
+    if int(user.get("is_verified", 0)) == 1:
+        session.pop("pending_verify_email", None)
+        return jsonify({
+            "verified": True,
+            "redirect_url": url_for("login", verified="1")
+        })
+
+    return jsonify({
+        "verified": False,
+        "message": "Waiting for email verification."
+    })
+
+
+@app.route("/resend_verification_email", methods=["POST"])
+def resend_verification_email():
+    pending_email = session.get("pending_verify_email")
+
+    if not pending_email:
+        return redirect(url_for("login"))
+
+    user = get_user_by_email(pending_email)
+
+    if not user:
+        session.pop("pending_verify_email", None)
+        return redirect(url_for("register"))
+
+    if int(user.get("is_verified", 0)) == 1:
+        session.pop("pending_verify_email", None)
+        return redirect(url_for("login", verified="1"))
+
+    new_token = secrets.token_urlsafe(32)
+
+    conn = get_db_connection()
+    cursor = get_cursor(conn)
+    cursor.execute(
+        "UPDATE users SET verify_token = %s WHERE id = %s",
+        (new_token, user["id"])
+    )
+    conn.commit()
+    conn.close()
+
+    try:
+        send_verification_email_to_user(user["email"], user["username"], new_token)
+    except Exception as e:
+        app.logger.error(f"RESEND VERIFICATION EMAIL ERROR: {e}")
+        return render_template(
+            "verify_pending.html",
+            email=pending_email,
+            error="Unable to resend verification email at the moment. Please try again later."
+        )
+
+    return render_template(
+        "verify_pending.html",
+        email=pending_email,
+        message="A new verification email has been sent successfully."
+    )
 
 
 @app.route("/login", methods=["GET", "POST"])
