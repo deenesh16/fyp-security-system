@@ -650,7 +650,7 @@ def send_email_message(to_email, subject, text_body, html_body=None):
 
     msg = EmailMessage()
     msg["Subject"] = subject
-    msg["From"] = f"Web Security Scanner <{MAIL_SENDER}>"
+    msg["From"] = f"Account Verification <{MAIL_SENDER}>"
     msg["To"] = to_email
     msg["Reply-To"] = MAIL_SENDER
     msg["X-Priority"] = "3"
@@ -766,16 +766,17 @@ def send_verification_email_to_user(email, username, verify_token):
 
     text_body = f"""Hello {username},
 
-Thank you for registering. Please verify your account by opening this link:
+Thank you for registering.
+
+Please verify your account by opening this link:
 {verify_link}
 
 You may open this link from your phone, laptop, or any device.
-After verification, you can log in from any device.
 
 If you did not create this account, you can ignore this email.
 
 Thank you,
-Web Security Scanner Team
+Account Verification Team
 """
 
     html_body = render_template(
