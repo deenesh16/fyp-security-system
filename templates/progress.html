@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html>
 <head>
@@ -14,8 +13,8 @@
         }
 
         .container {
-            max-width: 760px;
-            margin: 70px auto;
+            max-width: 900px;
+            margin: 45px auto;
             background: white;
             padding: 35px;
             border-radius: 18px;
@@ -39,7 +38,7 @@
 
         .info-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
             gap: 14px;
             margin-bottom: 22px;
         }
@@ -213,6 +212,12 @@
 
 <body>
 
+<div
+    id="progressConfig"
+    data-scan-id="{{ scan_id }}"
+    data-expired="{% if expired %}true{% else %}false{% endif %}">
+</div>
+
 <div class="container">
 
     <h1>Scan in Progress</h1>
@@ -227,33 +232,34 @@
         <div class="info-card">
             <div class="info-label">Scan Mode</div>
             <div class="info-value" id="scanMode">
-                {{ scan_mode }}
+                {{ scan_mode or "Loading..." }}
             </div>
         </div>
 
         <div class="info-card">
             <div class="info-label">Target Website</div>
             <div class="info-value" id="targetUrl">
-                {{ target_url }}
+                {{ target_url or "Loading..." }}
             </div>
         </div>
 
     </div>
 
     <div class="status-box">
-
         <div class="status-label">
             Current Status
         </div>
 
         <div class="status-text" id="statusText">
-            Initializing scan...
+            {% if expired %}
+                Scan session expired.
+            {% else %}
+                Initializing scan...
+            {% endif %}
         </div>
-
     </div>
 
     <div class="progress-wrapper">
-
         <div class="progress-top">
             <div class="progress-label">
                 Scan Progress
@@ -267,11 +273,9 @@
         <div class="progress-bar">
             <div class="progress-fill" id="progressBar"></div>
         </div>
-
     </div>
 
     <div class="time-box">
-
         <div class="time-item">
             <div class="time-label">
                 Elapsed Time
@@ -291,7 +295,6 @@
                 Calculating...
             </div>
         </div>
-
     </div>
 
     <div class="note">
@@ -300,7 +303,11 @@
         timing may vary slightly.
     </div>
 
-    <div class="error-box" id="errorBox"></div>
+    <div class="error-box" id="errorBox">
+        {% if expired %}
+            The scan session expired or no longer exists.
+        {% endif %}
+    </div>
 
     <div class="btn-area">
         <a href="/" class="btn">
@@ -311,12 +318,14 @@
 </div>
 
 <script>
+const progressConfig = document.getElementById("progressConfig");
+const scanId = progressConfig ? progressConfig.dataset.scanId : "";
+const isExpiredOnLoad = progressConfig ? progressConfig.dataset.expired === "true" : false;
 
 let pollInterval = null;
 let redirected = false;
 let localStartTime = Date.now();
 let localElapsedInterval = null;
-
 
 function formatLocalElapsedTime(seconds) {
     seconds = Math.max(0, Math.floor(Number(seconds) || 0));
@@ -326,14 +335,14 @@ function formatLocalElapsedTime(seconds) {
     const secs = seconds % 60;
 
     if (hours > 0) {
-        return `${hours} hr ${minutes} min ${secs} sec`;
+        return hours + " hr " + minutes + " min " + secs + " sec";
     }
 
     if (minutes > 0) {
-        return `${minutes} min ${secs} sec`;
+        return minutes + " min " + secs + " sec";
     }
 
-    return `${secs} sec`;
+    return secs + " sec";
 }
 
 function getLocalElapsedText() {
@@ -341,7 +350,6 @@ function getLocalElapsedText() {
 }
 
 function stopPolling() {
-
     if (pollInterval !== null) {
         clearInterval(pollInterval);
         pollInterval = null;
@@ -349,16 +357,18 @@ function stopPolling() {
 }
 
 function showError(message) {
-
-    const errorBox =
-        document.getElementById("errorBox");
-
+    const errorBox = document.getElementById("errorBox");
     errorBox.style.display = "block";
     errorBox.innerText = message;
 }
 
-function updateUI(data) {
+function hideError() {
+    const errorBox = document.getElementById("errorBox");
+    errorBox.style.display = "none";
+    errorBox.innerText = "";
+}
 
+function updateUI(data) {
     const progress =
         data.progress !== undefined && data.progress !== null
             ? data.progress
@@ -391,103 +401,116 @@ function updateUI(data) {
 }
 
 function redirectToResult(resultId) {
-
-    if (redirected) return;
+    if (redirected || !resultId) {
+        return;
+    }
 
     redirected = true;
-
     stopPolling();
 
-    window.location.href =
-        "/result/" + resultId;
+    window.location.href = "/result/" + encodeURIComponent(resultId);
+}
+
+function handleExpired(data) {
+    stopPolling();
+
+    document.getElementById("statusText").innerText =
+        data.status || "Scan session expired.";
+
+    showError(
+        data.error ||
+        "The scan session expired or no longer exists. Please start a new scan."
+    );
 }
 
 function checkScanStatus() {
-
     if (redirected) {
         stopPolling();
         return;
     }
 
-    fetch("/scan_status/{{ scan_id }}", {
+    if (!scanId || scanId.trim() === "") {
+        handleExpired({
+            status: "Scan session expired.",
+            error: "Missing scan ID. Please start a new scan."
+        });
+        return;
+    }
+
+    fetch("/scan_status/" + encodeURIComponent(scanId), {
         method: "GET",
         cache: "no-store"
     })
-
-    .then(response => {
-
-        if (response.status === 404) {
-
-            stopPolling();
-
-            document.getElementById("statusText").innerText =
-                "Scan session expired.";
-
-            showError(
-                "The scan session expired or no longer exists."
-            );
-
-            throw new Error("Invalid scan ID");
-        }
-
-        return response.json();
+    .then(function(response) {
+        return response.json().catch(function() {
+            return {
+                expired: true,
+                completed: false,
+                progress: 0,
+                status: "Unable to read scan status.",
+                error: "Unable to retrieve scan progress. Please refresh the page."
+            };
+        });
     })
-
-    .then(data => {
-
-        if (!data) return;
-
-        if (data.error) {
-            showError(data.error);
+    .then(function(data) {
+        if (!data) {
+            return;
         }
 
         updateUI(data);
 
+        if (data.expired === true) {
+            handleExpired(data);
+            return;
+        }
+
+        if (data.error) {
+            showError(data.error);
+        } else {
+            hideError();
+        }
+
         if (data.completed === true) {
+            if (data.result_id) {
+                document.getElementById("statusText").innerText =
+                    "Scan completed. Redirecting to results...";
 
-            stopPolling();
-
-            document.getElementById("statusText").innerText =
-                "Scan completed. Redirecting...";
-
-            setTimeout(() => {
-
-                redirectToResult(data.result_id);
-
-            }, 1000);
+                setTimeout(function() {
+                    redirectToResult(data.result_id);
+                }, 800);
+            } else {
+                showError("Scan completed, but result ID is missing. Please check scan history.");
+            }
         }
     })
-
-    .catch(error => {
-
+    .catch(function(error) {
         console.error("Polling Error:", error);
 
-        stopPolling();
+        document.getElementById("statusText").innerText =
+            "Connection lost. Retrying...";
 
-        if (
-            !error.message.includes("Invalid scan ID")
-        ) {
-
-            document.getElementById("statusText").innerText =
-                "Connection lost.";
-
-            showError(
-                "Unable to retrieve scan progress. Please refresh the page."
-            );
-        }
+        showError(
+            "Unable to retrieve scan progress. The system will keep retrying."
+        );
     });
 }
 
-window.onload = function () {
-
+window.onload = function() {
     stopPolling();
 
     if (localElapsedInterval !== null) {
         clearInterval(localElapsedInterval);
     }
 
-    localElapsedInterval = setInterval(function () {
+    if (isExpiredOnLoad === true) {
+        document.getElementById("errorBox").style.display = "block";
+        stopPolling();
+        return;
+    }
+
+    localElapsedInterval = setInterval(function() {
         const elapsedBox = document.getElementById("elapsedTime");
+
         if (!redirected && elapsedBox && (!elapsedBox.innerText || elapsedBox.innerText === "0 sec")) {
             elapsedBox.innerText = getLocalElapsedText();
         }
@@ -501,8 +524,9 @@ window.onload = function () {
     );
 };
 
-window.onbeforeunload = function () {
+window.onbeforeunload = function() {
     stopPolling();
+
     if (localElapsedInterval !== null) {
         clearInterval(localElapsedInterval);
     }
@@ -511,19 +535,13 @@ window.onbeforeunload = function () {
 window.addEventListener(
     "pageshow",
     function(event) {
-
         if (event.persisted) {
-
             stopPolling();
-
             window.location.reload();
         }
     }
 );
-
 </script>
 
 </body>
 </html>
-
-
