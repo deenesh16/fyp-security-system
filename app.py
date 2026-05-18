@@ -947,7 +947,7 @@ def verify_email(token):
     conn.commit()
     conn.close()
 
-    return redirect(url_for("login"))
+    return redirect(url_for("login", verified="1"))
 
 
 @app.route("/login", methods=["GET", "POST"])
