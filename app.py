@@ -2005,10 +2005,41 @@ def start_scan():
     return redirect(url_for("progress_page", scan_id=scan_id))
 
 
+
 @app.route("/progress/<scan_id>")
 @login_required
 def progress_page(scan_id):
-    return render_template("progress.html", scan_id=scan_id)
+    user = current_user()
+
+    task = scan_tasks.get(scan_id)
+
+    if task:
+        if user["role"] != "admin" and task.get("user_id") != user["id"]:
+            return "Access denied", 403
+
+        return render_template(
+            "progress.html",
+            scan_id=scan_id,
+            target_url=task.get("target", ""),
+            scan_mode=task.get("scan_mode", "Quick Scan"),
+            expired=False,
+        )
+
+    saved_scan = get_history_by_scan_id(scan_id)
+
+    if saved_scan:
+        if user["role"] != "admin" and saved_scan["user_id"] != user["id"]:
+            return "Access denied", 403
+
+        return redirect(url_for("result", scan_id=scan_id))
+
+    return render_template(
+        "progress.html",
+        scan_id=scan_id,
+        target_url="",
+        scan_mode="",
+        expired=True,
+    )
 
 
 @app.route("/scan_status/<scan_id>")
@@ -2017,14 +2048,39 @@ def scan_status(scan_id):
     user = current_user()
 
     if not user:
-        return jsonify({"error": "Session expired"}), 401
+        return jsonify({
+            "expired": True,
+            "completed": False,
+            "progress": 0,
+            "status": "Session expired. Please login again.",
+            "target": "",
+            "scan_mode": "",
+            "elapsed_seconds": 0,
+            "elapsed_time": "0 sec",
+            "remaining_seconds": 0,
+            "remaining_time": "Session expired",
+            "result_id": None,
+            "error": "Session expired. Please login again."
+        }), 401
 
     task = scan_tasks.get(scan_id)
 
-    # ---------------- ACTIVE SCAN FOUND IN MEMORY ----------------
     if task:
-        if user["role"] != "admin" and task["user_id"] != user["id"]:
-            return jsonify({"error": "Access denied"}), 403
+        if user["role"] != "admin" and task.get("user_id") != user["id"]:
+            return jsonify({
+                "expired": True,
+                "completed": False,
+                "progress": 0,
+                "status": "Access denied.",
+                "target": "",
+                "scan_mode": "",
+                "elapsed_seconds": 0,
+                "elapsed_time": "0 sec",
+                "remaining_seconds": 0,
+                "remaining_time": "Access denied",
+                "result_id": None,
+                "error": "Access denied."
+            }), 403
 
         started_at_epoch = float(task.get("started_at_epoch", time.time()) or time.time())
         elapsed_seconds = max(0, int(time.time() - started_at_epoch))
@@ -2033,9 +2089,10 @@ def scan_status(scan_id):
 
         if task.get("completed") is True:
             return jsonify({
-                "target": task.get("target"),
+                "expired": False,
+                "target": task.get("target", ""),
                 "scan_mode": task.get("scan_mode", "Quick Scan"),
-                "status": task.get("status", "Scan completed"),
+                "status": task.get("status", "Scan completed. Redirecting to results..."),
                 "progress": 100,
                 "completed": True,
                 "result_id": scan_id,
@@ -2047,11 +2104,13 @@ def scan_status(scan_id):
             })
 
         return jsonify({
-            "target": task.get("target"),
+            "expired": False,
+            "target": task.get("target", ""),
             "scan_mode": task.get("scan_mode", "Quick Scan"),
             "status": task.get("status", "Scanning..."),
             "progress": task.get("progress", 0),
             "completed": False,
+            "result_id": None,
             "elapsed_seconds": elapsed_seconds,
             "elapsed_time": elapsed_text,
             "remaining_seconds": remaining_seconds,
@@ -2059,28 +2118,57 @@ def scan_status(scan_id):
             "error": task.get("error"),
         })
 
-    # ---------------- FALLBACK DATABASE CHECK ----------------
-    row = get_history_by_scan_id(scan_id)
+    # Fallback: if Render restarted or memory cleared, recover from database before expiring.
+    saved_scan = get_history_by_scan_id(scan_id)
 
-    if row:
-        if user["role"] != "admin" and row["user_id"] != user["id"]:
-            return jsonify({"error": "Access denied"}), 403
+    if saved_scan:
+        if user["role"] != "admin" and saved_scan["user_id"] != user["id"]:
+            return jsonify({
+                "expired": True,
+                "completed": False,
+                "progress": 0,
+                "status": "Access denied.",
+                "target": "",
+                "scan_mode": "",
+                "elapsed_seconds": 0,
+                "elapsed_time": "0 sec",
+                "remaining_seconds": 0,
+                "remaining_time": "Access denied",
+                "result_id": None,
+                "error": "Access denied."
+            }), 403
+
+        saved_status = saved_scan["status"] or "Scan completed. Redirecting to results..."
 
         return jsonify({
-            "target": row["target"],
-            "scan_mode": row["scan_mode"],
-            "status": row["status"],
+            "expired": False,
+            "target": saved_scan["target"] or "",
+            "scan_mode": saved_scan["scan_mode"] or "Quick Scan",
+            "status": "Scan completed. Redirecting to results...",
             "progress": 100,
             "completed": True,
-            "result_id": row["scan_id"],
+            "result_id": saved_scan["scan_id"],
             "elapsed_seconds": 0,
             "elapsed_time": "Completed",
             "remaining_seconds": 0,
             "remaining_time": "Completed",
-            "error": None if not str(row["status"]).startswith("Error:") else row["status"],
+            "error": None if not str(saved_status).startswith("Error:") else saved_status,
         })
 
-    return jsonify({"error": "Invalid scan ID"}), 404
+    return jsonify({
+        "expired": True,
+        "completed": False,
+        "progress": 0,
+        "status": "Scan session expired.",
+        "target": "",
+        "scan_mode": "",
+        "elapsed_seconds": 0,
+        "elapsed_time": "0 sec",
+        "remaining_seconds": 0,
+        "remaining_time": "Expired",
+        "result_id": None,
+        "error": "The scan session expired or no longer exists. Please start a new scan."
+    }), 200
 
 
 @app.route("/result/<scan_id>")
