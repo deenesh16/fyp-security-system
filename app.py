@@ -762,65 +762,30 @@ def create_notification(user_id, title, message):
 def send_verification_email_to_user(email, username, verify_token):
     verify_link = f"{BASE_URL}/verify/{verify_token}"
 
-    subject = "Verify Your Account - Web Security Scanner"
+    subject = "Verify Your Account"
 
-    text_body = f"""
-Hello {username},
+    text_body = f"""Hello {username},
 
-Thank you for registering for the Automated Web Application Security Assessment System.
-
-Please verify your account by opening this link:
+Thank you for registering. Please verify your account by opening this link:
 {verify_link}
 
-You may click the verification link from your phone, laptop, or any device.
-After verification, you can login from any device using your registered email and password.
+You may open this link from your phone, laptop, or any device.
+After verification, you can log in from any device.
 
-If you did not create this account, please ignore this email.
+If you did not create this account, you can ignore this email.
 
 Thank you,
 Web Security Scanner Team
 """
 
-    html_body = f"""
-<!DOCTYPE html>
-<html>
-<body style="font-family:Arial,sans-serif;background:#f8fafc;padding:24px;color:#0f172a;">
-    <div style="max-width:620px;margin:auto;background:#ffffff;border-radius:16px;padding:28px;border:1px solid #e2e8f0;">
-        <h2 style="color:#0f172a;margin-top:0;">Verify Your Account</h2>
-
-        <p>Hello <strong>{html.escape(username)}</strong>,</p>
-
-        <p>
-            Thank you for registering for the Automated Web Application Security Assessment System.
-            Please click the button below to verify your account.
-        </p>
-
-        <p style="text-align:center;margin:28px 0;">
-            <a href="{verify_link}"
-               style="background:#2563eb;color:#ffffff;text-decoration:none;padding:13px 22px;border-radius:10px;font-weight:bold;display:inline-block;">
-                Verify My Account
-            </a>
-        </p>
-
-        <p style="font-size:14px;color:#475569;line-height:1.6;">
-            You may click this verification link from your phone, laptop, or any device.
-            After verification, you can login from any device using your registered email and password.
-        </p>
-
-        <p style="font-size:13px;color:#64748b;line-height:1.6;">
-            If the button does not work, copy and paste this link into your browser:<br>
-            <span style="word-break:break-all;">{verify_link}</span>
-        </p>
-
-        <p style="font-size:13px;color:#64748b;">
-            If you did not create this account, please ignore this email.
-        </p>
-    </div>
-</body>
-</html>
-"""
+    html_body = render_template(
+        "verification_email.html",
+        username=username,
+        verify_link=verify_link
+    )
 
     send_email_message(email, subject, text_body, html_body)
+
 
 
 # ---------------- AUTH HELPERS ----------------
