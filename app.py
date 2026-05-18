@@ -2074,6 +2074,8 @@ def history():
 @app.route("/admin")
 @admin_required
 def admin_panel():
+    user = current_user()
+
     users = get_all_users()
     history_rows = get_all_history()
     risk_totals = calculate_risk_totals(history_rows)
@@ -2083,6 +2085,7 @@ def admin_panel():
         "admin.html",
         unread_count=get_unread_notification_count(user["id"]),
         today_date=get_malaysia_date_display(),
+        user=user,
         users=users,
         history=history_rows,
         total_users=len(users),

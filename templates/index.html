@@ -297,17 +297,7 @@
             line-height: 1.6;
             font-weight: bold;
         }
-
-        .notification-box {
-            background: #eff6ff;
-            border: 1px solid #bfdbfe;
-            border-left: 5px solid #2563eb;
-            border-radius: 12px;
-            padding: 16px;
-            margin: 20px 0;
-        }
-
-        .notification-box h3 {
+.notification-box h3 {
             margin: 0 0 12px;
             color: #0f172a;
         }
@@ -350,7 +340,7 @@
             width: fit-content;
             font-weight: 600;
         }
-        
+
         .notification-link {
             position: relative;
             display: inline-block;
@@ -359,6 +349,7 @@
             color: #2563eb;
             font-weight: bold;
         }
+
         .notification-badge {
             display: inline-flex;
             align-items: center;
@@ -382,7 +373,10 @@
 <div class="container">
 
     <div class="top-bar">
-        <p>Welcome, <strong>{{ user["username"] }}</strong> - {{ "Admin" if user["role"] == "admin" else user_type_label }}</p>
+        <p>
+            Welcome, <strong>{{ user["username"] }}</strong> -
+            {{ "Admin" if user["role"] == "admin" else user_type_label }}
+        </p>
 
         <a href="/history">My History</a>
 
@@ -390,21 +384,15 @@
             | <a href="/admin">Admin Dashboard</a>
         {% endif %}
 
-         | 
-            <a href="/notifications" class="notification-link">
-                Notifications
-                {% if unread_count and unread_count > 0 %}
-                    <span class="notification-badge">{{ unread_count }}</span>
-                {% endif %}
-            </a>
-            |  | 
-            <a href="/notifications" class="notification-link">
-                Notifications
-                {% if unread_count and unread_count > 0 %}
-                    <span class="notification-badge">{{ unread_count }}</span>
-                {% endif %}
-            </a>
-            | <a href="/logout">Logout</a>
+        |
+        <a href="/notifications" class="notification-link">
+            Notifications
+            {% if unread_count and unread_count > 0 %}
+                <span class="notification-badge">{{ unread_count }}</span>
+            {% endif %}
+        </a>
+
+        | <a href="/logout">Logout</a>
     </div>
 
     <span class="system-badge">Security Assessment Dashboard</span>
@@ -448,21 +436,7 @@
             </div>
         </div>
     </div>
-
-    {% if notifications %}
-        <div class="notification-box">
-            <h3>Notifications</h3>
-            {% for note in notifications %}
-                <div class="notification-item">
-                    <div class="notification-title">{{ note["title"] }}</div>
-                    <div class="notification-message">{{ note["message"] }}</div>
-                    <div class="notification-date">{{ note["created_at"] }}</div>
-                </div>
-            {% endfor %}
-        </div>
-    {% endif %}
-
-    <div class="stats-grid">
+<div class="stats-grid">
         <div class="stat-card card-scans">
             <div class="stat-title">Total Scans</div>
             <div class="stat-value">{{ total_scans }}</div>
