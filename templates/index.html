@@ -350,6 +350,31 @@
             width: fit-content;
             font-weight: 600;
         }
+        
+        .notification-link {
+            position: relative;
+            display: inline-block;
+            margin: 0 8px;
+            text-decoration: none;
+            color: #2563eb;
+            font-weight: bold;
+        }
+        .notification-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 20px;
+            height: 20px;
+            padding: 0 6px;
+            margin-left: 4px;
+            border-radius: 999px;
+            background: #dc2626;
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+            vertical-align: top;
+        }
+
         </style>
 </head>
 
@@ -365,7 +390,21 @@
             | <a href="/admin">Admin Dashboard</a>
         {% endif %}
 
-        | <a href="/logout">Logout</a>
+         | 
+            <a href="/notifications" class="notification-link">
+                Notifications
+                {% if unread_count and unread_count > 0 %}
+                    <span class="notification-badge">{{ unread_count }}</span>
+                {% endif %}
+            </a>
+            |  | 
+            <a href="/notifications" class="notification-link">
+                Notifications
+                {% if unread_count and unread_count > 0 %}
+                    <span class="notification-badge">{{ unread_count }}</span>
+                {% endif %}
+            </a>
+            | <a href="/logout">Logout</a>
     </div>
 
     <span class="system-badge">Security Assessment Dashboard</span>

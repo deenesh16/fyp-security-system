@@ -989,6 +989,13 @@ body {
                         <div class="alert success">{{ message }}</div>
                     {% endif %}
 
+                    
+                    {% if request.args.get('verified') == '1' %}
+                        <div class="alert success">
+                            Your account has been verified successfully. Please login to start your assessment.
+                        </div>
+                    {% endif %}
+
                     <form method="POST" action="/login">
                         <div class="form-group">
                             <label for="email">Email</label>

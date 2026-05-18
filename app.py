@@ -200,6 +200,9 @@ def init_db():
         )
     """)
 
+
+    cursor.execute("ALTER TABLE notifications ADD COLUMN IF NOT EXISTS is_read INTEGER NOT NULL DEFAULT 0")
+    cursor.execute("ALTER TABLE notifications ADD COLUMN IF NOT EXISTS created_at TEXT")
     conn.commit()
     conn.close()
 
@@ -677,6 +680,81 @@ def send_email_message(to_email, subject, text_body, html_body=None):
     except Exception as e:
         app.logger.error(f"EMAIL ERROR: {e}")
         raise
+
+
+
+# ---------------- NOTIFICATION HELPERS ----------------
+def get_notifications_for_user(user_id):
+    conn = get_db_connection()
+    cursor = get_cursor(conn)
+    cursor.execute("""
+        SELECT id, user_id, title, message, is_read, created_at
+        FROM notifications
+        WHERE user_id = %s
+        ORDER BY id DESC
+    """, (user_id,))
+    rows = cursor.fetchall()
+    conn.close()
+    return rows
+
+
+def get_unread_notification_count(user_id):
+    conn = get_db_connection()
+    cursor = get_cursor(conn)
+    cursor.execute("""
+        SELECT COUNT(*) AS count
+        FROM notifications
+        WHERE user_id = %s AND is_read = 0
+    """, (user_id,))
+    row = cursor.fetchone()
+    conn.close()
+    return int(row["count"] if row and row.get("count") is not None else 0)
+
+
+def mark_notification_as_read(notification_id, user_id):
+    conn = get_db_connection()
+    cursor = get_cursor(conn)
+    cursor.execute("""
+        UPDATE notifications
+        SET is_read = 1
+        WHERE id = %s AND user_id = %s
+    """, (notification_id, user_id))
+    conn.commit()
+    conn.close()
+
+
+def delete_notification(notification_id, user_id):
+    conn = get_db_connection()
+    cursor = get_cursor(conn)
+    cursor.execute("""
+        DELETE FROM notifications
+        WHERE id = %s AND user_id = %s
+    """, (notification_id, user_id))
+    conn.commit()
+    conn.close()
+
+
+def mark_all_notifications_as_read(user_id):
+    conn = get_db_connection()
+    cursor = get_cursor(conn)
+    cursor.execute("""
+        UPDATE notifications
+        SET is_read = 1
+        WHERE user_id = %s
+    """, (user_id,))
+    conn.commit()
+    conn.close()
+
+
+def create_notification(user_id, title, message):
+    conn = get_db_connection()
+    cursor = get_cursor(conn)
+    cursor.execute("""
+        INSERT INTO notifications (user_id, title, message, is_read, created_at)
+        VALUES (%s, %s, %s, 0, %s)
+    """, (user_id, title, message, get_malaysia_time()))
+    conn.commit()
+    conn.close()
 
 
 # ---------------- AUTH HELPERS ----------------
@@ -1757,6 +1835,7 @@ def index():
 
     return render_template(
         "index.html",
+        unread_count=get_unread_notification_count(user["id"]),
         today_date=get_malaysia_date_display(),
         dashboard_display_category="Admin" if user["role"] == "admin" else str(user.get("user_type", "User")).replace("_", " ").title(),
         user=user,
@@ -2002,6 +2081,7 @@ def admin_panel():
 
     return render_template(
         "admin.html",
+        unread_count=get_unread_notification_count(user["id"]),
         today_date=get_malaysia_date_display(),
         users=users,
         history=history_rows,
@@ -2326,6 +2406,46 @@ def export_report_pdf(scan_id):
 # ---------------- STARTUP ----------------
 init_db()
 seed_admin()
+
+
+# ---------------- NOTIFICATION ROUTES ----------------
+@app.route("/notifications")
+@login_required
+def notifications():
+    user = current_user()
+    notifications_list = get_notifications_for_user(user["id"])
+    unread_count = get_unread_notification_count(user["id"])
+    return render_template(
+        "notifications.html",
+        user=user,
+        notifications=notifications_list,
+        unread_count=unread_count,
+    )
+
+
+@app.route("/notifications/read/<int:notification_id>", methods=["POST"])
+@login_required
+def mark_notification_read_route(notification_id):
+    user = current_user()
+    mark_notification_as_read(notification_id, user["id"])
+    return redirect(url_for("notifications"))
+
+
+@app.route("/notifications/delete/<int:notification_id>", methods=["POST"])
+@login_required
+def delete_notification_route(notification_id):
+    user = current_user()
+    delete_notification(notification_id, user["id"])
+    return redirect(url_for("notifications"))
+
+
+@app.route("/notifications/read-all", methods=["POST"])
+@login_required
+def mark_all_notifications_read_route():
+    user = current_user()
+    mark_all_notifications_as_read(user["id"])
+    return redirect(url_for("notifications"))
+
 
 if __name__ == "__main__":
     app.run(debug=True)
