@@ -2,114 +2,76 @@
 <html>
 <head>
     <title>Admin Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
-        * {
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #eef2ff, #f8fafc);
+            margin: 0;
+            padding: 30px 15px;
+            color: #1e293b;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1250px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 35px;
+            border-radius: 18px;
+            box-shadow: 0 10px 28px rgba(0, 0, 0, 0.12);
             box-sizing: border-box;
         }
 
-        body {
-            font-family: Arial, sans-serif;
-            background: #f8fafc;
-            margin: 0;
-            padding: 24px;
-            color: #0f172a;
-        }
-
-        .page {
-            width: 100%;
-            max-width: 1400px;
-            margin: 0 auto;
-        }
-
-        .top-nav {
-            text-align: center;
-            margin-bottom: 24px;
-            position: relative;
-            z-index: 9999;
-        }
-
-        .top-nav a {
-            color: #2563eb;
-            text-decoration: none;
-            font-weight: bold;
-            margin: 0 10px;
-            position: relative;
-            z-index: 10000;
-            pointer-events: auto;
-        }
-
-        .top-nav a:hover {
-            text-decoration: underline;
-        }
-
-        .badge {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            min-width: 20px;
-            height: 20px;
-            padding: 0 6px;
-            border-radius: 999px;
-            background: #dc2626;
-            color: white;
-            font-size: 12px;
-            margin-left: 4px;
-        }
-
         h1 {
+            text-align: center;
+            margin-bottom: 10px;
+            color: #0f172a;
             font-size: 34px;
-            margin: 0 0 8px;
-            text-align: center;
+        }
+
+        h2 {
+            margin-top: 35px;
+            margin-bottom: 15px;
             color: #0f172a;
         }
 
-        .subtitle {
+        .top-links {
             text-align: center;
-            color: #64748b;
-            margin-bottom: 28px;
-            line-height: 1.6;
+            margin-bottom: 25px;
         }
 
-        .section {
-            background: #ffffff;
-            border: 1px solid #dbe4ee;
-            border-radius: 16px;
-            padding: 24px;
-            margin-bottom: 24px;
-            box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
+        .top-links a {
+            margin: 0 10px;
+            text-decoration: none;
+            color: #2563eb;
+            font-weight: bold;
+            font-size: 17px;
         }
 
-        .section h2 {
-            margin: 0 0 8px;
-            font-size: 26px;
-            color: #0f172a;
-        }
-
-        .section p {
-            margin-top: 0;
-            color: #64748b;
-            line-height: 1.6;
+        .top-links a:hover {
+            text-decoration: underline;
         }
 
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-            gap: 16px;
-            margin-top: 18px;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 18px;
+            margin-bottom: 30px;
         }
 
         .stat-card {
-            border: 1px solid #dbe4ee;
-            border-radius: 14px;
             background: #f8fafc;
-            padding: 18px;
+            border: 1px solid #dbe4ee;
+            border-radius: 16px;
+            padding: 22px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.04);
         }
 
-        .stat-label {
-            color: #64748b;
-            font-weight: bold;
+        .stat-title {
             font-size: 14px;
+            color: #64748b;
             margin-bottom: 8px;
         }
 
@@ -119,363 +81,466 @@
             color: #0f172a;
         }
 
-        .risk-high {
-            color: #dc2626;
+        .card-users .stat-value { color: #2563eb; }
+        .card-scans .stat-value { color: #7c3aed; }
+
+        .card-high .stat-value { color: #dc2626; }
+        .card-medium .stat-value { color: #f97316; }
+        .card-low .stat-value { color: #eab308; }
+        .card-info .stat-value { color: #2563eb; }
+
+        .chart-box {
+            background: #f8fafc;
+            border: 1px solid #dbe4ee;
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 30px;
         }
 
-        .risk-medium {
-            color: #f97316;
+        .chart-box h2 {
+            margin-top: 0;
+            margin-bottom: 20px;
+            color: #0f172a;
         }
 
-        .risk-low {
-            color: #ca8a04;
-        }
-
-        .risk-info {
-            color: #2563eb;
-        }
-
-        .table-wrap {
+        .pie-chart-container {
             width: 100%;
-            overflow-x: auto;
+            max-width: 450px;
+            height: 320px;
+            margin: 0 auto;
+        }
+
+        #adminChart {
+            width: 100% !important;
+            height: 100% !important;
+        }
+
+        .section-box {
+            background: #f8fafc;
             border: 1px solid #dbe4ee;
             border-radius: 14px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+
+        .table-wrapper {
+            width: 100%;
+            overflow-x: auto;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
             background: white;
         }
 
         table {
             width: 100%;
+            min-width: 1000px;
             border-collapse: collapse;
-            min-width: 920px;
+            background: white;
+            table-layout: fixed;
         }
 
         th, td {
-            padding: 13px 15px;
-            border-bottom: 1px solid #e2e8f0;
-            border-right: 1px solid #e2e8f0;
+            border: 1px solid #e2e8f0;
+            padding: 12px;
             text-align: left;
             vertical-align: top;
-        }
-
-        th:last-child, td:last-child {
-            border-right: none;
-        }
-
-        tr:last-child td {
-            border-bottom: none;
+            overflow-wrap: break-word;
+            word-break: break-word;
         }
 
         th {
             background: #f1f5f9;
-            font-weight: bold;
-            color: #0f172a;
         }
 
-        .pill {
-            display: inline-block;
-            padding: 5px 11px;
-            border-radius: 999px;
-            font-size: 13px;
+        .result-link {
+            color: #2563eb;
             font-weight: bold;
-            background: #e0f2fe;
-            color: #075985;
-        }
-
-        .status-yes {
-            color: #15803d;
-            font-weight: bold;
-        }
-
-        .status-no {
-            color: #dc2626;
-            font-weight: bold;
-        }
-
-        .btn {
-            display: inline-block;
-            border: none;
-            border-radius: 8px;
-            padding: 9px 13px;
             text-decoration: none;
-            font-weight: bold;
-            cursor: pointer;
-            font-size: 14px;
         }
 
-        .btn-danger {
+        .result-link:hover {
+            text-decoration: underline;
+        }
+
+        .delete-btn {
             background: #dc2626;
             color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-weight: bold;
+            cursor: pointer;
         }
 
-        .btn-danger:hover {
+        .delete-btn:hover {
             background: #b91c1c;
-        }
-
-        .btn-blue {
-            background: #2563eb;
-            color: white;
-        }
-
-        .btn-blue:hover {
-            background: #1d4ed8;
         }
 
         .empty {
             background: #fefce8;
-            border: 1px solid #fde68a;
-            color: #854d0e;
-            border-radius: 14px;
-            padding: 18px;
-            font-weight: bold;
-            text-align: center;
+            border-left: 5px solid #eab308;
+            border-radius: 10px;
+            padding: 14px;
+            line-height: 1.6;
         }
 
-        .protected {
-            color: #475569;
-            font-weight: bold;
+        .url-cell {
+            max-width: 280px;
+            overflow-wrap: break-word;
+            word-break: break-word;
         }
 
-        .small-text {
-            font-size: 13px;
+        .small-note {
             color: #64748b;
-            line-height: 1.5;
+            font-size: 14px;
+            margin-bottom: 5px;
         }
 
-        @media (max-width: 700px) {
-            body {
-                padding: 14px;
+        .action-group {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 22px;
             }
 
-            h1 {
-                font-size: 28px;
+            .pie-chart-container {
+                max-width: 330px;
+                height: 280px;
             }
 
-            .section {
-                padding: 18px;
+            table {
+                font-size: 13px;
+            }
+
+            th, td {
+                padding: 9px;
             }
         }
-    </style>
+    
+
+        .type-badge {
+            display: inline-block;
+            padding: 5px 9px;
+            border-radius: 999px;
+            background: #e0f2fe;
+            color: #075985;
+            font-weight: bold;
+            font-size: 12px;
+        }
+
+        .log-badge {
+            display: inline-block;
+            padding: 6px 10px;
+            border-radius: 999px;
+            background: #fee2e2;
+            color: #991b1b;
+            font-weight: bold;
+            font-size: 12px;
+        }
+
+    
+        .usage-date-box {
+            background: #ffffff;
+            border: 1px solid #bbf7d0;
+            color: #064e3b;
+            border-radius: 12px;
+            padding: 12px 16px;
+            margin: 10px 0 18px;
+            font-size: 16px;
+            width: fit-content;
+            font-weight: 600;
+        }
+
+        .notification-link {
+            position: relative;
+            display: inline-block;
+            margin: 0 8px;
+            text-decoration: none;
+            color: #2563eb;
+            font-weight: bold;
+        }
+
+        .notification-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 20px;
+            height: 20px;
+            padding: 0 6px;
+            margin-left: 4px;
+            border-radius: 999px;
+            background: #dc2626;
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+            vertical-align: top;
+        }
+
+        
+        .top-nav,
+        .nav-links,
+        .navbar,
+        .header-links {
+            position: relative;
+            z-index: 9999;
+        }
+
+        .top-nav a,
+        .nav-links a,
+        .navbar a,
+        .header-links a,
+        .notification-link,
+        .admin-dashboard-link,
+        .logout-link {
+            position: relative;
+            z-index: 10000;
+            pointer-events: auto;
+        }
+
+        </style>
 </head>
 
 <body>
+    <div class="container">
+        <h1>Admin Dashboard</h1>
 
-<div class="page">
-
-    <div class="top-nav">
-        <a href="{{ url_for('index') }}">Dashboard</a>
-        |
-        <a href="{{ url_for('history') }}">History</a>
-        |
-        <a href="{{ url_for('notifications') }}">
-            Notifications
-            {% if unread_count and unread_count > 0 %}
-                <span class="badge">{{ unread_count }}</span>
-            {% endif %}
-        </a>
-        |
-        <a href="{{ url_for('logout') }}">Logout</a>
-    </div>
-
-    <h1>Admin Dashboard</h1>
-
-    <div class="subtitle">
-        Manage registered users, scan history, deleted scan logs, and overall system activity.
-        {% if today_date %}
-            <br>Today: <strong>{{ today_date }}</strong>
-        {% endif %}
-    </div>
-
-    <div class="section">
-        <h2>System Overview</h2>
-        <p>This section summarizes the current system usage and vulnerability risk distribution.</p>
+        <div class="top-links">
+            <a href="{{ url_for('index') }}">Home</a>
+            <a href="{{ url_for('history') }}">History</a>
+             | 
+            <a href="{{ url_for('notifications') }}" class="notification-link">
+                Notifications
+                {% if unread_count and unread_count > 0 %}
+                    <span class="notification-badge">{{ unread_count }}</span>
+                {% endif %}
+            </a>
+            | <a href="{{ url_for('logout') }}">Logout</a>
+        </div>
 
         <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-label">Total Users</div>
+            <div class="stat-card card-users">
+                <div class="stat-title">Total Users</div>
                 <div class="stat-value">{{ total_users }}</div>
             </div>
 
-            <div class="stat-card">
-                <div class="stat-label">Total Scans</div>
+            <div class="stat-card card-scans">
+                <div class="stat-title">Total Scans</div>
                 <div class="stat-value">{{ total_scans }}</div>
             </div>
 
-            <div class="stat-card">
-                <div class="stat-label">High Risk</div>
-                <div class="stat-value risk-high">{{ total_high }}</div>
+            <div class="stat-card card-high">
+                <div class="stat-title">High Findings</div>
+                <div class="stat-value">{{ total_high }}</div>
             </div>
 
-            <div class="stat-card">
-                <div class="stat-label">Medium Risk</div>
-                <div class="stat-value risk-medium">{{ total_medium }}</div>
+            <div class="stat-card card-medium">
+                <div class="stat-title">Medium Findings</div>
+                <div class="stat-value">{{ total_medium }}</div>
             </div>
 
-            <div class="stat-card">
-                <div class="stat-label">Low Risk</div>
-                <div class="stat-value risk-low">{{ total_low }}</div>
+            <div class="stat-card card-low">
+                <div class="stat-title">Low Findings</div>
+                <div class="stat-value">{{ total_low }}</div>
             </div>
 
-            <div class="stat-card">
-                <div class="stat-label">Informational</div>
-                <div class="stat-value risk-info">{{ total_info }}</div>
+            <div class="stat-card card-info">
+                <div class="stat-title">Informational Findings</div>
+                <div class="stat-value">{{ total_info }}</div>
             </div>
+        </div>
+
+        <div class="chart-box">
+            <h2>Risk Distribution</h2>
+            <div class="pie-chart-container">
+                <canvas id="adminChart"></canvas>
+            </div>
+        </div>
+
+        <div class="section-box">
+            <h2>Registered Users</h2>
+            <p class="small-note">This section displays all users registered in the system.</p>
+
+            {% if users %}
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 70px;">ID</th>
+                                <th style="width: 160px;">Username</th>
+                                <th style="width: 260px;">Email</th>
+                                <th style="width: 100px;">Role</th>
+                                <th style="width: 170px;">User Category</th>
+                                <th style="width: 100px;">Verified</th>
+                                <th style="width: 130px;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for u in users %}
+                                <tr>
+                                    <td>{{ loop.index }}</td>
+                                    <td>{{ u["username"] }}</td>
+                                    <td>{{ u["email"] }}</td>
+                                    <td>{{ u["role"] }}</td>
+                                    <td><span class="type-badge">{{ u["user_type"]|replace("_", " ")|title }}</span></td>
+                                    <td>{{ "Yes" if u["is_verified"] == 1 else "No" }}</td>
+                                    <td>
+                                        {% if u["email"] != "websecurityscanner@gmail.com" %}
+                                            <form method="post" action="/admin/delete_user/{{ u['id'] }}">
+                                                <button type="submit" class="delete-btn">Delete</button>
+                                            </form>
+                                        {% else %}
+                                            Protected
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="empty">No users found.</div>
+            {% endif %}
+        </div>
+
+        <div class="section-box">
+            <h2>All Scan History</h2>
+            <p class="small-note">This section shows scan activities from all users.</p>
+
+            {% if history %}
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 140px;">User</th>
+                                <th style="width: 240px;">Email</th>
+                                <th style="width: 260px;">Target URL</th>
+                                <th style="width: 120px;">Scan Mode</th>
+                                <th style="width: 260px;">Status</th>
+                                <th style="width: 110px;">Findings</th>
+                                <th style="width: 150px;">Date & Time</th>
+                                <th style="width: 140px;">Actions</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            {% for item in history %}
+                                <tr>
+                                    <td>{{ item["username"] }}</td>
+                                    <td>{{ item["email"] }}</td>
+                                    <td class="url-cell">{{ item["target"] }}</td>
+                                    <td>{{ item["scan_mode"] }}</td>
+                                    <td>{{ item["status"] }}</td>
+                                    <td>{{ item["total_findings"] }}</td>
+                                    <td>{{ item["created_at"] }}</td>
+                                    <td>
+                                        <div class="action-group">
+                                            <a href="/result/{{ item['scan_id'] }}" class="result-link">Open</a>
+
+                                            <form method="post" action="/admin/delete_scan/{{ item['scan_id'] }}">
+                                                <button type="submit" class="delete-btn">Delete</button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="empty">No scan history available.</div>
+            {% endif %}
+        </div>
+
+        <div class="section-box">
+            <h2>Deleted Scan Logs</h2>
+            <p class="small-note">This section records scans deleted by administrators for audit and accountability.</p>
+
+            {% if deleted_logs %}
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 170px;">Scan ID</th>
+                                <th style="width: 140px;">User</th>
+                                <th style="width: 230px;">Email</th>
+                                <th style="width: 260px;">Target URL</th>
+                                <th style="width: 120px;">Scan Mode</th>
+                                <th style="width: 110px;">Findings</th>
+                                <th style="width: 160px;">Scan Date</th>
+                                <th style="width: 180px;">Deleted At</th>
+                                <th style="width: 210px;">Deleted By</th>
+                                <th style="width: 180px;">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for log in deleted_logs %}
+                                <tr>
+                                    <td>{{ log["scan_id"] }}</td>
+                                    <td>{{ log["username"] }}</td>
+                                    <td>{{ log["email"] }}</td>
+                                    <td class="url-cell">{{ log["target"] }}</td>
+                                    <td>{{ log["scan_mode"] }}</td>
+                                    <td>{{ log["total_findings"] }}</td>
+                                    <td>{{ log["scan_created_at"] }}</td>
+                                    <td>{{ log["deleted_at"] }}</td>
+                                    <td>{{ log["deleted_by_admin_email"] }}</td>
+                                    <td><span class="log-badge">{{ log["reason"] }}</span></td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="empty">No deleted scan logs yet.</div>
+            {% endif %}
         </div>
     </div>
 
-    <div class="section">
-        <h2>Registered Users</h2>
-        <p>This section displays all users registered in the system.</p>
+    <script>
+        const adminData = JSON.parse('{{ [total_high, total_medium, total_low, total_info] | tojson | safe }}');
 
-        {% if users %}
-            <div class="table-wrap">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>No.</th>
-                            <th>Username</th>
-                            <th>Email</th>
-                            <th>Role</th>
-                            <th>User Category</th>
-                            <th>Verified</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
+        new Chart(document.getElementById('adminChart'), {
+            type: 'pie',
+            data: {
+                labels: ['High', 'Medium', 'Low', 'Informational'],
+                datasets: [{
+                    data: adminData,
+                    backgroundColor: [
+                        '#dc2626',
+                        '#f97316',
+                        '#eab308',
+                        '#2563eb'
+                    ],
+                    borderColor: '#ffffff',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            font: {
+                                size: 14
+                            },
+                            padding: 18
+                        }
+                    }
+                }
+            }
+        });
 
-                    <tbody>
-                        {% for u in users %}
-                            <tr>
-                                <td>{{ loop.index }}</td>
-                                <td>{{ u.username }}</td>
-                                <td>{{ u.email }}</td>
-                                <td>{{ u.role }}</td>
-                                <td>
-                                    <span class="pill">
-                                        {{ (u.user_type or "student").replace("_", " ").title() }}
-                                    </span>
-                                </td>
-                                <td>
-                                    {% if u.is_verified %}
-                                        <span class="status-yes">Yes</span>
-                                    {% else %}
-                                        <span class="status-no">No</span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    {% if u.role == "admin" %}
-                                        <span class="protected">Protected</span>
-                                    {% else %}
-                                        <form method="POST" action="{{ url_for('admin_delete_user', user_id=u.id) }}" onsubmit="return confirm('Delete this user and all related scans?');">
-                                            <button type="submit" class="btn btn-danger">Delete</button>
-                                        </form>
-                                    {% endif %}
-                                </td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        {% else %}
-            <div class="empty">No registered users found.</div>
-        {% endif %}
-    </div>
-
-    <div class="section">
-        <h2>Scan History</h2>
-        <p>This section displays scan records from all users.</p>
-
-        {% if history %}
-            <div class="table-wrap">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>No.</th>
-                            <th>Scan ID</th>
-                            <th>User</th>
-                            <th>Email</th>
-                            <th>Target</th>
-                            <th>Scan Mode</th>
-                            <th>Status</th>
-                            <th>Total Findings</th>
-                            <th>Date & Time</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-
-                    <tbody>
-                        {% for scan in history %}
-                            <tr>
-                                <td>{{ loop.index }}</td>
-                                <td class="small-text">{{ scan.scan_id }}</td>
-                                <td>{{ scan.username }}</td>
-                                <td>{{ scan.email }}</td>
-                                <td class="small-text">{{ scan.target }}</td>
-                                <td>{{ scan.scan_mode }}</td>
-                                <td>{{ scan.status }}</td>
-                                <td>{{ scan.total_findings }}</td>
-                                <td>{{ scan.created_at }}</td>
-                                <td>
-                                    <a class="btn btn-blue" href="{{ url_for('result', scan_id=scan.scan_id) }}">View</a>
-
-                                    <form method="POST" action="{{ url_for('admin_delete_scan', scan_id=scan.scan_id) }}" style="display:inline-block; margin-left:6px;" onsubmit="return confirm('Delete this scan record?');">
-                                        <button type="submit" class="btn btn-danger">Delete</button>
-                                    </form>
-                                </td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        {% else %}
-            <div class="empty">No scan history found.</div>
-        {% endif %}
-    </div>
-
-    <div class="section">
-        <h2>Deleted Scan Logs</h2>
-        <p>This section records scan records deleted by the administrator.</p>
-
-        {% if deleted_logs %}
-            <div class="table-wrap">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>No.</th>
-                            <th>Deleted Scan ID</th>
-                            <th>User</th>
-                            <th>Email</th>
-                            <th>Target</th>
-                            <th>Scan Mode</th>
-                            <th>Total Findings</th>
-                            <th>Scan Date</th>
-                            <th>Deleted At</th>
-                            <th>Reason</th>
-                        </tr>
-                    </thead>
-
-                    <tbody>
-                        {% for log in deleted_logs %}
-                            <tr>
-                                <td>{{ loop.index }}</td>
-                                <td class="small-text">{{ log.scan_id }}</td>
-                                <td>{{ log.username }}</td>
-                                <td>{{ log.email }}</td>
-                                <td class="small-text">{{ log.target }}</td>
-                                <td>{{ log.scan_mode }}</td>
-                                <td>{{ log.total_findings }}</td>
-                                <td>{{ log.scan_created_at }}</td>
-                                <td>{{ log.deleted_at }}</td>
-                                <td>{{ log.reason }}</td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        {% else %}
-            <div class="empty">No deleted scan logs found.</div>
-        {% endif %}
-    </div>
-
-</div>
-
+        window.addEventListener("pageshow", function (event) {
+            if (event.persisted) {
+                window.location.reload();
+            }
+        });
+    </script>
 </body>
 </html>
