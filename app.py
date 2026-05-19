@@ -200,10 +200,6 @@ def init_db():
         )
     """)
 
-
-    cursor.execute("ALTER TABLE notifications ADD COLUMN IF NOT EXISTS is_read INTEGER NOT NULL DEFAULT 0")
-    cursor.execute("ALTER TABLE notifications ADD COLUMN IF NOT EXISTS created_at TEXT")
-    cursor.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS user_type TEXT DEFAULT 'student'")
     conn.commit()
     conn.close()
 
@@ -424,6 +420,69 @@ def get_user_notifications(user_id, limit=5):
     rows = cursor.fetchall()
     conn.close()
     return rows
+
+
+
+def get_notifications_for_user(user_id):
+    conn = get_db_connection()
+    cursor = get_cursor(conn)
+    cursor.execute("""
+        SELECT id, user_id, title, message, is_read, created_at
+        FROM notifications
+        WHERE user_id = %s
+        ORDER BY id DESC
+    """, (user_id,))
+    rows = cursor.fetchall()
+    conn.close()
+    return rows
+
+
+def get_unread_notification_count(user_id):
+    conn = get_db_connection()
+    cursor = get_cursor(conn)
+    cursor.execute("""
+        SELECT COUNT(*) AS count
+        FROM notifications
+        WHERE user_id = %s AND is_read = 0
+    """, (user_id,))
+    row = cursor.fetchone()
+    conn.close()
+    return int(row["count"] if row and row.get("count") is not None else 0)
+
+
+def mark_notification_as_read(notification_id, user_id):
+    conn = get_db_connection()
+    cursor = get_cursor(conn)
+    cursor.execute("""
+        UPDATE notifications
+        SET is_read = 1
+        WHERE id = %s AND user_id = %s
+    """, (notification_id, user_id))
+    conn.commit()
+    conn.close()
+
+
+def delete_notification(notification_id, user_id):
+    conn = get_db_connection()
+    cursor = get_cursor(conn)
+    cursor.execute("""
+        DELETE FROM notifications
+        WHERE id = %s AND user_id = %s
+    """, (notification_id, user_id))
+    conn.commit()
+    conn.close()
+
+
+def mark_all_notifications_as_read(user_id):
+    conn = get_db_connection()
+    cursor = get_cursor(conn)
+    cursor.execute("""
+        UPDATE notifications
+        SET is_read = 1
+        WHERE user_id = %s
+    """, (user_id,))
+    conn.commit()
+    conn.close()
 
 
 def add_deleted_scan_log(scan_row, admin_user, reason="Deleted by administrator"):
@@ -650,7 +709,7 @@ def send_email_message(to_email, subject, text_body, html_body=None):
 
     msg = EmailMessage()
     msg["Subject"] = subject
-    msg["From"] = f"Account Verification <{MAIL_SENDER}>"
+    msg["From"] = f"Web Security Scanner <{MAIL_SENDER}>"
     msg["To"] = to_email
     msg["Reply-To"] = MAIL_SENDER
     msg["X-Priority"] = "3"
@@ -681,112 +740,6 @@ def send_email_message(to_email, subject, text_body, html_body=None):
     except Exception as e:
         app.logger.error(f"EMAIL ERROR: {e}")
         raise
-
-
-
-# ---------------- NOTIFICATION HELPERS ----------------
-def get_notifications_for_user(user_id):
-    conn = get_db_connection()
-    cursor = get_cursor(conn)
-    cursor.execute("""
-        SELECT id, user_id, title, message, is_read, created_at
-        FROM notifications
-        WHERE user_id = %s
-        ORDER BY id DESC
-    """, (user_id,))
-    rows = cursor.fetchall()
-    conn.close()
-    return rows
-
-
-def get_unread_notification_count(user_id):
-    conn = get_db_connection()
-    cursor = get_cursor(conn)
-    cursor.execute("""
-        SELECT COUNT(*) AS count
-        FROM notifications
-        WHERE user_id = %s AND is_read = 0
-    """, (user_id,))
-    row = cursor.fetchone()
-    conn.close()
-    return int(row["count"] if row and row.get("count") is not None else 0)
-
-
-def mark_notification_as_read(notification_id, user_id):
-    conn = get_db_connection()
-    cursor = get_cursor(conn)
-    cursor.execute("""
-        UPDATE notifications
-        SET is_read = 1
-        WHERE id = %s AND user_id = %s
-    """, (notification_id, user_id))
-    conn.commit()
-    conn.close()
-
-
-def delete_notification(notification_id, user_id):
-    conn = get_db_connection()
-    cursor = get_cursor(conn)
-    cursor.execute("""
-        DELETE FROM notifications
-        WHERE id = %s AND user_id = %s
-    """, (notification_id, user_id))
-    conn.commit()
-    conn.close()
-
-
-def mark_all_notifications_as_read(user_id):
-    conn = get_db_connection()
-    cursor = get_cursor(conn)
-    cursor.execute("""
-        UPDATE notifications
-        SET is_read = 1
-        WHERE user_id = %s
-    """, (user_id,))
-    conn.commit()
-    conn.close()
-
-
-def create_notification(user_id, title, message):
-    conn = get_db_connection()
-    cursor = get_cursor(conn)
-    cursor.execute("""
-        INSERT INTO notifications (user_id, title, message, is_read, created_at)
-        VALUES (%s, %s, %s, 0, %s)
-    """, (user_id, title, message, get_malaysia_time()))
-    conn.commit()
-    conn.close()
-
-
-
-def send_verification_email_to_user(email, username, verify_token):
-    verify_link = f"{BASE_URL}/verify/{verify_token}"
-
-    subject = "Verify Your Account"
-
-    text_body = f"""Hello {username},
-
-Thank you for registering.
-
-Please verify your account by opening this link:
-{verify_link}
-
-You may open this link from your phone, laptop, or any device.
-
-If you did not create this account, you can ignore this email.
-
-Thank you,
-Account Verification Team
-"""
-
-    html_body = render_template(
-        "verification_email.html",
-        username=username,
-        verify_link=verify_link
-    )
-
-    send_email_message(email, subject, text_body, html_body)
-
 
 
 # ---------------- AUTH HELPERS ----------------
@@ -840,17 +793,9 @@ def register():
         username = request.form.get("username", "").strip()
         email = request.form.get("email", "").strip().lower()
         password = request.form.get("password", "").strip()
-        user_type = request.form.get("user_type", "student").strip().lower()
+        user_type = request.form.get("user_type", "student").strip()
 
-        allowed_user_types = {
-            "student",
-            "developer",
-            "security_researcher",
-            "lecturer",
-            "other",
-        }
-
-        if user_type not in allowed_user_types:
+        if user_type not in USER_TYPE_LIMITS:
             user_type = "other"
 
         if not username or not email or not password:
@@ -859,64 +804,119 @@ def register():
         if not is_strong_password(password):
             return render_template(
                 "register.html",
-                error="Password must be at least 8 characters and include uppercase letter, lowercase letter, number, and symbol."
+                error="Password must be at least 8 characters and include uppercase letter, lowercase letter, number, and symbol.",
             )
 
-        existing_user = get_user_by_email(email)
-
-        if existing_user:
+        if get_user_by_email(email):
             return render_template("register.html", error="Email already registered.")
 
         verify_token = secrets.token_urlsafe(32)
 
+        conn = get_db_connection()
+        cursor = get_cursor(conn)
+
         try:
-            conn = get_db_connection()
-            cursor = get_cursor(conn)
-
-            try:
-                cursor.execute("""
-                    INSERT INTO users (username, email, password_hash, role, is_verified, verify_token, user_type)
-                    VALUES (%s, %s, %s, 'user', 0, %s, %s)
-                """, (
-                    username,
-                    email,
-                    generate_password_hash(password),
-                    verify_token,
-                    user_type,
-                ))
-            except Exception:
-                conn.rollback()
-                cursor.execute("""
-                    INSERT INTO users (username, email, password_hash, role, is_verified, verify_token)
-                    VALUES (%s, %s, %s, 'user', 0, %s)
-                """, (
-                    username,
-                    email,
-                    generate_password_hash(password),
-                    verify_token,
-                ))
-
+            cursor.execute("""
+                INSERT INTO users (username, email, password_hash, role, user_type, is_verified, verify_token)
+                VALUES (%s, %s, %s, 'user', %s, 0, %s)
+            """, (username, email, generate_password_hash(password), user_type, verify_token))
             conn.commit()
+        except psycopg2.IntegrityError:
+            conn.rollback()
             conn.close()
+            return render_template("register.html", error="Username or email already exists.")
 
-        except Exception as e:
-            app.logger.error(f"REGISTER DATABASE ERROR: {e}")
-            return render_template("register.html", error="Registration failed. Please try again.")
+        conn.close()
+
+        verify_link = f"{BASE_URL}/verify/{verify_token}"
+
+        subject = "Verify your Web Security Scanner account"
+
+        escaped_username = html.escape(username)
+
+        text_body = f"""
+Hello {username},
+
+Thank you for registering with the Automated Web Application Security Assessment System.
+
+To verify your account, open this link:
+{verify_link}
+
+This verification link is used only to activate your account.
+
+If you did not create this account, you can safely ignore this email.
+
+Thank you,
+Web Security Scanner Team
+"""
+
+        html_body = f"""
+<!DOCTYPE html>
+<html>
+<body style="margin:0; padding:0; background:#f4f7fb; font-family:Arial, sans-serif;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f7fb; padding:30px 0;">
+        <tr>
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff; border-radius:12px; padding:30px; border:1px solid #e5e7eb;">
+                    <tr>
+                        <td>
+                            <h2 style="color:#0f172a; margin-top:0;">Verify Your Account</h2>
+
+                            <p style="color:#334155; font-size:15px; line-height:1.6;">
+                                Hello <strong>{escaped_username}</strong>,
+                            </p>
+
+                            <p style="color:#334155; font-size:15px; line-height:1.6;">
+                                Thank you for registering with the Automated Web Application Security Assessment System.
+                                Please click the button below to verify your account.
+                            </p>
+
+                            <p style="text-align:center; margin:30px 0;">
+                                <a href="{verify_link}"
+                                   style="background:#2563eb; color:#ffffff; padding:14px 24px; border-radius:8px; text-decoration:none; font-weight:bold; display:inline-block;">
+                                    Verify My Account
+                                </a>
+                            </p>
+
+                            <p style="color:#64748b; font-size:13px; line-height:1.6;">
+                                If the button does not work, copy and paste this link into your browser:
+                            </p>
+
+                            <p style="font-size:13px; line-height:1.6; word-break:break-all;">
+                                <a href="{verify_link}" style="color:#2563eb;">{verify_link}</a>
+                            </p>
+
+                            <p style="color:#64748b; font-size:13px; line-height:1.6;">
+                                If you did not create this account, you can safely ignore this email.
+                            </p>
+
+                            <hr style="border:none; border-top:1px solid #e5e7eb; margin:24px 0;">
+
+                            <p style="color:#94a3b8; font-size:12px;">
+                                Web Security Scanner Team
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+"""
 
         try:
-            send_verification_email_to_user(email, username, verify_token)
+            send_email_message(email, subject, text_body, html_body)
+            return render_template("verify_notice.html", title="Verification Email Sent", link=None)
         except Exception as e:
-            app.logger.error(f"VERIFICATION EMAIL ERROR: {e}")
             return render_template(
-                "register.html",
-                error="Account created, but verification email could not be sent. Please contact the administrator."
+                "verify_notice.html",
+                title="Email Send Failed - Use This Link",
+                link=verify_link,
+                error=str(e),
             )
 
-        session["pending_verify_email"] = email
-        return redirect(url_for("verify_pending"))
-
     return render_template("register.html")
-
 
 
 @app.route("/verify/<token>")
@@ -932,101 +932,7 @@ def verify_email(token):
     conn.commit()
     conn.close()
 
-    return redirect(url_for("login", verified="1"))
-
-
-
-# ---------------- EMAIL VERIFICATION WAITING PAGE ----------------
-@app.route("/verify_pending")
-def verify_pending():
-    pending_email = session.get("pending_verify_email")
-
-    if not pending_email:
-        return redirect(url_for("login"))
-
-    user = get_user_by_email(pending_email)
-
-    if user and int(user.get("is_verified", 0)) == 1:
-        session.pop("pending_verify_email", None)
-        return redirect(url_for("login", verified="1"))
-
-    return render_template("verify_pending.html", email=pending_email)
-
-
-@app.route("/check_verification_status")
-def check_verification_status():
-    pending_email = session.get("pending_verify_email")
-
-    if not pending_email:
-        return jsonify({
-            "verified": False,
-            "message": "No pending verification session."
-        })
-
-    user = get_user_by_email(pending_email)
-
-    if not user:
-        return jsonify({
-            "verified": False,
-            "message": "Account not found."
-        })
-
-    if int(user.get("is_verified", 0)) == 1:
-        session.pop("pending_verify_email", None)
-        return jsonify({
-            "verified": True,
-            "redirect_url": url_for("login", verified="1")
-        })
-
-    return jsonify({
-        "verified": False,
-        "message": "Waiting for email verification."
-    })
-
-
-@app.route("/resend_verification_email", methods=["POST"])
-def resend_verification_email():
-    pending_email = session.get("pending_verify_email")
-
-    if not pending_email:
-        return redirect(url_for("login"))
-
-    user = get_user_by_email(pending_email)
-
-    if not user:
-        session.pop("pending_verify_email", None)
-        return redirect(url_for("register"))
-
-    if int(user.get("is_verified", 0)) == 1:
-        session.pop("pending_verify_email", None)
-        return redirect(url_for("login", verified="1"))
-
-    new_token = secrets.token_urlsafe(32)
-
-    conn = get_db_connection()
-    cursor = get_cursor(conn)
-    cursor.execute(
-        "UPDATE users SET verify_token = %s WHERE id = %s",
-        (new_token, user["id"])
-    )
-    conn.commit()
-    conn.close()
-
-    try:
-        send_verification_email_to_user(user["email"], user["username"], new_token)
-    except Exception as e:
-        app.logger.error(f"RESEND VERIFICATION EMAIL ERROR: {e}")
-        return render_template(
-            "verify_pending.html",
-            email=pending_email,
-            error="Unable to resend verification email at the moment. Please try again later."
-        )
-
-    return render_template(
-        "verify_pending.html",
-        email=pending_email,
-        message="A new verification email has been sent successfully."
-    )
+    return redirect(url_for("login"))
 
 
 @app.route("/login", methods=["GET", "POST"])
@@ -2005,41 +1911,10 @@ def start_scan():
     return redirect(url_for("progress_page", scan_id=scan_id))
 
 
-
 @app.route("/progress/<scan_id>")
 @login_required
 def progress_page(scan_id):
-    user = current_user()
-
-    task = scan_tasks.get(scan_id)
-
-    if task:
-        if user["role"] != "admin" and task.get("user_id") != user["id"]:
-            return "Access denied", 403
-
-        return render_template(
-            "progress.html",
-            scan_id=scan_id,
-            target_url=task.get("target", ""),
-            scan_mode=task.get("scan_mode", "Quick Scan"),
-            expired=False,
-        )
-
-    saved_scan = get_history_by_scan_id(scan_id)
-
-    if saved_scan:
-        if user["role"] != "admin" and saved_scan["user_id"] != user["id"]:
-            return "Access denied", 403
-
-        return redirect(url_for("result", scan_id=scan_id))
-
-    return render_template(
-        "progress.html",
-        scan_id=scan_id,
-        target_url="",
-        scan_mode="",
-        expired=True,
-    )
+    return render_template("progress.html", scan_id=scan_id)
 
 
 @app.route("/scan_status/<scan_id>")
@@ -2048,39 +1923,14 @@ def scan_status(scan_id):
     user = current_user()
 
     if not user:
-        return jsonify({
-            "expired": True,
-            "completed": False,
-            "progress": 0,
-            "status": "Session expired. Please login again.",
-            "target": "",
-            "scan_mode": "",
-            "elapsed_seconds": 0,
-            "elapsed_time": "0 sec",
-            "remaining_seconds": 0,
-            "remaining_time": "Session expired",
-            "result_id": None,
-            "error": "Session expired. Please login again."
-        }), 401
+        return jsonify({"error": "Session expired"}), 401
 
     task = scan_tasks.get(scan_id)
 
+    # ---------------- ACTIVE SCAN FOUND IN MEMORY ----------------
     if task:
-        if user["role"] != "admin" and task.get("user_id") != user["id"]:
-            return jsonify({
-                "expired": True,
-                "completed": False,
-                "progress": 0,
-                "status": "Access denied.",
-                "target": "",
-                "scan_mode": "",
-                "elapsed_seconds": 0,
-                "elapsed_time": "0 sec",
-                "remaining_seconds": 0,
-                "remaining_time": "Access denied",
-                "result_id": None,
-                "error": "Access denied."
-            }), 403
+        if user["role"] != "admin" and task["user_id"] != user["id"]:
+            return jsonify({"error": "Access denied"}), 403
 
         started_at_epoch = float(task.get("started_at_epoch", time.time()) or time.time())
         elapsed_seconds = max(0, int(time.time() - started_at_epoch))
@@ -2089,10 +1939,9 @@ def scan_status(scan_id):
 
         if task.get("completed") is True:
             return jsonify({
-                "expired": False,
-                "target": task.get("target", ""),
+                "target": task.get("target"),
                 "scan_mode": task.get("scan_mode", "Quick Scan"),
-                "status": task.get("status", "Scan completed. Redirecting to results..."),
+                "status": task.get("status", "Scan completed"),
                 "progress": 100,
                 "completed": True,
                 "result_id": scan_id,
@@ -2104,13 +1953,11 @@ def scan_status(scan_id):
             })
 
         return jsonify({
-            "expired": False,
-            "target": task.get("target", ""),
+            "target": task.get("target"),
             "scan_mode": task.get("scan_mode", "Quick Scan"),
             "status": task.get("status", "Scanning..."),
             "progress": task.get("progress", 0),
             "completed": False,
-            "result_id": None,
             "elapsed_seconds": elapsed_seconds,
             "elapsed_time": elapsed_text,
             "remaining_seconds": remaining_seconds,
@@ -2118,57 +1965,28 @@ def scan_status(scan_id):
             "error": task.get("error"),
         })
 
-    # Fallback: if Render restarted or memory cleared, recover from database before expiring.
-    saved_scan = get_history_by_scan_id(scan_id)
+    # ---------------- FALLBACK DATABASE CHECK ----------------
+    row = get_history_by_scan_id(scan_id)
 
-    if saved_scan:
-        if user["role"] != "admin" and saved_scan["user_id"] != user["id"]:
-            return jsonify({
-                "expired": True,
-                "completed": False,
-                "progress": 0,
-                "status": "Access denied.",
-                "target": "",
-                "scan_mode": "",
-                "elapsed_seconds": 0,
-                "elapsed_time": "0 sec",
-                "remaining_seconds": 0,
-                "remaining_time": "Access denied",
-                "result_id": None,
-                "error": "Access denied."
-            }), 403
-
-        saved_status = saved_scan["status"] or "Scan completed. Redirecting to results..."
+    if row:
+        if user["role"] != "admin" and row["user_id"] != user["id"]:
+            return jsonify({"error": "Access denied"}), 403
 
         return jsonify({
-            "expired": False,
-            "target": saved_scan["target"] or "",
-            "scan_mode": saved_scan["scan_mode"] or "Quick Scan",
-            "status": "Scan completed. Redirecting to results...",
+            "target": row["target"],
+            "scan_mode": row["scan_mode"],
+            "status": row["status"],
             "progress": 100,
             "completed": True,
-            "result_id": saved_scan["scan_id"],
+            "result_id": row["scan_id"],
             "elapsed_seconds": 0,
             "elapsed_time": "Completed",
             "remaining_seconds": 0,
             "remaining_time": "Completed",
-            "error": None if not str(saved_status).startswith("Error:") else saved_status,
+            "error": None if not str(row["status"]).startswith("Error:") else row["status"],
         })
 
-    return jsonify({
-        "expired": True,
-        "completed": False,
-        "progress": 0,
-        "status": "Scan session expired.",
-        "target": "",
-        "scan_mode": "",
-        "elapsed_seconds": 0,
-        "elapsed_time": "0 sec",
-        "remaining_seconds": 0,
-        "remaining_time": "Expired",
-        "result_id": None,
-        "error": "The scan session expired or no longer exists. Please start a new scan."
-    }), 200
+    return jsonify({"error": "Invalid scan ID"}), 404
 
 
 @app.route("/result/<scan_id>")
@@ -2242,7 +2060,6 @@ def history():
 @admin_required
 def admin_panel():
     user = current_user()
-
     users = get_all_users()
     history_rows = get_all_history()
     risk_totals = calculate_risk_totals(history_rows)
@@ -2250,9 +2067,9 @@ def admin_panel():
 
     return render_template(
         "admin.html",
+        user=user,
         unread_count=get_unread_notification_count(user["id"]),
         today_date=get_malaysia_date_display(),
-        user=user,
         users=users,
         history=history_rows,
         total_users=len(users),
@@ -2302,6 +2119,48 @@ def admin_delete_scan(scan_id):
 
     delete_scan_by_id(scan_id)
     return redirect(url_for("admin_panel"))
+
+
+
+# ---------------- NOTIFICATION CENTER ROUTES ----------------
+@app.route("/notifications")
+@login_required
+def notifications():
+    user = current_user()
+
+    notifications_list = get_notifications_for_user(user["id"])
+    unread_count = get_unread_notification_count(user["id"])
+
+    return render_template(
+        "notifications.html",
+        user=user,
+        notifications=notifications_list,
+        unread_count=unread_count,
+    )
+
+
+@app.route("/notifications/read/<int:notification_id>", methods=["POST"])
+@login_required
+def mark_notification_read_route(notification_id):
+    user = current_user()
+    mark_notification_as_read(notification_id, user["id"])
+    return redirect(url_for("notifications"))
+
+
+@app.route("/notifications/delete/<int:notification_id>", methods=["POST"])
+@login_required
+def delete_notification_route(notification_id):
+    user = current_user()
+    delete_notification(notification_id, user["id"])
+    return redirect(url_for("notifications"))
+
+
+@app.route("/notifications/read-all", methods=["POST"])
+@login_required
+def mark_all_notifications_read_route():
+    user = current_user()
+    mark_all_notifications_as_read(user["id"])
+    return redirect(url_for("notifications"))
 
 
 @app.route("/export_report_pdf/<scan_id>")
@@ -2576,46 +2435,6 @@ def export_report_pdf(scan_id):
 # ---------------- STARTUP ----------------
 init_db()
 seed_admin()
-
-
-# ---------------- NOTIFICATION ROUTES ----------------
-@app.route("/notifications")
-@login_required
-def notifications():
-    user = current_user()
-    notifications_list = get_notifications_for_user(user["id"])
-    unread_count = get_unread_notification_count(user["id"])
-    return render_template(
-        "notifications.html",
-        user=user,
-        notifications=notifications_list,
-        unread_count=unread_count,
-    )
-
-
-@app.route("/notifications/read/<int:notification_id>", methods=["POST"])
-@login_required
-def mark_notification_read_route(notification_id):
-    user = current_user()
-    mark_notification_as_read(notification_id, user["id"])
-    return redirect(url_for("notifications"))
-
-
-@app.route("/notifications/delete/<int:notification_id>", methods=["POST"])
-@login_required
-def delete_notification_route(notification_id):
-    user = current_user()
-    delete_notification(notification_id, user["id"])
-    return redirect(url_for("notifications"))
-
-
-@app.route("/notifications/read-all", methods=["POST"])
-@login_required
-def mark_all_notifications_read_route():
-    user = current_user()
-    mark_all_notifications_as_read(user["id"])
-    return redirect(url_for("notifications"))
-
 
 if __name__ == "__main__":
     app.run(debug=True)

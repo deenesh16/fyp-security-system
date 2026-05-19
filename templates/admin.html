@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Admin Dashboard</title>
+    <title>Automated Web Application Security Assessment System</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
@@ -9,64 +9,95 @@
             font-family: Arial, sans-serif;
             background: linear-gradient(135deg, #eef2ff, #f8fafc);
             margin: 0;
-            padding: 30px 15px;
-            color: #1e293b;
+            color: #0f172a;
         }
 
         .container {
-            width: 100%;
-            max-width: 1250px;
-            margin: 0 auto;
-            background: #ffffff;
+            max-width: 1100px;
+            margin: 50px auto;
+            background: white;
             padding: 35px;
-            border-radius: 18px;
-            box-shadow: 0 10px 28px rgba(0, 0, 0, 0.12);
+            border-radius: 16px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
             box-sizing: border-box;
         }
 
         h1 {
             text-align: center;
-            margin-bottom: 10px;
             color: #0f172a;
-            font-size: 34px;
+            font-size: 36px;
+            line-height: 1.25;
+            margin: 10px 0;
         }
 
-        h2 {
-            margin-top: 35px;
-            margin-bottom: 15px;
-            color: #0f172a;
+        .subtitle {
+            color: #475569;
+            text-align: center;
+            font-size: 17px;
+            line-height: 1.6;
+            margin-bottom: 25px;
         }
 
-        .top-links {
+        .top-bar {
             text-align: center;
             margin-bottom: 25px;
         }
 
-        .top-links a {
-            margin: 0 10px;
+        .top-bar p {
+            color: #334155;
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+
+        .top-bar a {
+            margin: 0 8px;
             text-decoration: none;
             color: #2563eb;
             font-weight: bold;
-            font-size: 17px;
         }
 
-        .top-links a:hover {
+        .top-bar a:hover {
             text-decoration: underline;
+        }
+
+        .system-badge {
+            display: block;
+            width: fit-content;
+            margin: 0 auto 16px;
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            color: #1d4ed8;
+            padding: 9px 15px;
+            border-radius: 999px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .warning {
+            background-color: #fff7ed;
+            border-left: 5px solid #f97316;
+            padding: 14px;
+            border-radius: 8px;
+            margin: 20px 0;
+            color: #9a3412;
+            font-size: 14px;
+            line-height: 1.6;
         }
 
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
             gap: 18px;
-            margin-bottom: 30px;
+            margin: 30px 0;
         }
 
         .stat-card {
             background: #f8fafc;
             border: 1px solid #dbe4ee;
             border-radius: 16px;
-            padding: 22px;
+            padding: 20px;
             box-shadow: 0 3px 10px rgba(0,0,0,0.04);
+            text-align: center;
         }
 
         .stat-title {
@@ -81,164 +112,219 @@
             color: #0f172a;
         }
 
-        .card-users .stat-value { color: #2563eb; }
-        .card-scans .stat-value { color: #7c3aed; }
+        .card-scans .stat-value {
+            color: #2563eb;
+        }
 
-        .card-high .stat-value { color: #dc2626; }
-        .card-medium .stat-value { color: #f97316; }
-        .card-low .stat-value { color: #eab308; }
-        .card-info .stat-value { color: #2563eb; }
+        .card-findings .stat-value {
+            color: #7c3aed;
+        }
+
+        .card-high .stat-value {
+            color: #dc2626;
+        }
+
+        .card-medium .stat-value {
+            color: #f97316;
+        }
+
+        .card-low .stat-value {
+            color: #eab308;
+        }
+
+        .card-info .stat-value {
+            color: #2563eb;
+        }
 
         .chart-box {
             background: #f8fafc;
             border: 1px solid #dbe4ee;
             border-radius: 16px;
-            padding: 25px;
+            padding: 20px;
             margin-bottom: 30px;
+            height: 380px;
+            box-sizing: border-box;
         }
 
-        .chart-box h2 {
+        .chart-box h3 {
+            text-align: center;
             margin-top: 0;
-            margin-bottom: 20px;
+            margin-bottom: 18px;
             color: #0f172a;
         }
 
-        .pie-chart-container {
+        .chart-container {
             width: 100%;
-            max-width: 450px;
-            height: 320px;
-            margin: 0 auto;
+            height: 300px;
         }
 
-        #adminChart {
+        #chart {
             width: 100% !important;
             height: 100% !important;
         }
 
-        .section-box {
+        .scan-form-box {
             background: #f8fafc;
             border: 1px solid #dbe4ee;
-            border-radius: 14px;
-            padding: 20px;
-            margin-bottom: 25px;
+            border-radius: 16px;
+            padding: 24px;
         }
 
-        .table-wrapper {
-            width: 100%;
-            overflow-x: auto;
-            border: 1px solid #e2e8f0;
-            border-radius: 12px;
-            background: white;
+        .scan-form-box h3 {
+            margin-top: 0;
+            color: #0f172a;
+            text-align: center;
         }
 
-        table {
-            width: 100%;
-            min-width: 1000px;
-            border-collapse: collapse;
-            background: white;
-            table-layout: fixed;
-        }
-
-        th, td {
-            border: 1px solid #e2e8f0;
-            padding: 12px;
-            text-align: left;
-            vertical-align: top;
-            overflow-wrap: break-word;
-            word-break: break-word;
-        }
-
-        th {
-            background: #f1f5f9;
-        }
-
-        .result-link {
-            color: #2563eb;
+        label {
+            display: block;
+            margin-top: 20px;
+            margin-bottom: 8px;
             font-weight: bold;
-            text-decoration: none;
+            color: #334155;
         }
 
-        .result-link:hover {
-            text-decoration: underline;
+        input[type="text"], select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 15px;
+            box-sizing: border-box;
         }
 
-        .delete-btn {
-            background: #dc2626;
+        input[type="text"]:focus,
+        select:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+        }
+
+        button {
+            margin-top: 20px;
+            width: 100%;
+            padding: 13px;
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
             color: white;
             border: none;
             border-radius: 8px;
-            padding: 8px 12px;
+            font-size: 16px;
             font-weight: bold;
             cursor: pointer;
+            box-shadow: 0 10px 20px rgba(37, 99, 235, 0.22);
+            transition: 0.25s ease;
         }
 
-        .delete-btn:hover {
-            background: #b91c1c;
+        button:hover {
+            background: linear-gradient(135deg, #1d4ed8, #1e40af);
+            transform: translateY(-1px);
         }
 
-        .empty {
-            background: #fefce8;
-            border-left: 5px solid #eab308;
-            border-radius: 10px;
-            padding: 14px;
-            line-height: 1.6;
-        }
-
-        .url-cell {
-            max-width: 280px;
-            overflow-wrap: break-word;
-            word-break: break-word;
-        }
-
-        .small-note {
+        .footer {
+            margin-top: 20px;
+            font-size: 13px;
+            text-align: center;
             color: #64748b;
-            font-size: 14px;
-            margin-bottom: 5px;
-        }
-
-        .action-group {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
+            line-height: 1.6;
         }
 
         @media (max-width: 768px) {
             .container {
+                margin: 25px auto;
                 padding: 22px;
             }
 
-            .pie-chart-container {
-                max-width: 330px;
-                height: 280px;
+            h1 {
+                font-size: 28px;
             }
 
-            table {
-                font-size: 13px;
+            .chart-box {
+                height: 340px;
             }
 
-            th, td {
-                padding: 9px;
+            .chart-container {
+                height: 260px;
             }
         }
     
 
-        .type-badge {
-            display: inline-block;
-            padding: 5px 9px;
-            border-radius: 999px;
-            background: #e0f2fe;
-            color: #075985;
-            font-weight: bold;
-            font-size: 12px;
+        .usage-box {
+            background: #ecfdf5;
+            border: 1px solid #bbf7d0;
+            border-left: 5px solid #10b981;
+            border-radius: 12px;
+            padding: 16px;
+            margin: 20px 0;
+            color: #064e3b;
+            line-height: 1.6;
         }
 
-        .log-badge {
-            display: inline-block;
-            padding: 6px 10px;
-            border-radius: 999px;
-            background: #fee2e2;
-            color: #991b1b;
+        .usage-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .usage-card {
+            background: rgba(255,255,255,0.7);
+            border: 1px solid #bbf7d0;
+            border-radius: 10px;
+            padding: 12px;
+        }
+
+        .usage-label {
+            font-size: 13px;
+            color: #047857;
             font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .usage-value {
+            font-size: 19px;
+            font-weight: bold;
+            color: #064e3b;
+        }
+
+        .scan-error {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            border-left: 5px solid #dc2626;
+            color: #991b1b;
+            padding: 14px;
+            border-radius: 10px;
+            margin: 20px 0;
+            line-height: 1.6;
+            font-weight: bold;
+        }
+.notification-box h3 {
+            margin: 0 0 12px;
+            color: #0f172a;
+        }
+
+        .notification-item {
+            background: white;
+            border: 1px solid #dbeafe;
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 10px;
+        }
+
+        .notification-title {
+            font-weight: bold;
+            color: #1d4ed8;
+            margin-bottom: 5px;
+        }
+
+        .notification-message {
+            color: #334155;
+            line-height: 1.5;
+            font-size: 14px;
+        }
+
+        .notification-date {
+            margin-top: 6px;
+            color: #64748b;
             font-size: 12px;
         }
 
@@ -284,242 +370,185 @@
 </head>
 
 <body>
-    <div class="container">
-        <h1>Admin Dashboard</h1>
+<div class="container">
 
-        <div class="top-links">
-            <a href="/">Home</a>
-            <a href="/history">History</a>
-             | 
-            <a href="/notifications" class="notification-link">
-                Notifications
-                {% if unread_count and unread_count > 0 %}
-                    <span class="notification-badge">{{ unread_count }}</span>
-                {% endif %}
-            </a>
-            | <a href="/logout">Logout</a>
-        </div>
+    <div class="top-bar">
+        <p>
+            Welcome, <strong>{{ user["username"] }}</strong> -
+            {{ "Admin" if user["role"] == "admin" else user_type_label }}
+        </p>
 
-        <div class="stats-grid">
-            <div class="stat-card card-users">
-                <div class="stat-title">Total Users</div>
-                <div class="stat-value">{{ total_users }}</div>
-            </div>
+        <a href="/history">My History</a>
 
-            <div class="stat-card card-scans">
-                <div class="stat-title">Total Scans</div>
-                <div class="stat-value">{{ total_scans }}</div>
-            </div>
+        {% if user["role"] == "admin" %}
+            | <a href="/admin">Admin Dashboard</a>
+        {% endif %}
 
-            <div class="stat-card card-high">
-                <div class="stat-title">High Findings</div>
-                <div class="stat-value">{{ total_high }}</div>
-            </div>
-
-            <div class="stat-card card-medium">
-                <div class="stat-title">Medium Findings</div>
-                <div class="stat-value">{{ total_medium }}</div>
-            </div>
-
-            <div class="stat-card card-low">
-                <div class="stat-title">Low Findings</div>
-                <div class="stat-value">{{ total_low }}</div>
-            </div>
-
-            <div class="stat-card card-info">
-                <div class="stat-title">Informational Findings</div>
-                <div class="stat-value">{{ total_info }}</div>
-            </div>
-        </div>
-
-        <div class="chart-box">
-            <h2>Risk Distribution</h2>
-            <div class="pie-chart-container">
-                <canvas id="adminChart"></canvas>
-            </div>
-        </div>
-
-        <div class="section-box">
-            <h2>Registered Users</h2>
-            <p class="small-note">This section displays all users registered in the system.</p>
-
-            {% if users %}
-                <div class="table-wrapper">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th style="width: 70px;">ID</th>
-                                <th style="width: 160px;">Username</th>
-                                <th style="width: 260px;">Email</th>
-                                <th style="width: 100px;">Role</th>
-                                <th style="width: 170px;">User Category</th>
-                                <th style="width: 100px;">Verified</th>
-                                <th style="width: 130px;">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for u in users %}
-                                <tr>
-                                    <td>{{ loop.index }}</td>
-                                    <td>{{ u["username"] }}</td>
-                                    <td>{{ u["email"] }}</td>
-                                    <td>{{ u["role"] }}</td>
-                                    <td><span class="type-badge">{{ u["user_type"]|replace("_", " ")|title }}</span></td>
-                                    <td>{{ "Yes" if u["is_verified"] == 1 else "No" }}</td>
-                                    <td>
-                                        {% if u["email"] != "websecurityscanner@gmail.com" %}
-                                            <form method="post" action="/admin/delete_user/{{ u['id'] }}">
-                                                <button type="submit" class="delete-btn">Delete</button>
-                                            </form>
-                                        {% else %}
-                                            Protected
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            {% else %}
-                <div class="empty">No users found.</div>
+        |
+        <a href="/notifications" class="notification-link">
+            Notifications
+            {% if unread_count and unread_count > 0 %}
+                <span class="notification-badge">{{ unread_count }}</span>
             {% endif %}
+        </a>
+
+        | <a href="/logout">Logout</a>
+    </div>
+
+    <span class="system-badge">Security Assessment Dashboard</span>
+
+    <h1>Automated Web Application Security Assessment System</h1>
+
+    <p class="subtitle">
+        Scan web applications, detect vulnerabilities, review risk distribution,
+        and generate professional security assessment reports.
+    </p>
+
+    <div class="warning">
+        <strong>Warning:</strong> Only scan websites that you own or have permission to test.
+        Unauthorized scanning may violate rules, laws, or terms of service.
+    </div>
+
+    {% if scan_error %}
+        <div class="scan-error">
+            {{ scan_error }}
+        </div>
+    {% endif %}
+
+    <div class="usage-box">
+        <strong>Daily Scan Usage</strong>
+        <div class="usage-grid">
+            <div class="usage-card">
+                <div class="usage-label">User Category</div>
+                <div class="usage-value">{{ dashboard_display_category }}</div>
+            </div>
+            <div class="usage-card">
+                <div class="usage-label">Scans Used Today</div>
+                <div class="usage-value">{{ scans_today }}</div>
+            </div>
+            <div class="usage-card">
+                <div class="usage-label">Daily Limit</div>
+                <div class="usage-value">{{ "Unlimited" if daily_limit is none else daily_limit }}</div>
+            </div>
+            <div class="usage-card">
+                <div class="usage-label">Remaining Today</div>
+                <div class="usage-value">{{ "Unlimited" if remaining_scans is none else remaining_scans }}</div>
+            </div>
+        </div>
+    </div>
+<div class="stats-grid">
+        <div class="stat-card card-scans">
+            <div class="stat-title">Total Scans</div>
+            <div class="stat-value">{{ total_scans }}</div>
         </div>
 
-        <div class="section-box">
-            <h2>All Scan History</h2>
-            <p class="small-note">This section shows scan activities from all users.</p>
-
-            {% if history %}
-                <div class="table-wrapper">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th style="width: 140px;">User</th>
-                                <th style="width: 240px;">Email</th>
-                                <th style="width: 260px;">Target URL</th>
-                                <th style="width: 120px;">Scan Mode</th>
-                                <th style="width: 260px;">Status</th>
-                                <th style="width: 110px;">Findings</th>
-                                <th style="width: 150px;">Date & Time</th>
-                                <th style="width: 140px;">Actions</th>
-                            </tr>
-                        </thead>
-
-                        <tbody>
-                            {% for item in history %}
-                                <tr>
-                                    <td>{{ item["username"] }}</td>
-                                    <td>{{ item["email"] }}</td>
-                                    <td class="url-cell">{{ item["target"] }}</td>
-                                    <td>{{ item["scan_mode"] }}</td>
-                                    <td>{{ item["status"] }}</td>
-                                    <td>{{ item["total_findings"] }}</td>
-                                    <td>{{ item["created_at"] }}</td>
-                                    <td>
-                                        <div class="action-group">
-                                            <a href="/result/{{ item['scan_id'] }}" class="result-link">Open</a>
-
-                                            <form method="post" action="/admin/delete_scan/{{ item['scan_id'] }}">
-                                                <button type="submit" class="delete-btn">Delete</button>
-                                            </form>
-                                        </div>
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            {% else %}
-                <div class="empty">No scan history available.</div>
-            {% endif %}
+        <div class="stat-card card-findings">
+            <div class="stat-title">Total Findings</div>
+            <div class="stat-value">{{ total_findings }}</div>
         </div>
 
-        <div class="section-box">
-            <h2>Deleted Scan Logs</h2>
-            <p class="small-note">This section records scans deleted by administrators for audit and accountability.</p>
+        <div class="stat-card card-high">
+            <div class="stat-title">High</div>
+            <div class="stat-value">{{ total_high }}</div>
+        </div>
 
-            {% if deleted_logs %}
-                <div class="table-wrapper">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th style="width: 170px;">Scan ID</th>
-                                <th style="width: 140px;">User</th>
-                                <th style="width: 230px;">Email</th>
-                                <th style="width: 260px;">Target URL</th>
-                                <th style="width: 120px;">Scan Mode</th>
-                                <th style="width: 110px;">Findings</th>
-                                <th style="width: 160px;">Scan Date</th>
-                                <th style="width: 180px;">Deleted At</th>
-                                <th style="width: 210px;">Deleted By</th>
-                                <th style="width: 180px;">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for log in deleted_logs %}
-                                <tr>
-                                    <td>{{ log["scan_id"] }}</td>
-                                    <td>{{ log["username"] }}</td>
-                                    <td>{{ log["email"] }}</td>
-                                    <td class="url-cell">{{ log["target"] }}</td>
-                                    <td>{{ log["scan_mode"] }}</td>
-                                    <td>{{ log["total_findings"] }}</td>
-                                    <td>{{ log["scan_created_at"] }}</td>
-                                    <td>{{ log["deleted_at"] }}</td>
-                                    <td>{{ log["deleted_by_admin_email"] }}</td>
-                                    <td><span class="log-badge">{{ log["reason"] }}</span></td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            {% else %}
-                <div class="empty">No deleted scan logs yet.</div>
-            {% endif %}
+        <div class="stat-card card-medium">
+            <div class="stat-title">Medium</div>
+            <div class="stat-value">{{ total_medium }}</div>
+        </div>
+
+        <div class="stat-card card-low">
+            <div class="stat-title">Low</div>
+            <div class="stat-value">{{ total_low }}</div>
+        </div>
+
+        <div class="stat-card card-info">
+            <div class="stat-title">Informational</div>
+            <div class="stat-value">{{ total_info }}</div>
         </div>
     </div>
 
-    <script>
-        const adminData = JSON.parse('{{ [total_high, total_medium, total_low, total_info] | tojson | safe }}');
+    <div class="chart-box">
+        <h3>My Risk Distribution</h3>
+        <div class="chart-container">
+            <canvas id="chart"></canvas>
+        </div>
+    </div>
 
-        new Chart(document.getElementById('adminChart'), {
-            type: 'pie',
-            data: {
-                labels: ['High', 'Medium', 'Low', 'Informational'],
-                datasets: [{
-                    data: adminData,
-                    backgroundColor: [
-                        '#dc2626',
-                        '#f97316',
-                        '#eab308',
-                        '#2563eb'
-                    ],
-                    borderColor: '#ffffff',
-                    borderWidth: 2
-                }]
+    <div class="scan-form-box">
+        <h3>Start New Security Assessment</h3>
+
+        <form action="/start_scan" method="post">
+            <label for="url">Target Website URL</label>
+            <input id="url" type="text" name="url" placeholder="https://example.com" required>
+
+            <label for="scan_mode">Scan Mode</label>
+            <select id="scan_mode" name="scan_mode">
+                <option value="quick">Quick Scan</option>
+                <option value="full">Full Scan</option>
+            </select>
+
+            <button type="submit">Start Assessment Scan</button>
+        </form>
+    </div>
+
+    <div class="footer">
+        Recommended test targets: testphp.vulnweb.com or authorized lab systems only.
+    </div>
+
+</div>
+
+<script>
+    const chartData = JSON.parse('{{ [total_high, total_medium, total_low, total_info] | tojson | safe }}');
+
+    new Chart(document.getElementById('chart'), {
+        type: 'bar',
+        data: {
+            labels: ['High', 'Medium', 'Low', 'Informational'],
+            datasets: [{
+                label: 'Findings',
+                data: chartData,
+                backgroundColor: [
+                    '#dc2626',
+                    '#f97316',
+                    '#eab308',
+                    '#2563eb'
+                ],
+                borderColor: [
+                    '#991b1b',
+                    '#c2410c',
+                    '#a16207',
+                    '#1d4ed8'
+                ],
+                borderWidth: 1,
+                borderRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
             },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'top',
-                        labels: {
-                            font: {
-                                size: 14
-                            },
-                            padding: 18
-                        }
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        precision: 0
                     }
                 }
             }
-        });
+        }
+    });
 
-        window.addEventListener("pageshow", function (event) {
-            if (event.persisted) {
-                window.location.reload();
-            }
-        });
-    </script>
+    window.addEventListener("pageshow", function (event) {
+        if (event.persisted) {
+            window.location.reload();
+        }
+    });
+</script>
+
 </body>
 </html>

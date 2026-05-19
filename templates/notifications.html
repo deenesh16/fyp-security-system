@@ -222,6 +222,10 @@
         |
         <a href="/history">My History</a>
         |
+        {% if user["role"] == "admin" %}
+            <a href="/admin">Admin Dashboard</a>
+            |
+        {% endif %}
         <a href="/logout">Logout</a>
     </div>
 
