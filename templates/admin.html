@@ -1,108 +1,115 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Automated Web Application Security Assessment System</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <title>Admin Dashboard</title>
 
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: linear-gradient(135deg, #eef2ff, #f8fafc);
-            margin: 0;
-            color: #0f172a;
-        }
-
-        .container {
-            max-width: 1100px;
-            margin: 50px auto;
-            background: white;
-            padding: 35px;
-            border-radius: 16px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+        * {
             box-sizing: border-box;
         }
 
-        h1 {
-            text-align: center;
+        body {
+            font-family: Arial, sans-serif;
+            background: #f8fafc;
+            margin: 0;
+            padding: 24px;
             color: #0f172a;
-            font-size: 36px;
-            line-height: 1.25;
-            margin: 10px 0;
         }
 
-        .subtitle {
-            color: #475569;
+        .page {
+            width: 100%;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .top-nav {
             text-align: center;
-            font-size: 17px;
-            line-height: 1.6;
-            margin-bottom: 25px;
+            margin-bottom: 24px;
+            position: relative;
+            z-index: 9999;
         }
 
-        .top-bar {
-            text-align: center;
-            margin-bottom: 25px;
-        }
-
-        .top-bar p {
-            color: #334155;
-            font-size: 16px;
-            margin-bottom: 12px;
-        }
-
-        .top-bar a {
-            margin: 0 8px;
-            text-decoration: none;
+        .top-nav a {
             color: #2563eb;
+            text-decoration: none;
             font-weight: bold;
+            margin: 0 10px;
+            position: relative;
+            z-index: 10000;
+            pointer-events: auto;
         }
 
-        .top-bar a:hover {
+        .top-nav a:hover {
             text-decoration: underline;
         }
 
-        .system-badge {
-            display: block;
-            width: fit-content;
-            margin: 0 auto 16px;
-            background: #eff6ff;
-            border: 1px solid #bfdbfe;
-            color: #1d4ed8;
-            padding: 9px 15px;
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 20px;
+            height: 20px;
+            padding: 0 6px;
             border-radius: 999px;
-            font-weight: bold;
-            font-size: 14px;
+            background: #dc2626;
+            color: white;
+            font-size: 12px;
+            margin-left: 4px;
         }
 
-        .warning {
-            background-color: #fff7ed;
-            border-left: 5px solid #f97316;
-            padding: 14px;
-            border-radius: 8px;
-            margin: 20px 0;
-            color: #9a3412;
-            font-size: 14px;
+        h1 {
+            font-size: 34px;
+            margin: 0 0 8px;
+            text-align: center;
+            color: #0f172a;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #64748b;
+            margin-bottom: 28px;
+            line-height: 1.6;
+        }
+
+        .section {
+            background: #ffffff;
+            border: 1px solid #dbe4ee;
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
+        }
+
+        .section h2 {
+            margin: 0 0 8px;
+            font-size: 26px;
+            color: #0f172a;
+        }
+
+        .section p {
+            margin-top: 0;
+            color: #64748b;
             line-height: 1.6;
         }
 
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 18px;
-            margin: 30px 0;
+            grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+            gap: 16px;
+            margin-top: 18px;
         }
 
         .stat-card {
-            background: #f8fafc;
             border: 1px solid #dbe4ee;
-            border-radius: 16px;
-            padding: 20px;
-            box-shadow: 0 3px 10px rgba(0,0,0,0.04);
-            text-align: center;
+            border-radius: 14px;
+            background: #f8fafc;
+            padding: 18px;
         }
 
-        .stat-title {
-            font-size: 14px;
+        .stat-label {
             color: #64748b;
+            font-weight: bold;
+            font-size: 14px;
             margin-bottom: 8px;
         }
 
@@ -112,443 +119,363 @@
             color: #0f172a;
         }
 
-        .card-scans .stat-value {
-            color: #2563eb;
-        }
-
-        .card-findings .stat-value {
-            color: #7c3aed;
-        }
-
-        .card-high .stat-value {
+        .risk-high {
             color: #dc2626;
         }
 
-        .card-medium .stat-value {
+        .risk-medium {
             color: #f97316;
         }
 
-        .card-low .stat-value {
-            color: #eab308;
+        .risk-low {
+            color: #ca8a04;
         }
 
-        .card-info .stat-value {
+        .risk-info {
             color: #2563eb;
         }
 
-        .chart-box {
-            background: #f8fafc;
-            border: 1px solid #dbe4ee;
-            border-radius: 16px;
-            padding: 20px;
-            margin-bottom: 30px;
-            height: 380px;
-            box-sizing: border-box;
-        }
-
-        .chart-box h3 {
-            text-align: center;
-            margin-top: 0;
-            margin-bottom: 18px;
-            color: #0f172a;
-        }
-
-        .chart-container {
+        .table-wrap {
             width: 100%;
-            height: 300px;
-        }
-
-        #chart {
-            width: 100% !important;
-            height: 100% !important;
-        }
-
-        .scan-form-box {
-            background: #f8fafc;
+            overflow-x: auto;
             border: 1px solid #dbe4ee;
-            border-radius: 16px;
-            padding: 24px;
+            border-radius: 14px;
+            background: white;
         }
 
-        .scan-form-box h3 {
-            margin-top: 0;
-            color: #0f172a;
-            text-align: center;
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 920px;
         }
 
-        label {
-            display: block;
-            margin-top: 20px;
-            margin-bottom: 8px;
+        th, td {
+            padding: 13px 15px;
+            border-bottom: 1px solid #e2e8f0;
+            border-right: 1px solid #e2e8f0;
+            text-align: left;
+            vertical-align: top;
+        }
+
+        th:last-child, td:last-child {
+            border-right: none;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        th {
+            background: #f1f5f9;
             font-weight: bold;
-            color: #334155;
+            color: #0f172a;
         }
 
-        input[type="text"], select {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #cbd5e1;
-            border-radius: 8px;
-            font-size: 15px;
-            box-sizing: border-box;
+        .pill {
+            display: inline-block;
+            padding: 5px 11px;
+            border-radius: 999px;
+            font-size: 13px;
+            font-weight: bold;
+            background: #e0f2fe;
+            color: #075985;
         }
 
-        input[type="text"]:focus,
-        select:focus {
-            outline: none;
-            border-color: #2563eb;
-            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+        .status-yes {
+            color: #15803d;
+            font-weight: bold;
         }
 
-        button {
-            margin-top: 20px;
-            width: 100%;
-            padding: 13px;
-            background: linear-gradient(135deg, #2563eb, #1d4ed8);
-            color: white;
+        .status-no {
+            color: #dc2626;
+            font-weight: bold;
+        }
+
+        .btn {
+            display: inline-block;
             border: none;
             border-radius: 8px;
-            font-size: 16px;
+            padding: 9px 13px;
+            text-decoration: none;
             font-weight: bold;
             cursor: pointer;
-            box-shadow: 0 10px 20px rgba(37, 99, 235, 0.22);
-            transition: 0.25s ease;
+            font-size: 14px;
         }
 
-        button:hover {
-            background: linear-gradient(135deg, #1d4ed8, #1e40af);
-            transform: translateY(-1px);
+        .btn-danger {
+            background: #dc2626;
+            color: white;
         }
 
-        .footer {
-            margin-top: 20px;
-            font-size: 13px;
+        .btn-danger:hover {
+            background: #b91c1c;
+        }
+
+        .btn-blue {
+            background: #2563eb;
+            color: white;
+        }
+
+        .btn-blue:hover {
+            background: #1d4ed8;
+        }
+
+        .empty {
+            background: #fefce8;
+            border: 1px solid #fde68a;
+            color: #854d0e;
+            border-radius: 14px;
+            padding: 18px;
+            font-weight: bold;
             text-align: center;
-            color: #64748b;
-            line-height: 1.6;
         }
 
-        @media (max-width: 768px) {
-            .container {
-                margin: 25px auto;
-                padding: 22px;
+        .protected {
+            color: #475569;
+            font-weight: bold;
+        }
+
+        .small-text {
+            font-size: 13px;
+            color: #64748b;
+            line-height: 1.5;
+        }
+
+        @media (max-width: 700px) {
+            body {
+                padding: 14px;
             }
 
             h1 {
                 font-size: 28px;
             }
 
-            .chart-box {
-                height: 340px;
-            }
-
-            .chart-container {
-                height: 260px;
+            .section {
+                padding: 18px;
             }
         }
-    
-
-        .usage-box {
-            background: #ecfdf5;
-            border: 1px solid #bbf7d0;
-            border-left: 5px solid #10b981;
-            border-radius: 12px;
-            padding: 16px;
-            margin: 20px 0;
-            color: #064e3b;
-            line-height: 1.6;
-        }
-
-        .usage-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 12px;
-            margin-top: 12px;
-        }
-
-        .usage-card {
-            background: rgba(255,255,255,0.7);
-            border: 1px solid #bbf7d0;
-            border-radius: 10px;
-            padding: 12px;
-        }
-
-        .usage-label {
-            font-size: 13px;
-            color: #047857;
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-
-        .usage-value {
-            font-size: 19px;
-            font-weight: bold;
-            color: #064e3b;
-        }
-
-        .scan-error {
-            background: #fef2f2;
-            border: 1px solid #fecaca;
-            border-left: 5px solid #dc2626;
-            color: #991b1b;
-            padding: 14px;
-            border-radius: 10px;
-            margin: 20px 0;
-            line-height: 1.6;
-            font-weight: bold;
-        }
-.notification-box h3 {
-            margin: 0 0 12px;
-            color: #0f172a;
-        }
-
-        .notification-item {
-            background: white;
-            border: 1px solid #dbeafe;
-            border-radius: 10px;
-            padding: 12px;
-            margin-bottom: 10px;
-        }
-
-        .notification-title {
-            font-weight: bold;
-            color: #1d4ed8;
-            margin-bottom: 5px;
-        }
-
-        .notification-message {
-            color: #334155;
-            line-height: 1.5;
-            font-size: 14px;
-        }
-
-        .notification-date {
-            margin-top: 6px;
-            color: #64748b;
-            font-size: 12px;
-        }
-
-    
-        .usage-date-box {
-            background: #ffffff;
-            border: 1px solid #bbf7d0;
-            color: #064e3b;
-            border-radius: 12px;
-            padding: 12px 16px;
-            margin: 10px 0 18px;
-            font-size: 16px;
-            width: fit-content;
-            font-weight: 600;
-        }
-
-        .notification-link {
-            position: relative;
-            display: inline-block;
-            margin: 0 8px;
-            text-decoration: none;
-            color: #2563eb;
-            font-weight: bold;
-        }
-
-        .notification-badge {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            min-width: 20px;
-            height: 20px;
-            padding: 0 6px;
-            margin-left: 4px;
-            border-radius: 999px;
-            background: #dc2626;
-            color: white;
-            font-size: 12px;
-            font-weight: bold;
-            vertical-align: top;
-        }
-
-        </style>
+    </style>
 </head>
 
 <body>
-<div class="container">
 
-    <div class="top-bar">
-        <p>
-            Welcome, <strong>{{ user["username"] }}</strong> -
-            {{ "Admin" if user["role"] == "admin" else user_type_label }}
-        </p>
+<div class="page">
 
-        <a href="/history">My History</a>
-
-        {% if user["role"] == "admin" %}
-            | <a href="/admin">Admin Dashboard</a>
-        {% endif %}
-
+    <div class="top-nav">
+        <a href="{{ url_for('index') }}">Dashboard</a>
         |
-        <a href="/notifications" class="notification-link">
+        <a href="{{ url_for('history') }}">History</a>
+        |
+        <a href="{{ url_for('notifications') }}">
             Notifications
             {% if unread_count and unread_count > 0 %}
-                <span class="notification-badge">{{ unread_count }}</span>
+                <span class="badge">{{ unread_count }}</span>
             {% endif %}
         </a>
-
-        | <a href="/logout">Logout</a>
+        |
+        <a href="{{ url_for('logout') }}">Logout</a>
     </div>
 
-    <span class="system-badge">Security Assessment Dashboard</span>
+    <h1>Admin Dashboard</h1>
 
-    <h1>Automated Web Application Security Assessment System</h1>
-
-    <p class="subtitle">
-        Scan web applications, detect vulnerabilities, review risk distribution,
-        and generate professional security assessment reports.
-    </p>
-
-    <div class="warning">
-        <strong>Warning:</strong> Only scan websites that you own or have permission to test.
-        Unauthorized scanning may violate rules, laws, or terms of service.
+    <div class="subtitle">
+        Manage registered users, scan history, deleted scan logs, and overall system activity.
+        {% if today_date %}
+            <br>Today: <strong>{{ today_date }}</strong>
+        {% endif %}
     </div>
 
-    {% if scan_error %}
-        <div class="scan-error">
-            {{ scan_error }}
-        </div>
-    {% endif %}
+    <div class="section">
+        <h2>System Overview</h2>
+        <p>This section summarizes the current system usage and vulnerability risk distribution.</p>
 
-    <div class="usage-box">
-        <strong>Daily Scan Usage</strong>
-        <div class="usage-grid">
-            <div class="usage-card">
-                <div class="usage-label">User Category</div>
-                <div class="usage-value">{{ dashboard_display_category }}</div>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">Total Users</div>
+                <div class="stat-value">{{ total_users }}</div>
             </div>
-            <div class="usage-card">
-                <div class="usage-label">Scans Used Today</div>
-                <div class="usage-value">{{ scans_today }}</div>
+
+            <div class="stat-card">
+                <div class="stat-label">Total Scans</div>
+                <div class="stat-value">{{ total_scans }}</div>
             </div>
-            <div class="usage-card">
-                <div class="usage-label">Daily Limit</div>
-                <div class="usage-value">{{ "Unlimited" if daily_limit is none else daily_limit }}</div>
+
+            <div class="stat-card">
+                <div class="stat-label">High Risk</div>
+                <div class="stat-value risk-high">{{ total_high }}</div>
             </div>
-            <div class="usage-card">
-                <div class="usage-label">Remaining Today</div>
-                <div class="usage-value">{{ "Unlimited" if remaining_scans is none else remaining_scans }}</div>
+
+            <div class="stat-card">
+                <div class="stat-label">Medium Risk</div>
+                <div class="stat-value risk-medium">{{ total_medium }}</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-label">Low Risk</div>
+                <div class="stat-value risk-low">{{ total_low }}</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-label">Informational</div>
+                <div class="stat-value risk-info">{{ total_info }}</div>
             </div>
         </div>
     </div>
-<div class="stats-grid">
-        <div class="stat-card card-scans">
-            <div class="stat-title">Total Scans</div>
-            <div class="stat-value">{{ total_scans }}</div>
-        </div>
 
-        <div class="stat-card card-findings">
-            <div class="stat-title">Total Findings</div>
-            <div class="stat-value">{{ total_findings }}</div>
-        </div>
+    <div class="section">
+        <h2>Registered Users</h2>
+        <p>This section displays all users registered in the system.</p>
 
-        <div class="stat-card card-high">
-            <div class="stat-title">High</div>
-            <div class="stat-value">{{ total_high }}</div>
-        </div>
+        {% if users %}
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>No.</th>
+                            <th>Username</th>
+                            <th>Email</th>
+                            <th>Role</th>
+                            <th>User Category</th>
+                            <th>Verified</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
 
-        <div class="stat-card card-medium">
-            <div class="stat-title">Medium</div>
-            <div class="stat-value">{{ total_medium }}</div>
-        </div>
-
-        <div class="stat-card card-low">
-            <div class="stat-title">Low</div>
-            <div class="stat-value">{{ total_low }}</div>
-        </div>
-
-        <div class="stat-card card-info">
-            <div class="stat-title">Informational</div>
-            <div class="stat-value">{{ total_info }}</div>
-        </div>
+                    <tbody>
+                        {% for u in users %}
+                            <tr>
+                                <td>{{ loop.index }}</td>
+                                <td>{{ u.username }}</td>
+                                <td>{{ u.email }}</td>
+                                <td>{{ u.role }}</td>
+                                <td>
+                                    <span class="pill">
+                                        {{ (u.user_type or "student").replace("_", " ").title() }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if u.is_verified %}
+                                        <span class="status-yes">Yes</span>
+                                    {% else %}
+                                        <span class="status-no">No</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if u.role == "admin" %}
+                                        <span class="protected">Protected</span>
+                                    {% else %}
+                                        <form method="POST" action="{{ url_for('admin_delete_user', user_id=u.id) }}" onsubmit="return confirm('Delete this user and all related scans?');">
+                                            <button type="submit" class="btn btn-danger">Delete</button>
+                                        </form>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="empty">No registered users found.</div>
+        {% endif %}
     </div>
 
-    <div class="chart-box">
-        <h3>My Risk Distribution</h3>
-        <div class="chart-container">
-            <canvas id="chart"></canvas>
-        </div>
+    <div class="section">
+        <h2>Scan History</h2>
+        <p>This section displays scan records from all users.</p>
+
+        {% if history %}
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>No.</th>
+                            <th>Scan ID</th>
+                            <th>User</th>
+                            <th>Email</th>
+                            <th>Target</th>
+                            <th>Scan Mode</th>
+                            <th>Status</th>
+                            <th>Total Findings</th>
+                            <th>Date & Time</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for scan in history %}
+                            <tr>
+                                <td>{{ loop.index }}</td>
+                                <td class="small-text">{{ scan.scan_id }}</td>
+                                <td>{{ scan.username }}</td>
+                                <td>{{ scan.email }}</td>
+                                <td class="small-text">{{ scan.target }}</td>
+                                <td>{{ scan.scan_mode }}</td>
+                                <td>{{ scan.status }}</td>
+                                <td>{{ scan.total_findings }}</td>
+                                <td>{{ scan.created_at }}</td>
+                                <td>
+                                    <a class="btn btn-blue" href="{{ url_for('result', scan_id=scan.scan_id) }}">View</a>
+
+                                    <form method="POST" action="{{ url_for('admin_delete_scan', scan_id=scan.scan_id) }}" style="display:inline-block; margin-left:6px;" onsubmit="return confirm('Delete this scan record?');">
+                                        <button type="submit" class="btn btn-danger">Delete</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="empty">No scan history found.</div>
+        {% endif %}
     </div>
 
-    <div class="scan-form-box">
-        <h3>Start New Security Assessment</h3>
+    <div class="section">
+        <h2>Deleted Scan Logs</h2>
+        <p>This section records scan records deleted by the administrator.</p>
 
-        <form action="/start_scan" method="post">
-            <label for="url">Target Website URL</label>
-            <input id="url" type="text" name="url" placeholder="https://example.com" required>
+        {% if deleted_logs %}
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>No.</th>
+                            <th>Deleted Scan ID</th>
+                            <th>User</th>
+                            <th>Email</th>
+                            <th>Target</th>
+                            <th>Scan Mode</th>
+                            <th>Total Findings</th>
+                            <th>Scan Date</th>
+                            <th>Deleted At</th>
+                            <th>Reason</th>
+                        </tr>
+                    </thead>
 
-            <label for="scan_mode">Scan Mode</label>
-            <select id="scan_mode" name="scan_mode">
-                <option value="quick">Quick Scan</option>
-                <option value="full">Full Scan</option>
-            </select>
-
-            <button type="submit">Start Assessment Scan</button>
-        </form>
-    </div>
-
-    <div class="footer">
-        Recommended test targets: testphp.vulnweb.com or authorized lab systems only.
+                    <tbody>
+                        {% for log in deleted_logs %}
+                            <tr>
+                                <td>{{ loop.index }}</td>
+                                <td class="small-text">{{ log.scan_id }}</td>
+                                <td>{{ log.username }}</td>
+                                <td>{{ log.email }}</td>
+                                <td class="small-text">{{ log.target }}</td>
+                                <td>{{ log.scan_mode }}</td>
+                                <td>{{ log.total_findings }}</td>
+                                <td>{{ log.scan_created_at }}</td>
+                                <td>{{ log.deleted_at }}</td>
+                                <td>{{ log.reason }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="empty">No deleted scan logs found.</div>
+        {% endif %}
     </div>
 
 </div>
-
-<script>
-    const chartData = JSON.parse('{{ [total_high, total_medium, total_low, total_info] | tojson | safe }}');
-
-    new Chart(document.getElementById('chart'), {
-        type: 'bar',
-        data: {
-            labels: ['High', 'Medium', 'Low', 'Informational'],
-            datasets: [{
-                label: 'Findings',
-                data: chartData,
-                backgroundColor: [
-                    '#dc2626',
-                    '#f97316',
-                    '#eab308',
-                    '#2563eb'
-                ],
-                borderColor: [
-                    '#991b1b',
-                    '#c2410c',
-                    '#a16207',
-                    '#1d4ed8'
-                ],
-                borderWidth: 1,
-                borderRadius: 6
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    display: false
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        precision: 0
-                    }
-                }
-            }
-        }
-    });
-
-    window.addEventListener("pageshow", function (event) {
-        if (event.persisted) {
-            window.location.reload();
-        }
-    });
-</script>
 
 </body>
 </html>
