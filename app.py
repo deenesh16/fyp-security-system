@@ -260,7 +260,13 @@ def get_user_by_reset_token(token):
 def get_all_users():
     conn = get_db_connection()
     cursor = get_cursor(conn)
-    cursor.execute("SELECT id, username, email, role, user_type, is_verified FROM users ORDER BY id DESC")
+    cursor.execute("""
+        SELECT id, username, email, role, user_type, is_verified
+        FROM users
+        ORDER BY
+            CASE WHEN role = 'admin' THEN 0 ELSE 1 END,
+            id ASC
+    """)
     rows = cursor.fetchall()
     conn.close()
     return rows
