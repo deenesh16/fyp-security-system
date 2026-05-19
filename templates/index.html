@@ -366,6 +366,27 @@
             vertical-align: top;
         }
 
+        
+        .top-bar,
+        .nav-links,
+        .navbar,
+        .header-links {
+            position: relative;
+            z-index: 9999;
+        }
+
+        .top-bar a,
+        .nav-links a,
+        .navbar a,
+        .header-links a,
+        .notification-link,
+        .admin-dashboard-link,
+        .logout-link {
+            position: relative;
+            z-index: 10000;
+            pointer-events: auto;
+        }
+
         </style>
 </head>
 
@@ -381,18 +402,18 @@
         <a href="/history">My History</a>
 
         {% if user["role"] == "admin" %}
-            | <a href="/admin">Admin Dashboard</a>
+            | <a href="{{ url_for('admin_panel') }}" class="admin-dashboard-link" style="position: relative; z-index: 10000; pointer-events: auto;">Admin Dashboard</a>
         {% endif %}
 
         |
-        <a href="/notifications" class="notification-link">
-            Notifications
-            {% if unread_count and unread_count > 0 %}
+        <a href="{{ url_for('notifications') }}" class="notification-link" style="position: relative; z-index: 10000; pointer-events: auto;">
+                Notifications
+                {% if unread_count and unread_count > 0 %}
                 <span class="notification-badge">{{ unread_count }}</span>
             {% endif %}
-        </a>
+            </a>
 
-        | <a href="/logout">Logout</a>
+        | <a href="{{ url_for('logout') }}" class="logout-link" style="position: relative; z-index: 10000; pointer-events: auto;">Logout</a>
     </div>
 
     <span class="system-badge">Security Assessment Dashboard</span>
