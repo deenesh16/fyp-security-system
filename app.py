@@ -41,6 +41,7 @@ import os
 import logging
 import re
 import html
+from urllib.parse import urlparse
 
 
 app = Flask(__name__)
@@ -708,6 +709,20 @@ def is_strong_password(password):
     )
 
 
+def is_government_domain(target):
+    """Block government domains ending in .gov or .gov.my.
+
+    The check is performed against the parsed hostname instead of the full URL,
+    preventing false positives when '.gov' appears only in a path or query string.
+    """
+    try:
+        parsed = urlparse(str(target or "").strip())
+        hostname = (parsed.hostname or "").lower().rstrip(".")
+        return hostname.endswith(".gov") or hostname.endswith(".gov.my")
+    except Exception:
+        return False
+
+
 # ---------------- EMAIL ----------------
 def send_email_message(to_email, subject, text_body, html_body=None):
     if not MAIL_SENDER or not MAIL_APP_PASSWORD:
@@ -1210,6 +1225,15 @@ def run_scan(scan_id, target, scan_mode, user_id):
     }
 
     try:
+        # Defensive server-side check in case the input validation is bypassed.
+        if is_government_domain(target):
+            scan_tasks[scan_id]["status"] = f"{mode_label}: Scan Blocked"
+            scan_tasks[scan_id]["error"] = (
+                "Government domains ending in .gov or .gov.my are restricted and cannot be scanned."
+            )
+            scan_tasks[scan_id]["completed"] = True
+            return
+
         scan_tasks[scan_id]["status"] = "Connecting to ZAP scanner..."
         zap = get_zap_client()
 
@@ -1861,6 +1885,41 @@ def start_scan():
 
     if not target.startswith("http://") and not target.startswith("https://"):
         target = "http://" + target
+
+    # Restrict government domains before creating or starting a scan.
+    if is_government_domain(target):
+        stats = get_user_dashboard_stats(user["id"])
+        daily_limit = get_user_daily_limit(user)
+        scans_today = get_today_scan_count(user["id"])
+        remaining_scans = None if daily_limit is None else max(0, daily_limit - scans_today)
+        notifications = get_user_notifications(user["id"])
+
+        return render_template(
+            "index.html",
+            unread_count=get_unread_notification_count(user["id"]),
+            today_date=get_malaysia_date_display(),
+            dashboard_display_category=(
+                "Admin"
+                if user["role"] == "admin"
+                else str(user.get("user_type", "User")).replace("_", " ").title()
+            ),
+            user=user,
+            total_scans=stats["total_scans"],
+            total_findings=stats["total_findings"],
+            total_high=stats["high"],
+            total_medium=stats["medium"],
+            total_low=stats["low"],
+            total_info=stats["info"],
+            user_type_label=get_user_type_label(user.get("user_type")),
+            daily_limit=daily_limit,
+            scans_today=scans_today,
+            remaining_scans=remaining_scans,
+            notifications=notifications,
+            scan_error=(
+                "Scanning Restricted: Government domains ending in .gov or .gov.my "
+                "cannot be scanned by this system. Please use an authorized non-government test target."
+            ),
+        )
 
     mode_config = SCAN_MODES.get(scan_mode, SCAN_MODES["quick"])
 

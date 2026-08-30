@@ -297,6 +297,37 @@
             line-height: 1.6;
             font-weight: bold;
         }
+
+        .government-domain-warning {
+            display: none;
+            margin-top: 12px;
+            padding: 12px 14px;
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            border-left: 5px solid #dc2626;
+            border-radius: 10px;
+            color: #991b1b;
+            font-size: 14px;
+            line-height: 1.5;
+            font-weight: bold;
+        }
+
+        .government-domain-warning.show {
+            display: block;
+        }
+
+        button:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+            opacity: 0.75;
+        }
+
+        button:disabled:hover {
+            background: #94a3b8;
+            transform: none;
+        }
 .notification-box h3 {
             margin: 0 0 12px;
             color: #0f172a;
@@ -499,9 +530,13 @@
     <div class="scan-form-box">
         <h3>Start New Security Assessment</h3>
 
-        <form action="/start_scan" method="post">
+        <form id="scanForm" action="/start_scan" method="post">
             <label for="url">Target Website URL</label>
-            <input id="url" type="text" name="url" placeholder="https://example.com" required>
+            <input id="url" type="text" name="url" placeholder="https://example.com" required autocomplete="off">
+
+            <div id="governmentDomainWarning" class="government-domain-warning" role="alert" aria-live="polite">
+                Scanning Restricted: Government domains ending in .gov or .gov.my cannot be scanned by this system. Please use an authorized non-government test target.
+            </div>
 
             <label for="scan_mode">Scan Mode</label>
             <select id="scan_mode" name="scan_mode">
@@ -509,7 +544,7 @@
                 <option value="full">Full Scan</option>
             </select>
 
-            <button type="submit">Start Assessment Scan</button>
+            <button id="startScanButton" type="submit">Start Assessment Scan</button>
         </form>
     </div>
 
@@ -563,6 +598,68 @@
             }
         }
     });
+
+    // Instant client-side government domain filter.
+    // The server-side app.py check remains the final security control.
+    const scanForm = document.getElementById("scanForm");
+    const urlInput = document.getElementById("url");
+    const startScanButton = document.getElementById("startScanButton");
+    const governmentDomainWarning = document.getElementById("governmentDomainWarning");
+
+    function getHostnameFromInput(value) {
+        const trimmed = (value || "").trim();
+
+        if (!trimmed) {
+            return "";
+        }
+
+        try {
+            const normalized = /^https?:\/\//i.test(trimmed)
+                ? trimmed
+                : "http://" + trimmed;
+
+            return new URL(normalized).hostname.toLowerCase().replace(/\.$/, "");
+        } catch (error) {
+            return "";
+        }
+    }
+
+    function isGovernmentDomain(value) {
+        const hostname = getHostnameFromInput(value);
+
+        return hostname.endsWith(".gov") || hostname.endsWith(".gov.my");
+    }
+
+    function updateGovernmentDomainState() {
+        const blocked = isGovernmentDomain(urlInput.value);
+
+        governmentDomainWarning.classList.toggle("show", blocked);
+        startScanButton.disabled = blocked;
+        urlInput.setAttribute("aria-invalid", blocked ? "true" : "false");
+
+        if (blocked) {
+            urlInput.style.borderColor = "#dc2626";
+            urlInput.style.boxShadow = "0 0 0 4px rgba(220, 38, 38, 0.10)";
+        } else {
+            urlInput.style.borderColor = "";
+            urlInput.style.boxShadow = "";
+        }
+    }
+
+    urlInput.addEventListener("input", updateGovernmentDomainState);
+    urlInput.addEventListener("paste", function () {
+        setTimeout(updateGovernmentDomainState, 0);
+    });
+
+    scanForm.addEventListener("submit", function (event) {
+        if (isGovernmentDomain(urlInput.value)) {
+            event.preventDefault();
+            updateGovernmentDomainState();
+            urlInput.focus();
+        }
+    });
+
+    updateGovernmentDomainState();
 
     window.addEventListener("pageshow", function (event) {
         if (event.persisted) {
